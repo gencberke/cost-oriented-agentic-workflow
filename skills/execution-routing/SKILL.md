@@ -19,6 +19,12 @@ Before routing the first unit, run this checklist over the plan and **emit its r
 
 Emit one of exactly two outputs: a single **batched** question to the human (each finding beside the plan text that mandates it, asking which governs) — or the line `Pre-flight scan: clean.` Never proceed without one of them. (A single trivial unit skips this; it earns its keep on a real multi-task plan.) The per-unit review loop still catches conflicts that only surface during implementation.
 
+## Repository-state pre-flight
+
+Before Task 1, require `git status --porcelain` empty for planned/delegated work. If dirty, stop and offer commit, stash, or isolated-worktree choices; never absorb unknown changes. Default `controller-per-unit` must be clean again after each reviewed commit.
+
+Resume exception for `user-owned`/`none`: allow dirty paths only when every path is inside completed ledger `files=` scopes. Any outside path hard-stops for human classification.
+
 ## The routing gate: contract cost (decide per unit)
 
 Delegating is not free — you pay to write the contract, dispatch, and review the return. Delegation only wins when the code you'd save outweighs that overhead.
@@ -95,17 +101,18 @@ digraph loop {
 
 ## Return protocol (keep the controller lean)
 
-The implementer writes its full report to a **report file** and returns only: **Status**, files changed, a one-line test summary, concerns, and the report path — it does **not** commit (see Commit policy). The reviewer reads the diff from a **package file** (`scripts/review-package BASE HEAD`, which also includes uncommitted working-tree changes) and returns a verdict + findings. Code bodies and full diffs stay in files — they never re-enter your context.
+The implementer writes its full report to a **report file** and returns only: **Status**, files changed, a one-line test summary, concerns, and the report path — it does **not** commit (see Commit policy). The reviewer reads the diff from a **package file** and returns a verdict + findings. Code bodies and full diffs stay in files — they never re-enter your context.
 
 Hand work over as files, not pasted text:
 - **Workspace:** `scripts/cow-workspace` resolves the self-ignored, per-worktree artifact directory at `<repo-root>/.cost-oriented-agentic-workflow/run/`.
 - **Brief:** `scripts/task-brief PLAN_FILE N` extracts the task into `task-N-brief.md` there; the dispatch points to it as the source of requirements.
 - **Report:** place `task-N-report.md` beside the brief; the implementer writes there.
-- **Diff:** `scripts/review-package BASE HEAD` writes the package there; pass its path to the reviewer. Use the BASE you recorded before dispatching — never `HEAD~1`.
+- **Task diff:** pass the task's exact plan `Files` paths: `scripts/review-package BASE HEAD -- PATH...`. This includes committed, staged, unstaged, and untracked content only for that scope. Use the BASE recorded before dispatching — never `HEAD~1`.
+- **Whole-work diff:** omit paths: `scripts/review-package MERGE_BASE HEAD`. Branch mode includes committed work only and exits `4` with dirty filenames when current HEAD is dirty.
 
 ## Commit policy
 
-Default: **controller-per-unit.** The delegated implementer and the inline writer leave changes in the working tree; **you (the controller) commit each unit after it passes review**, so git history holds reviewed commits, not pre-review snapshots. Record BASE = HEAD before the unit; the working tree carries the diff and `review-package` includes it, so the unit is fully reviewable before it is committed. Each committed unit is a ledger/recovery boundary.
+Default: **controller-per-unit.** The delegated implementer and the inline writer leave changes in the working tree; **you (the controller) commit each unit after it passes review**, so git history holds reviewed commits, not pre-review snapshots. Record BASE = HEAD before the unit; review the working tree with task-scoped `review-package ... -- PATH...`, then commit. Confirm the tree is clean before starting the next unit. Each committed unit is a ledger/recovery boundary.
 
 Override only by repo or user preference, and note it in the anchor when non-default:
 - `implementer` — the delegated worker commits its own unit (then the dispatch and return protocol ask for commit SHAs instead of "files changed").
@@ -132,7 +139,7 @@ A trivial light-path edit does not force a commit under any policy.
 
 ## Durable progress (anti-drift)
 
-Conversation memory does not survive compaction. Track completed units in `<repo-root>/.cost-oriented-agentic-workflow/run/progress.md`, one line per finished unit: `Unit N: complete (commits <base7>..<head7>, review clean)`. `scripts/cow-workspace` copies a legacy `<git-dir>/cow/progress.md` forward when the new ledger is absent; it never deletes the legacy file. On resume, trust the ledger and `git log` over recollection. Because `git clean -fdx` can delete the ignored workspace, retain `git log` as the fallback ground truth.
+Conversation memory does not survive compaction. Track completed units in `<repo-root>/.cost-oriented-agentic-workflow/run/progress.md`, including their repo-relative `files=` scope: `Unit N: complete (files=a,b; commits <base7>..<head7>; review clean)`. `scripts/cow-workspace` copies a legacy `<git-dir>/cow/progress.md` forward when the new ledger is absent; it never deletes the legacy file. On resume, trust the ledger and `git log` over recollection. Because `git clean -fdx` can delete the ignored workspace, retain `git log` as the fallback ground truth.
 
 ## When all units are done
 

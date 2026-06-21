@@ -1,85 +1,151 @@
 #!/usr/bin/env bash
-# Generate a review package: commit list, stat summary, and the net
-# diff with extended context, written to a file the reviewer reads in one
-# call. Using the recorded per-task BASE (not HEAD~1) keeps multi-commit
-# tasks intact.
+# Generate a review package with extended diff context. Without PATH arguments,
+# package only committed BASE..HEAD work. With PATH arguments, package committed,
+# staged, unstaged, and untracked content for exactly that task scope.
 #
-# Usage: review-package BASE HEAD [OUTFILE]
+# Usage: review-package BASE HEAD [OUTFILE] [-- PATH ...]
 # Default OUTFILE: <repo-root>/.cost-oriented-agentic-workflow/run/
-# review-<base7>..<head7>.diff — named per commit range, so a re-review after fixes
-# gets a distinct file. Pass OUTFILE if two sessions in one worktree might review
-# the identical range at the same time.
+# review-<base7>..<head7>.diff
 set -euo pipefail
 
-if [ $# -lt 2 ] || [ $# -gt 3 ]; then
-  echo "usage: review-package BASE HEAD [OUTFILE]" >&2
+usage() {
+  echo "usage: review-package BASE HEAD [OUTFILE] [-- PATH ...]" >&2
   exit 2
-fi
+}
+
+[ $# -ge 2 ] || usage
 
 base=$1
 head=$2
+shift 2
 
-git rev-parse --verify --quiet "$base" >/dev/null || { echo "bad BASE: $base" >&2; exit 2; }
-git rev-parse --verify --quiet "$head" >/dev/null || { echo "bad HEAD: $head" >&2; exit 2; }
+out=""
+task_mode=""
+raw_paths=()
 
-if [ $# -eq 3 ]; then
-  out=$3
-else
-  dir=$("$(cd "$(dirname "$0")" && pwd)/cow-workspace")
-  out="$dir/review-$(git rev-parse --short "$base")..$(git rev-parse --short "$head").diff"
+if [ $# -gt 0 ] && [ "$1" != "--" ]; then
+  out=$1
+  shift
 fi
 
-# Capture working-tree state BEFORE opening $out, so the output file itself
-# (if an in-tree OUTFILE is passed) never registers as an uncommitted change.
-# Only when HEAD is the current commit do uncommitted changes belong to this
-# review — so review correctness does not depend on the work being committed
-# (e.g. an inline edit on the light path).
-include_worktree=""
-if [ "$(git rev-parse --verify HEAD 2>/dev/null)" = "$(git rev-parse --verify "$head" 2>/dev/null)" ] \
-   && [ -n "$(git status --porcelain)" ]; then
-  include_worktree=1
-  wt_staged=$(git diff --cached -U10)
-  wt_unstaged=$(git diff -U10)
-  wt_untracked=$(git ls-files --others --exclude-standard)
+if [ $# -gt 0 ]; then
+  [ "$1" = "--" ] || usage
+  shift
+  [ $# -gt 0 ] || usage
+  task_mode=1
+  raw_paths=("$@")
 fi
 
-{
-  echo "# Review package: ${base}..${head}"
-  echo
-  echo "## Commits"
-  git log --oneline "${base}..${head}"
-  echo
-  echo "## Files changed"
-  git diff --stat "${base}..${head}"
-  echo
-  echo "## Diff"
-  git diff -U10 "${base}..${head}"
+base_sha=$(git rev-parse --verify --quiet "$base^{commit}") || {
+  echo "bad BASE: $base" >&2
+  exit 2
+}
+head_sha=$(git rev-parse --verify --quiet "$head^{commit}") || {
+  echo "bad HEAD: $head" >&2
+  exit 2
+}
+current_head=$(git rev-parse --verify HEAD)
+root=$(git rev-parse --show-toplevel)
 
-  if [ -n "$include_worktree" ]; then
-    echo
-    echo "## Uncommitted working-tree changes (on top of ${head})"
-    echo
-    echo "### Staged"
-    printf '%s\n' "$wt_staged"
-    echo
-    echo "### Unstaged (tracked)"
-    printf '%s\n' "$wt_unstaged"
-    if [ -n "$wt_untracked" ]; then
-      echo
-      echo "### Untracked files (content)"
-      # Show each untracked file's CONTENT as an add-diff vs /dev/null, not just
-      # its name — an implementer that leaves new files uncommitted must still be
-      # reviewable. git renders binary files as a "Binary files differ" line.
-      # ($wt_untracked was captured before $out was opened, so $out is excluded.)
-      while IFS= read -r f; do
-        [ -n "$f" ] || continue
-        git diff --no-index /dev/null "$f" 2>/dev/null || true
-      done <<EOF
-$wt_untracked
-EOF
-    fi
+paths=()
+pathspecs=()
+if [ -n "$task_mode" ]; then
+  for raw in "${raw_paths[@]}"; do
+    path=${raw//\\//}
+    while [[ "$path" == ./* ]]; do path=${path#./}; done
+    case "$path" in
+      ""|"."|/*|[A-Za-z]:*|..|../*|*/../*|*/..)
+        echo "invalid repo-relative path: $raw" >&2
+        exit 2
+        ;;
+    esac
+    paths+=("$path")
+    pathspecs+=(":(top,literal)$path")
+  done
+fi
+
+# Whole-work/branch packages are committed evidence only. When HEAD is current,
+# refuse a dirty tree before opening OUTFILE and reveal filenames, never content.
+if [ -z "$task_mode" ] && [ "$current_head" = "$head_sha" ]; then
+  dirty=$(git status --porcelain=v1 --untracked-files=all)
+  if [ -n "$dirty" ]; then
+    while IFS= read -r line; do
+      [ -n "$line" ] && printf '%s\n' "${line:3}" >&2
+    done <<< "$dirty"
+    exit 4
   fi
-} > "$out"
+fi
 
-commits=$(git rev-list --count "${base}..${head}")
+if [ -z "$out" ]; then
+  dir=$("$(cd "$(dirname "$0")" && pwd)/cow-workspace")
+  out="$dir/review-$(git rev-parse --short "$base_sha")..$(git rev-parse --short "$head_sha").diff"
+fi
+
+commits=$(git rev-list --count "$base_sha..$head_sha")
+
+if [ -n "$task_mode" ]; then
+  # Capture every working-tree surface before opening OUTFILE, so an explicit
+  # in-tree output file can never include itself in the package.
+  committed_log=$(git log --oneline "$base_sha..$head_sha" -- "${pathspecs[@]}")
+  committed_stat=$(git diff --no-ext-diff --no-textconv --no-renames --stat "$base_sha..$head_sha" -- "${pathspecs[@]}")
+  committed_diff=$(git diff --no-ext-diff --no-textconv --no-renames -U10 "$base_sha..$head_sha" -- "${pathspecs[@]}")
+  staged_diff=$(git diff --cached --no-ext-diff --no-textconv --no-renames -U10 -- "${pathspecs[@]}")
+  unstaged_diff=$(git diff --no-ext-diff --no-textconv --no-renames -U10 -- "${pathspecs[@]}")
+  untracked=()
+  while IFS= read -r -d '' file; do
+    untracked+=("$file")
+  done < <(git ls-files -z --full-name --others --exclude-standard -- "${pathspecs[@]}")
+
+  {
+    echo "# Task-scoped review package: ${base_sha}..${head_sha}"
+    echo
+    echo "## Scope"
+    for path in "${paths[@]}"; do printf '%s\n' "- $path"; done
+    echo
+    echo "## Commits touching scope"
+    printf '%s\n' "$committed_log"
+    echo
+    echo "## Committed files changed"
+    printf '%s\n' "$committed_stat"
+    echo
+    echo "## Committed diff"
+    printf '%s\n' "$committed_diff"
+    echo
+    echo "## Staged diff"
+    printf '%s\n' "$staged_diff"
+    echo
+    echo "## Unstaged tracked diff"
+    printf '%s\n' "$unstaged_diff"
+    echo
+    echo "## Untracked files"
+    for file in "${untracked[@]}"; do
+      if [ -L "$root/$file" ]; then
+        printf 'Symlink: %s -> %s\n' "$file" "$(readlink "$root/$file")"
+        continue
+      fi
+      numstat=$(git -C "$root" diff --no-ext-diff --no-textconv --no-index --numstat -- /dev/null "$file" 2>/dev/null || true)
+      case "$numstat" in
+        $'-\t-\t'*)
+          size=$(wc -c < "$root/$file" | tr -d ' ')
+          printf 'Binary file: %s (%s bytes)\n' "$file" "$size"
+          ;;
+        *) git -C "$root" diff --no-ext-diff --no-textconv --no-index -U10 -- /dev/null "$file" 2>/dev/null || true ;;
+      esac
+    done
+  } > "$out"
+else
+  {
+    echo "# Review package: ${base_sha}..${head_sha}"
+    echo
+    echo "## Commits"
+    git log --oneline "$base_sha..$head_sha"
+    echo
+    echo "## Files changed"
+    git diff --no-ext-diff --no-textconv --stat "$base_sha..$head_sha"
+    echo
+    echo "## Diff"
+    git diff --no-ext-diff --no-textconv -U10 "$base_sha..$head_sha"
+  } > "$out"
+fi
+
 echo "wrote ${out}: ${commits} commit(s), $(wc -c < "$out" | tr -d ' ') bytes"

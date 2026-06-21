@@ -38,7 +38,8 @@ Subagent (general-purpose):
     4. Self-review (below), fix what you find.
     5. Report back. **Do not commit** — leave your changes in the working tree;
        the controller commits the unit after it has been reviewed (review-package
-       includes uncommitted work, so review does not need a commit).
+       includes uncommitted work for this task's exact Files scope, so review
+       does not need a commit).
 
     Work from: [directory]
 

@@ -126,6 +126,6 @@ Subagent (general-purpose):
 - `[GLOBAL_CONSTRAINTS]` — binding requirements copied verbatim from the plan/spec (not process rules — those are in this template).
 - `[REPORT_FILE]` — the implementer's report file.
 - `[BASE_SHA]` / `[HEAD_SHA]` — commit before this task / current commit.
-- `[DIFF_FILE]` — the path `scripts/review-package BASE HEAD` printed.
+- `[DIFF_FILE]` — the path `scripts/review-package BASE HEAD -- TASK_PATHS...` printed.
 
 A fix dispatch can address spec gaps and quality findings together; re-review covers both verdicts.

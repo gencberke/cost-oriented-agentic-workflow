@@ -62,7 +62,11 @@ APPENDIX_MARKER
 TRAILING_EQUAL_MARKER
 PLAN
 
-git add docs/plans/plan.md
+mkdir -p src
+printf 'INITIAL_ALLOWED\n' > src/allowed.ts
+printf 'INITIAL_UNRELATED\n' > src/unrelated.ts
+printf 'RENAME_SOURCE_CONTENT\n' > src/rename-source.ts
+git add docs/plans/plan.md src
 git commit -qm c1
 BASE=$(git rev-parse HEAD)
 
@@ -110,35 +114,72 @@ grep -q TRAILING_EQUAL_MARKER "$OUT/t3.md" 2>/dev/null && r=no || r=ok; check "$
 if "$TB" docs/plans/plan.md 99 "$OUT/t99.md" >/dev/null 2>&1; then r=no; else r=ok; fi; check "$r" "task-brief: missing task exits nonzero"
 
 # ---- review-package ----
-printf 'x\n' > a.ts
-git add a.ts
+printf 'COMMITTED_ALLOWED_MARKER\n' > src/allowed.ts
+printf 'COMMITTED_UNRELATED_MARKER\n' > src/unrelated.ts
+git add src/allowed.ts src/unrelated.ts
 git commit -qm c2
 HEAD=$(git rev-parse HEAD)
 
-printf 'mod\n' >> a.ts
-printf 'UNTRACKED_BODY_MARKER\n' > new.ts
-printf '\x00\x01BIN\x00' > blob.bin
-"$RP" "$BASE" "$HEAD" "$OUT/rp.md" >/dev/null 2>&1
-grep -q '^## Diff' "$OUT/rp.md" 2>/dev/null && r=ok || r=no; check "$r" "review-package: committed diff present"
-grep -qE '^## Uncommitted working-tree changes' "$OUT/rp.md" 2>/dev/null && r=ok || r=no; check "$r" "review-package: uncommitted section when dirty"
-grep -q UNTRACKED_BODY_MARKER "$OUT/rp.md" 2>/dev/null && r=ok || r=no; check "$r" "review-package: untracked CONTENT (not just name)"
-grep -qi 'blob.bin' "$OUT/rp.md" 2>/dev/null && r=ok || r=no; check "$r" "review-package: untracked binary referenced"
+printf 'UNSTAGED_ALLOWED_MARKER\n' >> src/allowed.ts
+printf 'UNSTAGED_UNRELATED_MARKER\n' >> src/unrelated.ts
+printf 'STAGED_ALLOWED_MARKER\n' > src/staged.ts
+git add src/staged.ts
+git mv src/rename-source.ts src/rename-destination.ts
+printf 'UNTRACKED_ALLOWED_MARKER\n' > src/allowed-new.ts
+printf 'UNTRACKED_UNRELATED_MARKER\n' > src/unrelated-new.ts
+printf '\x00\x01BIN_CONTENT_MUST_NOT_RENDER\x00' > src/blob.bin
+printf 'WORKSPACE_ARTIFACT_MARKER\n' > "$COW_DIR/internal-review.diff"
 
-"$RP" "$BASE" "$HEAD" >/dev/null 2>&1
-DEFAULT_REVIEW="$COW_DIR/review-$(git rev-parse --short "$BASE")..$(git rev-parse --short "$HEAD").diff"
-[ -f "$DEFAULT_REVIEW" ] && r=ok || r=no; check "$r" "review-package: default output uses workspace"
+task_summary=$(cd nested/path && "$RP" "$BASE" "$HEAD" "$OUT/task.md" -- \
+  src/allowed.ts src/staged.ts src/rename-destination.ts \
+  src/allowed-new.ts src/blob.bin)
+printf '%s\n' "$task_summary" | grep -qF "wrote $OUT/task.md:" && \
+  printf '%s\n' "$task_summary" | grep -qE '[0-9]+ commit\(s\), [0-9]+ bytes$' && r=ok || r=no
+check "$r" "review-package: reports output path, commit count, and byte size"
+grep -q COMMITTED_ALLOWED_MARKER "$OUT/task.md" 2>/dev/null && r=ok || r=no; check "$r" "review-package task mode: committed scoped diff"
+grep -q STAGED_ALLOWED_MARKER "$OUT/task.md" 2>/dev/null && r=ok || r=no; check "$r" "review-package task mode: staged scoped diff"
+grep -q UNSTAGED_ALLOWED_MARKER "$OUT/task.md" 2>/dev/null && r=ok || r=no; check "$r" "review-package task mode: unstaged scoped diff"
+grep -q UNTRACKED_ALLOWED_MARKER "$OUT/task.md" 2>/dev/null && r=ok || r=no; check "$r" "review-package task mode: allowed untracked content"
+grep -q 'Binary file: src/blob.bin (' "$OUT/task.md" 2>/dev/null && r=ok || r=no; check "$r" "review-package task mode: binary metadata without content"
+grep -q RENAME_SOURCE_CONTENT "$OUT/task.md" 2>/dev/null && ! grep -q 'rename-source.ts' "$OUT/task.md" 2>/dev/null && r=ok || r=no
+check "$r" "review-package task mode: rename cannot expose an out-of-scope path"
+if grep -qE 'COMMITTED_UNRELATED_MARKER|UNSTAGED_UNRELATED_MARKER|UNTRACKED_UNRELATED_MARKER|WORKSPACE_ARTIFACT_MARKER' "$OUT/task.md" 2>/dev/null; then r=no; else r=ok; fi
+check "$r" "review-package task mode: unrelated and workspace content cannot leak"
+
+(cd nested/path && "$RP" "$BASE" "$HEAD" -- src/allowed.ts) >/dev/null 2>&1
+DEFAULT_TASK_REVIEW="$COW_DIR/review-$(git rev-parse --short "$BASE")..$(git rev-parse --short "$HEAD").diff"
+grep -q COMMITTED_ALLOWED_MARKER "$DEFAULT_TASK_REVIEW" 2>/dev/null && r=ok || r=no
+check "$r" "review-package task mode: optional OUTFILE defaults to workspace"
+
+"$RP" "$BASE" "$HEAD" "$OUT/branch-dirty.md" >"$OUT/branch-dirty.stdout" 2>"$OUT/branch-dirty.stderr"
+rc=$?
+[ "$rc" -eq 4 ] && r=ok || r=no; check "$r" "review-package branch mode: dirty current tree exits 4"
+[ ! -e "$OUT/branch-dirty.md" ] && r=ok || r=no; check "$r" "review-package branch mode: dirty failure writes no package"
+grep -q 'src/allowed.ts' "$OUT/branch-dirty.stderr" 2>/dev/null && ! grep -q UNSTAGED_ALLOWED_MARKER "$OUT/branch-dirty.stderr" 2>/dev/null && r=ok || r=no
+check "$r" "review-package branch mode: dirty failure reports filenames, not content"
+
+"$RP" "$BASE" "$HEAD" "$OUT/traversal.md" -- ../escape >/dev/null 2>&1
+[ "$?" -eq 2 ] && r=ok || r=no; check "$r" "review-package task mode: rejects parent traversal"
+"$RP" "$BASE" "$HEAD" "$OUT/absolute.md" -- "$REPO/src/allowed.ts" >/dev/null 2>&1
+[ "$?" -eq 2 ] && r=ok || r=no; check "$r" "review-package task mode: rejects absolute paths"
+"$RP" "$BASE" "$HEAD" "$OUT/windows-absolute.md" -- 'C:\outside\file.ts' >/dev/null 2>&1
+[ "$?" -eq 2 ] && r=ok || r=no; check "$r" "review-package task mode: rejects Windows absolute paths"
 
 git add -A
 git commit -qm c3
 H3=$(git rev-parse HEAD)
 git ls-files --error-unmatch '.cost-oriented-agentic-workflow/*' >/dev/null 2>&1 && r=no || r=ok
 check "$r" "cow-workspace: artifacts never enter commits"
-"$RP" "$BASE" "$H3" "$OUT/rp2.md" >/dev/null 2>&1
-grep -qE '^## Uncommitted working-tree changes' "$OUT/rp2.md" 2>/dev/null && r=no || r=ok; check "$r" "review-package: no section on clean tree"
 
-printf 'dirty\n' >> a.ts
-"$RP" "$BASE" "$HEAD" "$OUT/rp3.md" >/dev/null 2>&1
-grep -qE '^## Uncommitted working-tree changes' "$OUT/rp3.md" 2>/dev/null && r=no || r=ok; check "$r" "review-package: no worktree noise for historical range"
+"$RP" "$BASE" "$H3" >/dev/null 2>&1
+DEFAULT_REVIEW="$COW_DIR/review-$(git rev-parse --short "$BASE")..$(git rev-parse --short "$H3").diff"
+[ -f "$DEFAULT_REVIEW" ] && r=ok || r=no; check "$r" "review-package branch mode: clean default output uses workspace"
+if grep -qE '^## (Staged|Unstaged|Untracked)|WORKSPACE_ARTIFACT_MARKER' "$DEFAULT_REVIEW" 2>/dev/null; then r=no; else r=ok; fi
+check "$r" "review-package branch mode: package is committed-only"
+
+printf 'HISTORICAL_NOISE_MARKER\n' >> src/unrelated.ts
+"$RP" "$BASE" "$HEAD" "$OUT/historical.md" >/dev/null 2>&1
+grep -q HISTORICAL_NOISE_MARKER "$OUT/historical.md" 2>/dev/null && r=no || r=ok; check "$r" "review-package branch mode: historical range ignores working-tree noise"
 
 echo
 if [ "$fails" -eq 0 ]; then echo "scripts: all checks passed."; else echo "scripts: $fails failed."; exit 1; fi

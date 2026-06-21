@@ -14,7 +14,7 @@ A reviewer that reads its own diff (on its own cheap tokens) and returns a verdi
 
 ## Who reviews, and when (the risk matrix governs)
 
-The risk matrix in using-cost-oriented-workflow decides *whether* an independent review happens; mode decides *how deep*. The reviewer always reads its own diff from a package file (`execution-routing/scripts/review-package BASE HEAD`) on its own cheap tokens.
+The risk matrix in using-cost-oriented-workflow decides *whether* an independent review happens; mode decides *how deep*. The reviewer always reads its own diff from a package file on its own cheap tokens: per-task uses `execution-routing/scripts/review-package BASE HEAD -- PATH...` with the plan's exact `Files`; whole-work omits paths and reads committed branch work from a clean tree.
 
 **Per task:**
 - **Risk low** → the implementer's self-review is the per-task gate. Don't dispatch a separate reviewer for every low-risk task — the one whole-work review at the end is the independent gate. (This is the cost-optimal default.)
