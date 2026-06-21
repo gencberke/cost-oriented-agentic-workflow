@@ -9,9 +9,9 @@ The work is done and reviewed; now integrate it deliberately. Don't ask "what ne
 
 **Core:** verify tests → detect workspace → present options → execute → clean up.
 
-## 1. Verify first
+## 1. Own final verification
 
-Run the project's test/verification command and read the output (verification-before-completion). If tests fail, **stop** — you cannot offer merge or PR until they pass. Show the failures and resolve them first (systematic-debugging if it's a real bug).
+Finishing owns the final evidence. Reuse a fresh run only when it was produced this turn against the identical HEAD and working-tree state; otherwise run the project's verification command and read its output. On failure, stop before offering merge/PR. A merge changes state, so always re-run on the merged result.
 
 ## 2. Detect the workspace and the base branch
 
@@ -20,21 +20,19 @@ GIT_DIR=$(cd "$(git rev-parse --git-dir)" && pwd -P)
 GIT_COMMON=$(cd "$(git rev-parse --git-common-dir)" && pwd -P)
 BRANCH=$(git branch --show-current)
 
-# Base BRANCH NAME (what you check out and merge into) — prefer the start branch the
-# plan/ledger recorded; else the upstream's branch; else the first of main/master/develop.
-BASE_BRANCH=$(git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null | sed 's@^[^/]*/@@')
-if [ -z "$BASE_BRANCH" ]; then
-  for b in main master develop; do
-    git show-ref --verify --quiet "refs/heads/$b" && { BASE_BRANCH=$b; break; }
-  done
-fi
-# Split point (a SHA — for the review range / "split from", NOT something to check out):
-BASE_COMMIT=$(git merge-base HEAD "$BASE_BRANCH" 2>/dev/null)
+ROOT=$(git rev-parse --show-toplevel)
+LEDGER="$ROOT/.cost-oriented-agentic-workflow/run/progress.md"
+BASE_BRANCH=$(sed -n 's/^BASE_BRANCH:[[:space:]]*//p' "$LEDGER" | head -1)
+MERGE_BASE_SHA=$(sed -n 's/^MERGE_BASE_SHA:[[:space:]]*//p' "$LEDGER" | head -1)
+HEAD_SHA=$(git rev-parse HEAD)
 ```
 
-`BASE_BRANCH` is a branch **name** you check out and merge into; `BASE_COMMIT` is the split-point SHA — never `git checkout` a SHA as if it were a branch. If the plan recorded no start branch and detection is ambiguous, ask: "This branch split from `<BASE_BRANCH>` — correct?"
+Require the ledger values; do not redetect or recompute them here. Verify that
+`BASE_BRANCH` resolves under `refs/heads/` and that `MERGE_BASE_SHA^{commit}`
+resolves; stop if either check fails. `BASE_BRANCH` is the local branch name used
+for merge options; `MERGE_BASE_SHA` remains the immutable review split point.
 
-`GIT_DIR == GIT_COMMON` → normal checkout. `GIT_DIR != GIT_COMMON` → linked worktree (cleanup is provenance-based, step 5). No `BRANCH` (detached HEAD) → use the reduced menu (no local merge).
+`GIT_DIR == GIT_COMMON` → normal checkout. `GIT_DIR != GIT_COMMON` → linked worktree. No `BRANCH` means detached HEAD: preserve `HEAD_SHA` for review/keep/PR and never offer local merge.
 
 ## 3. Present options (concrete, not open-ended)
 

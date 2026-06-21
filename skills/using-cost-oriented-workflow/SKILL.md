@@ -7,6 +7,8 @@ description: Use when starting or resuming work under the cost-oriented agentic 
 If you were dispatched as a subagent to execute a specific task, skip this skill. Do the task you were given.
 </SUBAGENT-STOP>
 
+**Entry sentinel:** `COW_ENTRY_INJECTED`. Once this skill is loaded, treat the sentinel as present and do not invoke the entry skill again in this session.
+
 # Using the Cost-Oriented Workflow
 
 ## Core economy
@@ -120,12 +122,13 @@ Long sessions drift when there is no cheap artifact to re-anchor against. That a
 
 ```
 MODE: standard | production
+COMMIT_POLICY: controller-per-unit | implementer | user-owned | none
 ROUTING: brainstorm-gate → plan/contract → delegate-by-contract-cost → review-per-risk-matrix → verify-before-done
 CADENCE: continuous — run planned tasks without pausing; STOP only on: blocked · decision ambiguity · plan/code conflict · scope or risk escalation · external/irreversible action · retry budget exhausted · new credential or permission · failed baseline/verification · human asked to checkpoint
-ON RESUME/COMPACTION: re-invoke cost-oriented-agentic-workflow:using-cost-oriented-workflow, then trust this file + the ledger + git over memory.
+ON RESUME/COMPACTION: if COW_ENTRY_INJECTED is absent, invoke cost-oriented-agentic-workflow:using-cost-oriented-workflow exactly once; if present, do not reload it. In both cases trust the plan + ledger + git log over memory.
 ```
 
-After a compaction or resume, the header and the progress ledger (and `git log`) are ground truth — trust them over your recollection.
+After compaction/resume, plan + progress ledger + `git log` are ground truth regardless of how the entry skill was loaded.
 
 ## Token-economy posture
 

@@ -21,7 +21,7 @@ Wrote code before the test? In production, that's a violation — the test writt
 2. **GREEN:** write the *minimal* code to make it pass. No extra features (YAGNI). Run it — see it pass.
 3. **REFACTOR:** clean up names, duplication, structure while the test stays green. Re-run.
 
-Repeat per behavior. Commit at green points.
+Repeat per behavior. Record each green checkpoint with its test evidence. Commit only when the active `COMMIT_POLICY` authorizes the implementer; default `controller-per-unit` leaves the checkpoint uncommitted until review.
 
 ## What a good test verifies
 

@@ -32,4 +32,4 @@ Never tell a reviewer what *not* to flag, and never pre-rate a finding's severit
 
 ## The return contract
 
-State what to return: **status + files changed + one-line verification summary + concerns + the report-file path** (the implementer leaves work uncommitted; the controller commits after review — see execution-routing Commit policy). Code bodies and full diffs stay in files. Your context holds summaries and verdicts, never the code.
+Pass the ledger's exact `COMMIT_POLICY`. Request at most 8 return lines: **status + files changed + one-line verification + concerns + report path**; include commit SHAs only under `implementer`. Code bodies, diffs, and logs stay in files.

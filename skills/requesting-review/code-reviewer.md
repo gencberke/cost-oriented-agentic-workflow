@@ -15,8 +15,10 @@ Subagent (general-purpose):
     ## What Was Implemented
     [DESCRIPTION]
 
-    ## Requirements / Plan
-    [PLAN_OR_REQUIREMENTS — include the plan's Global Constraints verbatim]
+    ## Plan
+    Read: [PLAN_FILE]
+    Binding constraints (short, exact): [BINDING_CONSTRAINTS]
+    The plan text is not pasted into this prompt.
 
     ## Diff to Review
     **Base:** [BASE_SHA]  **Head:** [HEAD_SHA]  **Diff file:** [DIFF_FILE]
@@ -42,7 +44,10 @@ Subagent (general-purpose):
     list *pre-existing* ones separately for the controller to triage — they don't
     block this branch. Flag significant plan deviations specifically so they can be
     confirmed as intentional. If the problem is in the plan itself, say so. Point at
-    file:line for every finding.
+    file:line for every finding. Return every valid Critical and Important
+    finding; never cap them. Return at most the 3 highest-impact Minor findings.
+    Strengths are at most one line. Begin directly with the verdict: no preamble,
+    process narration, or closing summary.
 
     This is the **integration lens** — weight seam risks the branch introduces that
     per-task review cannot see: backward-compatibility / rollout (does a change
@@ -51,17 +56,17 @@ Subagent (general-purpose):
     status). These — not restated per-task nits — are what the whole-work review is for.
 
     ## Output Format
-    ### Strengths
+    ### Plan Alignment
+    **Ready to merge?** [Yes | No | With fixes] — introduced/worsened only
+    [Missing, extra, misunderstood, or cannot verify; concise when clean.]
+    ### Strengths (one line maximum)
     ### Issues (introduced or worsened by this branch)
     #### Critical (Must Fix)   [bugs, security, data loss, broken functionality]
     #### Important (Should Fix) [architecture, missing features, poor error handling, test gaps]
-    #### Minor (Nice to Have)  [style, optimization, docs polish]
+    #### Minor (Nice to Have; at most 3, highest impact)
     (each: file:line, causality (introduced | worsened), reachability, what's wrong, why it matters, fix if not obvious)
     ### Pre-existing (untouched by this branch — controller triage, not a merge blocker)
     [Already-broken things; severity + file:line, or "none".]
-    ### Assessment
-    **Ready to merge?** [Yes | No | With fixes]   ← judged on introduced/worsened only
-    **Reasoning:** [1-2 sentences]
 ```
 
 ## Production: security lens (add when the diff is security-sensitive)
@@ -83,4 +88,4 @@ injection surfaces, dependencies, or migrations, append this to the prompt:
     what you checked.
 ```
 
-**Placeholders:** `[DESCRIPTION]`, `[PLAN_OR_REQUIREMENTS]`, `[BASE_SHA]`, `[HEAD_SHA]`, `[DIFF_FILE]` (from `review-package`).
+**Placeholders:** `[DESCRIPTION]`, `[PLAN_FILE]`, `[BINDING_CONSTRAINTS]`, `[BASE_SHA]`, `[HEAD_SHA]`, `[DIFF_FILE]` (from `review-package`).

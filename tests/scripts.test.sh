@@ -7,12 +7,21 @@ SCRIPTS_DIR="$(cd "$(dirname "$0")/../skills/execution-routing/scripts" && pwd)"
 COW="$SCRIPTS_DIR/cow-workspace"
 TB="$SCRIPTS_DIR/task-brief"
 RP="$SCRIPTS_DIR/review-package"
+HOOK="$(cd "$SCRIPTS_DIR/../../.." && pwd)/hooks/session-start"
 fails=0
 check() { if [ "$1" = ok ]; then printf 'PASS: %s\n' "$2"; else printf 'FAIL: %s\n' "$2"; fails=$((fails + 1)); fi; }
 
 REPO=$(mktemp -d)
 OUT=$(mktemp -d)
 trap 'rm -rf "$REPO" "$OUT"' EXIT
+
+# ---- SessionStart / compact anchor ----
+"$HOOK" > "$OUT/hook.json"
+node -e 'JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))' "$OUT/hook.json" >/dev/null 2>&1 && r=ok || r=no
+check "$r" "session-start: emits valid JSON"
+grep -q COW_ENTRY_INJECTED "$OUT/hook.json" 2>/dev/null && r=ok || r=no; check "$r" "session-start: emits entry sentinel"
+grep -q 'do not invoke it again' "$OUT/hook.json" 2>/dev/null && grep -q 'git log' "$OUT/hook.json" 2>/dev/null && r=ok || r=no
+check "$r" "session-start: prevents duplicate entry load and restores ground truth"
 
 cd "$REPO"
 git init -q

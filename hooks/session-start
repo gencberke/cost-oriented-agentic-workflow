@@ -23,7 +23,7 @@ escape_for_json() {
 }
 
 entry_escaped=$(escape_for_json "$entry_content")
-session_context="The cost-oriented agentic workflow is active for this session (standard mode unless the plan/task file's anchor header says production). It trades process for tokens: size each task first, delegate token-heavy writing to a Sonnet subagent, and keep this controller lean. On a compaction or resume, trust the plan/task file and the ledger over memory.\n\n${entry_escaped}"
+session_context="COW_ENTRY_INJECTED\nThe entry skill is already loaded; do not invoke it again. The workflow is active in standard mode unless the plan anchor says production. On compaction/resume, rebuild state from the plan, ledger, and git log.\n\n${entry_escaped}"
 
 # Claude Code reads hookSpecificOutput.additionalContext (this plugin targets Claude Code).
 printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "%s"\n  }\n}\n' "$session_context"

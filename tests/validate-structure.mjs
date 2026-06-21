@@ -210,6 +210,82 @@ grepSkill('execution-routing', /Unit N.*route=<inline\|delegate>.*risk=<low\|ele
 grepSkill('execution-routing', /persist `waves=2`.*blocked.*resume cannot reset the budget/i,
   'execution-routing persists exhausted remediation state across resume');
 
+// Phase 4 contracts: run identity, compaction idempotency, commit authority,
+// bounded outputs, verification ownership, and runtime prose budget.
+const executionText = read(path.join(skillsDir, 'execution-routing', 'SKILL.md'));
+const writingText = read(path.join(skillsDir, 'writing-plans', 'SKILL.md'));
+const finishingText = read(path.join(skillsDir, 'finishing-a-development-branch', 'SKILL.md'));
+const verificationText = read(path.join(skillsDir, 'verification-before-completion', 'SKILL.md'));
+const tddText = read(path.join(skillsDir, 'test-driven-development', 'SKILL.md'));
+const implementerText = read(path.join(skillsDir, 'execution-routing', 'implementer-prompt.md'));
+const taskReviewerText = read(path.join(skillsDir, 'execution-routing', 'task-reviewer-prompt.md'));
+const wholeReviewerText = read(path.join(skillsDir, 'requesting-review', 'code-reviewer.md'));
+const hookText = read(path.join(root, 'hooks/session-start'));
+
+check(/PLAN_FILE:.*MODE:.*COMMIT_POLICY:.*BASE_BRANCH:.*MERGE_BASE_SHA:/s.test(executionText),
+  'execution-routing pins the complete run-identity ledger header');
+check(/MERGE_BASE_SHA.*ledger.*review/s.test(executionText) && !/git merge-base main HEAD/.test(executionText),
+  'execution-routing final review uses the recorded merge-base SHA');
+check(/never mistake the feature branch's upstream for its base/i.test(executionText),
+  'execution-routing does not confuse feature upstream with base branch');
+check(/BASE_BRANCH=.*LEDGER/.test(finishingText) && /MERGE_BASE_SHA=.*LEDGER/.test(finishingText),
+  'finishing reads base branch and merge-base SHA from the ledger');
+check(/BASE_BRANCH.*refs\/heads\/.*MERGE_BASE_SHA\^\{commit\}.*stop/s.test(finishingText),
+  'finishing rejects unresolved ledger branch and merge-base values');
+check(/detached HEAD.*never offer local merge/i.test(finishingText),
+  'finishing removes local merge from detached HEAD');
+
+check(hookText.includes('COW_ENTRY_INJECTED'), 'SessionStart hook emits the entry sentinel');
+check(/COW_ENTRY_INJECTED.*absent.*exactly once.*present.*do not reload/s.test(writingText),
+  'writing-plans makes entry loading idempotent after compaction');
+check(/green checkpoint.*COMMIT_POLICY.*controller-per-unit/s.test(tddText),
+  'TDD records green checkpoints without granting commit authority');
+check(/Commit only when.*COMMIT_POLICY.*implementer/s.test(implementerText),
+  'implementer commits only under the implementer policy');
+
+check(/at most 8 lines/i.test(implementerText) && /test count/i.test(implementerText)
+  && /never full logs/i.test(implementerText),
+  'implementer output and full-report evidence are bounded');
+for (const [label, text] of [['task reviewer', taskReviewerText], ['whole reviewer', wholeReviewerText]]) {
+  check(/Return every valid\s+Critical and Important\s+finding/s.test(text)
+    && /at most the 3\s+highest-impact Minor/s.test(text)
+    && /Strengths are at most one line/i.test(text)
+    && /no preamble,\s+process narration, or closing summary/s.test(text),
+  `${label} preserves C/I findings while bounding low-value output`);
+}
+check(wholeReviewerText.includes('[PLAN_FILE]') && wholeReviewerText.includes('[BINDING_CONSTRAINTS]')
+  && !wholeReviewerText.includes('[PLAN_OR_REQUIREMENTS]'),
+  'whole-work reviewer uses plan path plus short binding constraints');
+check(/this turn.*HEAD, index, and working tree are unchanged/s.test(verificationText)
+  && /merge always requires a new run/i.test(verificationText),
+  'verification reuses only identical-state evidence and re-runs after merge');
+
+const dispatchTemplates = [
+  'skills/execution-routing/implementer-prompt.md',
+  'skills/execution-routing/task-reviewer-prompt.md',
+  'skills/requesting-review/code-reviewer.md',
+];
+const runtimeProseFiles = [
+  ...skillDirs.map((name) => `skills/${name}/SKILL.md`),
+  ...dispatchTemplates,
+];
+const runtimeBytes = runtimeProseFiles.reduce((sum, file) =>
+  sum + Buffer.byteLength(read(path.join(root, file)), 'utf8'), 0);
+check(runtimeBytes <= 86000, `runtime prose stays within 86000 bytes (${runtimeBytes})`);
+
+const baselineBytes = {
+  'skills/using-cost-oriented-workflow/SKILL.md': 13013,
+  'skills/execution-routing/SKILL.md': 13248,
+  'skills/execution-routing/implementer-prompt.md': 4355,
+  'skills/execution-routing/task-reviewer-prompt.md': 6044,
+  'skills/requesting-review/code-reviewer.md': 4557,
+};
+for (const [file, baseline] of Object.entries(baselineBytes)) {
+  const current = Buffer.byteLength(read(path.join(root, file)), 'utf8');
+  check(current <= baseline * 1.10,
+    `${file} stays within 110% of v0.3.2 baseline (${current}/${baseline})`);
+}
+
 // ── Summary ─────────────────────────────────────────────────────────────────
 console.log(`\n${passes} checks passed, ${failures} failed.`);
 if (failures > 0) process.exit(1);

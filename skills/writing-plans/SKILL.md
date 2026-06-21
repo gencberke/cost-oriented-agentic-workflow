@@ -16,9 +16,10 @@ This block is the compaction lifeline. Keep it current; it is the cheap artifact
 ```markdown
 > **Cost-oriented workflow — anchor. Re-read this block each loop.**
 > MODE: standard | production
+> COMMIT_POLICY: controller-per-unit | implementer | user-owned | none
 > ROUTING: brainstorm-gate → this plan/contract → delegate-by-contract-cost (inline when the contract would cost more than the code) → review-per-risk-matrix → verify-before-done
 > CADENCE: continuous — run planned tasks without pausing; STOP only on: blocked · decision ambiguity · plan/code conflict · scope or risk escalation · external/irreversible action · retry budget exhausted · new credential or permission · failed baseline/verification · human asked to checkpoint
-> ON RESUME/COMPACTION: re-invoke cost-oriented-agentic-workflow:using-cost-oriented-workflow, then trust this file + the per-worktree ledger (`<repo-root>/.cost-oriented-agentic-workflow/run/progress.md`) + git log over memory. The ignored workspace can be removed by `git clean -fdx`; git log remains the fallback.
+> ON RESUME/COMPACTION: if `COW_ENTRY_INJECTED` is absent, invoke cost-oriented-agentic-workflow:using-cost-oriented-workflow exactly once; if present, do not reload it. In both cases trust this plan + the per-worktree ledger + git log over memory.
 
 # [Feature] Plan
 

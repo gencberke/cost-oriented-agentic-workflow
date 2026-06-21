@@ -9,21 +9,29 @@ Turn a plan into working code while spending the controller's expensive tokens o
 
 **Core economy:** You (Opus) route and review. A Sonnet subagent (high effort) does the token-heavy reasoning and writing. Bulk artifacts move as files; the controller reads summaries and verification, never pasted code bodies.
 
-## Pre-flight: scan the plan once (a real step, not a vibe)
+## Plan pre-flight
 
-Before routing the first unit, run this checklist over the plan and **emit its result** — do not skip it as "looks fine":
-
-1. **Constraint vs task** — does any task contradict the Global Constraints?
-2. **Acceptance vs interface/logic** — does any task's Acceptance contradict its own Interfaces or stated logic? (e.g. a field the constraints say to *keep* but an acceptance calls "ignored"; a heuristic that triggers on `A or B present` but whose acceptance says `only B`.) A real dogfooded plan shipped with exactly these — they hide in mid-flight edits that touch one section but not the others.
-3. **Plan-mandated defects** — anything the plan mandates that a reviewer would flag (a test that asserts nothing, a duplicated logic block)?
-
-Emit one of exactly two outputs: a single **batched** question to the human (each finding beside the plan text that mandates it, asking which governs) — or the line `Pre-flight scan: clean.` Never proceed without one of them. (A single trivial unit skips this; it earns its keep on a real multi-task plan.) The per-unit review loop still catches conflicts that only surface during implementation.
+Before Task 1, scan once for Global-Constraint/task conflicts, Acceptance/interface contradictions, and plan-mandated defects. Emit `Pre-flight scan: clean.` or one batched question quoting each conflicting plan line and asking which governs. Do not proceed on ambiguity. A single trivial unit skips this scan.
 
 ## Repository-state pre-flight
 
 Before Task 1, require `git status --porcelain` empty for planned/delegated work. If dirty, stop and offer commit, stash, or isolated-worktree choices; never absorb unknown changes. Default `controller-per-unit` must be clean again after each reviewed commit.
 
 Resume exception for `user-owned`/`none`: allow dirty paths only when every path is inside completed ledger `files=` scopes. Any outside path hard-stops for human classification.
+
+## Pin run identity once
+
+Before Task 1, create or read the workspace `progress.md` header:
+
+```text
+PLAN_FILE:
+MODE:
+COMMIT_POLICY:
+BASE_BRANCH:
+MERGE_BASE_SHA:
+```
+
+For a new run, set the plan path, mode, and active commit policy (default `controller-per-unit`). Resolve the base from an explicit decision or one credible repo-default/`main`/`master`/`develop` candidate; never mistake the feature branch's upstream for its base. If ambiguous, ask before Task 1. Record `MERGE_BASE_SHA = git merge-base HEAD "$BASE_BRANCH"` once. Never recompute either value mid-run; resume reads the ledger.
 
 ## The routing gate: contract cost (decide per unit)
 
@@ -159,7 +167,7 @@ Never mark a unit complete with open Critical/Important findings. Record final-r
 
 The per-unit loop gates each task in isolation; it does not catch problems that only appear where units meet. After the last unit, before claiming the branch is finished:
 
-1. **One whole-work review** — dispatch the broad reviewer over `scripts/review-package MERGE_BASE HEAD`, currently `MERGE_BASE = git merge-base main HEAD`: standard → Sonnet, production → Opus. Apply the same bounded remediation gate. Standard may skip this only for a single planned unit that already had independent review; production never skips it.
+1. **One whole-work review** — read `MERGE_BASE_SHA` from the ledger and review `scripts/review-package MERGE_BASE_SHA HEAD`: standard → Sonnet, production → Opus. Apply the same bounded remediation gate. Standard may skip this only for a single planned unit that already had independent review; production never skips it.
 2. **Integrate** — hand off to **finishing-a-development-branch**: verify tests, then merge / PR / keep / discard, then clean up.
 
 ## Red flags

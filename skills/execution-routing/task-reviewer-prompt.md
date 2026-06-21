@@ -74,17 +74,18 @@ Subagent (general-purpose):
       already-large files or significantly grow existing ones? (Don't flag
       pre-existing sizes — only what this change contributed.)
 
-    Point at evidence: file:line for every finding and for any check you'd
-    otherwise answer with a bare "yes". Begin your reply directly with the
-    spec-compliance verdict — no preamble, no process narration.
+    Point at evidence: file:line for every finding. Begin directly with the
+    verdict: no preamble, process narration, or closing summary.
 
     ## Calibration
 
     Categorize by actual severity. **Important** means the task can't be trusted
     until fixed: incorrect/fragile behavior, a missed requirement, swallowed
     errors, tests that assert nothing, verbatim duplication of a logic block.
-    "Coverage could be broader" and polish are **Minor**. If the brief itself
-    mandates something this rubric calls a defect, report it as Important
+    "Coverage could be broader" and polish are **Minor**. Return every valid
+    Critical and Important finding; never cap them. Return at most the 3
+    highest-impact Minor findings. Strengths are at most one line. If the brief
+    itself mandates something this rubric calls a defect, report it as Important
     labeled plan-mandated — the human decides, not the plan's authorship.
     Acknowledge what was done well before listing issues.
 
@@ -99,25 +100,22 @@ Subagent (general-purpose):
     ## Output Format
 
     ### Spec Compliance
+    **Task quality:** [Approved | Needs fixes] — introduced/worsened only
     - ✅ Spec compliant | ❌ Issues found: [missing/extra/misunderstood, file:line]
     - ⚠️ Cannot verify from diff: [what, and what the controller should check]
 
-    ### Strengths
-    [Specific.]
+    ### Strengths (one line maximum)
 
     ### Issues (introduced or worsened by this task)
     #### Critical (Must Fix)
     #### Important (Should Fix)
-    #### Minor (Nice to Have)
+    #### Minor (Nice to Have; at most 3, highest impact)
     For each: file:line, causality (introduced | worsened), reachability (the path
     that triggers it), what's wrong, why it matters, how to fix if not obvious.
 
     ### Pre-existing (untouched by this task — for the controller to triage, not part of the verdict)
     [Already-broken things this task left alone; severity + file:line, or "none".]
 
-    ### Assessment
-    **Task quality:** [Approved | Needs fixes]   ← judged on introduced/worsened only
-    **Reasoning:** [1-2 sentences]
 ```
 
 **Placeholders:**
