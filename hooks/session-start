@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# OPTIONAL SessionStart hook (opt-in — NOT active by default).
+# Injects the cost-oriented workflow entry skill so the workflow is active in
+# every session and re-anchored after a compaction. Default activation is the
+# launcher command; enable this only if you want the workflow always on.
+# To enable: copy hooks.json.example to hooks.json and reinstall the plugin.
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+entry_content=$(cat "${PLUGIN_ROOT}/skills/using-cost-oriented-workflow/SKILL.md" 2>&1 || echo "Error reading entry skill")
+
+# Escape for JSON embedding (one C-level pass per substitution).
+escape_for_json() {
+    local s="$1"
+    s="${s//\\/\\\\}"
+    s="${s//\"/\\\"}"
+    s="${s//$'\n'/\\n}"
+    s="${s//$'\r'/\\r}"
+    s="${s//$'\t'/\\t}"
+    printf '%s' "$s"
+}
+
+entry_escaped=$(escape_for_json "$entry_content")
+session_context="The cost-oriented agentic workflow is active for this session (standard mode unless the plan/task file's anchor header says production). It trades process for tokens: size each task first, delegate token-heavy writing to a Sonnet subagent, and keep this controller lean. On a compaction or resume, trust the plan/task file and the ledger over memory.\n\n${entry_escaped}"
+
+# Claude Code reads hookSpecificOutput.additionalContext (this plugin targets Claude Code).
+printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "%s"\n  }\n}\n' "$session_context"
+exit 0

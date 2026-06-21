@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+# Generate a review package: commit list, stat summary, and the net
+# diff with extended context, written to a file the reviewer reads in one
+# call. Using the recorded per-task BASE (not HEAD~1) keeps multi-commit
+# tasks intact.
+#
+# Usage: review-package BASE HEAD [OUTFILE]
+# Default OUTFILE: <git-dir>/cow/review-<base7>..<head7>.diff — named per commit
+# range, so a re-review after fixes always gets a distinct fresh file and
+# different ranges don't collide. Pass an explicit OUTFILE if two sessions might
+# review the identical range at the same time.
+set -euo pipefail
+
+if [ $# -lt 2 ] || [ $# -gt 3 ]; then
+  echo "usage: review-package BASE HEAD [OUTFILE]" >&2
+  exit 2
+fi
+
+base=$1
+head=$2
+
+git rev-parse --verify --quiet "$base" >/dev/null || { echo "bad BASE: $base" >&2; exit 2; }
+git rev-parse --verify --quiet "$head" >/dev/null || { echo "bad HEAD: $head" >&2; exit 2; }
+
+if [ $# -eq 3 ]; then
+  out=$3
+else
+  dir=$(git rev-parse --git-path cow)
+  mkdir -p "$dir"
+  dir=$(cd "$dir" && pwd)
+  out="$dir/review-$(git rev-parse --short "$base")..$(git rev-parse --short "$head").diff"
+fi
+
+# Capture working-tree state BEFORE opening $out, so the output file itself
+# (if an in-tree OUTFILE is passed) never registers as an uncommitted change.
+# Only when HEAD is the current commit do uncommitted changes belong to this
+# review — so review correctness does not depend on the work being committed
+# (e.g. an inline edit on the light path).
+include_worktree=""
+if [ "$(git rev-parse --verify HEAD 2>/dev/null)" = "$(git rev-parse --verify "$head" 2>/dev/null)" ] \
+   && [ -n "$(git status --porcelain)" ]; then
+  include_worktree=1
+  wt_staged=$(git diff --cached -U10)
+  wt_unstaged=$(git diff -U10)
+  wt_untracked=$(git ls-files --others --exclude-standard)
+fi
+
+{
+  echo "# Review package: ${base}..${head}"
+  echo
+  echo "## Commits"
+  git log --oneline "${base}..${head}"
+  echo
+  echo "## Files changed"
+  git diff --stat "${base}..${head}"
+  echo
+  echo "## Diff"
+  git diff -U10 "${base}..${head}"
+
+  if [ -n "$include_worktree" ]; then
+    echo
+    echo "## Uncommitted working-tree changes (on top of ${head})"
+    echo
+    echo "### Staged"
+    printf '%s\n' "$wt_staged"
+    echo
+    echo "### Unstaged (tracked)"
+    printf '%s\n' "$wt_unstaged"
+    if [ -n "$wt_untracked" ]; then
+      echo
+      echo "### Untracked files (content)"
+      # Show each untracked file's CONTENT as an add-diff vs /dev/null, not just
+      # its name — an implementer that leaves new files uncommitted must still be
+      # reviewable. git renders binary files as a "Binary files differ" line.
+      # ($wt_untracked was captured before $out was opened, so $out is excluded.)
+      while IFS= read -r f; do
+        [ -n "$f" ] || continue
+        git diff --no-index /dev/null "$f" 2>/dev/null || true
+      done <<EOF
+$wt_untracked
+EOF
+    fi
+  fi
+} > "$out"
+
+commits=$(git rev-list --count "${base}..${head}")
+echo "wrote ${out}: ${commits} commit(s), $(wc -c < "$out" | tr -d ' ') bytes"

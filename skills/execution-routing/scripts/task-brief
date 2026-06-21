@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# Extract one task — plus the plan's binding Global Constraints — into a single
+# file the implementer/reviewer reads in one call, so the task text and the
+# constraints never have to be pasted through the controller's context. The
+# constraints travel WITH the brief (no manual verbatim copy into each dispatch).
+#
+# Usage: task-brief PLAN_FILE TASK_NUMBER [OUTFILE]
+# Default OUTFILE: <git-dir>/cow/task-<N>-brief.md — one path per repo + task
+# number (NOT per session). Two concurrent sessions working the same task number
+# in the same repo would share this file; pass an explicit OUTFILE to isolate.
+#
+# Task headings must look like:  ## Task 3: <name>  (any #-level, "Task N").
+# The Global Constraints block must be a "## Global Constraints" section.
+set -euo pipefail
+
+if [ $# -lt 2 ] || [ $# -gt 3 ]; then
+  echo "usage: task-brief PLAN_FILE TASK_NUMBER [OUTFILE]" >&2
+  exit 2
+fi
+
+plan=$1
+n=$2
+[ -f "$plan" ] || { echo "no such plan file: $plan" >&2; exit 2; }
+
+if [ $# -eq 3 ]; then
+  out=$3
+else
+  dir=$(git rev-parse --git-path cow)
+  mkdir -p "$dir"
+  dir=$(cd "$dir" && pwd)
+  out="$dir/task-${n}-brief.md"
+fi
+
+# Binding Global Constraints block (may be empty): from "## Global Constraints"
+# until the next ---, "# ", or "## " heading. Fence-aware.
+constraints=$(awk '
+  /^```/ { infence = !infence }
+  !infence && /^##[ \t]+Global[ \t]+Constraints[ \t]*$/ { inc = 1; print; next }
+  !infence && inc && (/^---[ \t]*$/ || /^#[ \t]/ || /^##[ \t]/) { inc = 0 }
+  inc { print }
+' "$plan")
+
+# The requested task body (the original extraction). Fence-aware.
+task=$(awk -v n="$n" '
+  /^```/ { infence = !infence }
+  !infence && /^#+[ \t]+Task[ \t]+[0-9]+/ {
+    intask = ($0 ~ ("^#+[ \t]+Task[ \t]+" n "([^0-9]|$)"))
+  }
+  intask { print }
+' "$plan")
+
+if [ -z "$task" ]; then
+  echo "task ${n} not found in ${plan} (no heading matching 'Task ${n}')" >&2
+  exit 3
+fi
+
+{
+  if [ -n "$constraints" ]; then
+    printf '%s\n\n' "$constraints"
+  fi
+  printf '%s\n' "$task"
+} > "$out"
+
+echo "wrote ${out}: $(wc -l < "$out" | tr -d ' ') lines"
