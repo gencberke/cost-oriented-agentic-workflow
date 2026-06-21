@@ -55,7 +55,7 @@ The thresholds are guides, not law — the real test is "does the contract cost 
 
 ## Risk gate (overrides the size gate)
 
-Contract-cost decides *cost*; it does not decide *safety*. A unit in the hard-exclusion list (using-cost-oriented-workflow → Risk classification — auth, secrets, migrations, money, privacy, shared state, public API, dependencies, prod/CI config, irreversible side effects) is **never** light-path and **never** "inline with only your own seam check," however few lines it is. You may still write it inline, but it then takes an **independent review** per the risk matrix. Carry the task's recorded **Risk** level into every dispatch so the reviewer applies the right lens.
+Contract cost never overrides safety. Classify with using-cost-oriented-workflow's hard exclusions; those units never take the light path. They may be inline, but review follows the mode/risk matrix. Carry mode + risk into every dispatch.
 
 ## Model selection (pin it explicitly)
 
@@ -72,32 +72,31 @@ The contract pins only **between-unit** facts: file names, function/type signatu
 
 Drift then lands in the cheap, easy-to-catch interior, while the expensive between-unit seams stay locked. Mode sets thickness: **standard** pins the interface only (accept interior variance); **production** also pins key behaviors and required tests.
 
-## The delegate loop
+## Execute and review each unit
+
+Prepare and dispatch delegated work as below. When an inline or delegated unit reaches `DONE`, branch on the central mode/risk matrix:
 
 ```dot
 digraph loop {
-    "Prepare contract (preparing-subagent-prompts): task-brief file + report path + interfaces + verification cmd" [shape=box];
-    "Record BASE commit; dispatch implementer (Sonnet) — implementer-prompt.md" [shape=box];
-    "Status?" [shape=diamond];
-    "Answer / give context / re-dispatch" [shape=box];
-    "Independent review (requesting-review)" [shape=box];
-    "Approved?" [shape=diamond];
-    "Dispatch fix subagent (Critical/Important)" [shape=box];
-    "Mark complete in ledger" [shape=box];
+    "DONE" [shape=box];
+    "Mode/risk matrix requires independent task review?" [shape=diamond];
+    "Independent Sonnet review" [shape=box];
+    "Bounded remediation gate" [shape=box];
+    "Verify" [shape=box];
+    "Controller commit (default policy)" [shape=box];
+    "Ledger" [shape=doublecircle];
 
-    "Prepare contract (preparing-subagent-prompts): task-brief file + report path + interfaces + verification cmd" -> "Record BASE commit; dispatch implementer (Sonnet) — implementer-prompt.md";
-    "Record BASE commit; dispatch implementer (Sonnet) — implementer-prompt.md" -> "Status?";
-    "Status?" -> "Answer / give context / re-dispatch" [label="QUESTIONS/NEEDS_CONTEXT/BLOCKED"];
-    "Answer / give context / re-dispatch" -> "Record BASE commit; dispatch implementer (Sonnet) — implementer-prompt.md";
-    "Status?" -> "Independent review (requesting-review)" [label="DONE"];
-    "Independent review (requesting-review)" -> "Approved?";
-    "Approved?" -> "Dispatch fix subagent (Critical/Important)" [label="no"];
-    "Dispatch fix subagent (Critical/Important)" -> "Independent review (requesting-review)" [label="re-review"];
-    "Approved?" -> "Mark complete in ledger" [label="yes"];
+    "DONE" -> "Mode/risk matrix requires independent task review?";
+    "Mode/risk matrix requires independent task review?" -> "Verify" [label="no"];
+    "Mode/risk matrix requires independent task review?" -> "Independent Sonnet review" [label="yes"];
+    "Independent Sonnet review" -> "Bounded remediation gate";
+    "Bounded remediation gate" -> "Verify";
+    "Verify" -> "Controller commit (default policy)";
+    "Controller commit (default policy)" -> "Ledger";
 }
 ```
 
-**Inline path:** when you chose inline, write it, run its verification, and record the unit in the ledger (commit per the Commit policy below). No dispatch and no review subagent for a few low-risk lines — your own seam check suffices. But reach for the review subagent when the inline change is non-trivial, and a **hard-exclusion-risk** change always gets an independent review even when you wrote it inline (risk gate).
+This branch applies equally to inline and delegated work: standard/low uses self-review + final whole-work review; production sends every planned task to an independent Sonnet; high risk is always independently reviewed.
 
 ## Return protocol (keep the controller lean)
 
@@ -132,6 +131,13 @@ A trivial light-path edit does not force a commit under any policy.
 
 **When the failure is a bug or a failing test** (not missing context or a too-large task), find the root cause first — **systematic-debugging** — and dispatch the fix *with* that cause stated, not "make the test pass." A retry spent on a guess is the exact loop this workflow exists to avoid; root-cause-first is cheaper than thrashing.
 
+## Bounded remediation gate
+
+- Allow at most **2 remediation waves** per task or final whole-work review. One wave = one fixer addressing all accepted *introduced/worsened* Critical/Important findings, covering tests, then a fresh targeted independent reviewer.
+- False-positive adjudication uses no wave. A pre-existing Critical/Important uses no original-unit wave: get risk acceptance, or make the human-approved scope a new unit. A plan conflict also uses no wave; ask the human which governs.
+- If the same finding survives wave 1, do not apply a second blind fix: use systematic-debugging/root cause or controller adjudication first.
+- After wave 2, any open Critical/Important stops autonomous execution and is surfaced with evidence. **Budget exhausted ≠ approved.** The implementer's 2-extra-attempt budget above is separate.
+
 ## Batching and parallelism
 
 - **Batch** a coherent cluster — interdependent files or one subsystem — into a single delegated package so the contract overhead is amortized once.
@@ -139,13 +145,21 @@ A trivial light-path edit does not force a commit under any policy.
 
 ## Durable progress (anti-drift)
 
-Conversation memory does not survive compaction. Track completed units in `<repo-root>/.cost-oriented-agentic-workflow/run/progress.md`, including their repo-relative `files=` scope: `Unit N: complete (files=a,b; commits <base7>..<head7>; review clean)`. `scripts/cow-workspace` copies a legacy `<git-dir>/cow/progress.md` forward when the new ledger is absent; it never deletes the legacy file. On resume, trust the ledger and `git log` over recollection. Because `git clean -fdx` can delete the ignored workspace, retain `git log` as the fallback ground truth.
+Write every completed unit to `<repo-root>/.cost-oriented-agentic-workflow/run/progress.md`:
+
+```text
+Unit N | route=<inline|delegate> | risk=<low|elevated|high> | files=<paths>
+review=<none|required:clean> | waves=<0..2> | verify=<result>
+commit=<base..head>
+```
+
+Never mark a unit complete with open Critical/Important findings. Record final-review state too; before surfacing exhaustion, persist `waves=2` + open findings as blocked so resume cannot reset the budget. `scripts/cow-workspace` copies a missing ledger from legacy `<git-dir>/cow/progress.md` without deleting it. On resume trust ledger + `git log`; `git clean -fdx` may delete the ignored ledger, so git remains the fallback.
 
 ## When all units are done
 
 The per-unit loop gates each task in isolation; it does not catch problems that only appear where units meet. After the last unit, before claiming the branch is finished:
 
-1. **One whole-work review** — dispatch the broad reviewer (requesting-review, whole-work scope) over the full branch diff: `scripts/review-package MERGE_BASE HEAD`, where `MERGE_BASE = git merge-base main HEAD`. It reads integration and architecture, not one task. Resolve Critical/Important as in the per-unit loop. (A single trivial unit doesn't need this second pass — its own review sufficed.)
+1. **One whole-work review** — dispatch the broad reviewer over `scripts/review-package MERGE_BASE HEAD`, currently `MERGE_BASE = git merge-base main HEAD`: standard → Sonnet, production → Opus. Apply the same bounded remediation gate. Standard may skip this only for a single planned unit that already had independent review; production never skips it.
 2. **Integrate** — hand off to **finishing-a-development-branch**: verify tests, then merge / PR / keep / discard, then clean up.
 
 ## Red flags

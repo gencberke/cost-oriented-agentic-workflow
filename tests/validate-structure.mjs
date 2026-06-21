@@ -162,6 +162,54 @@ grepSkill('execution-routing', /HEAD~1/i, 'execution-routing keeps the HEAD~1 wa
 grepSkill('verification-before-completion', /NO COMPLETION CLAIM/i, 'verification keeps its Iron Law');
 grepSkill('systematic-debugging', /ROOT CAUSE/i, 'systematic-debugging keeps its Iron Law');
 
+// Mode-aware review routing is data-driven so standard/low cannot silently
+// inherit production's mandatory per-task reviewer (or vice versa).
+const routingFixturePath = path.join(root, 'tests/fixtures/review-routing.json');
+let routingCases = [];
+try {
+  const fixture = JSON.parse(read(routingFixturePath));
+  routingCases = Array.isArray(fixture.cases) ? fixture.cases : [];
+  ok('review-routing fixture is valid JSON');
+} catch (e) {
+  fail(`review-routing fixture is valid JSON — ${e.message}`);
+}
+
+const entryText = read(path.join(skillsDir, 'using-cost-oriented-workflow', 'SKILL.md'));
+const matrixRows = entryText.split(/\r?\n/)
+  .filter((line) => line.startsWith('|') && line.includes('/'))
+  .map((line) => line.split('|').slice(1, -1).map((cell) => cell.trim()));
+
+function matrixDecision(mode, risk) {
+  const exact = `${mode} / ${risk}`;
+  const row = matrixRows.find((cells) => {
+    const key = (cells[0] || '').replace(/[`*]/g, '').trim().toLowerCase();
+    return key === exact || (mode === 'production' && key === 'production / any planned task');
+  });
+  const token = row?.[1]?.match(/`([^`]+)`/);
+  return token ? token[1] : null;
+}
+
+check(routingCases.length >= 6, 'review-routing fixture covers the mode/risk matrix');
+for (const c of routingCases) {
+  check(matrixDecision(c.mode, c.risk) === c.expected,
+    `review-routing: ${c.mode}/${c.risk} => ${c.expected}`);
+}
+check(matrixDecision('standard', 'low') !== matrixDecision('production', 'low'),
+  'review-routing keeps standard-low distinct from production-low');
+grepSkill('using-cost-oriented-workflow', /Critical\/Important fix.*required:fresh-targeted/i,
+  'review-routing requires a fresh targeted review after Critical/Important fixes');
+
+grepSkill('execution-routing', /Mode\/risk matrix requires independent task review\?/i,
+  'execution-routing branches on mode/risk review routing');
+grepSkill('execution-routing', /at most \*\*2 remediation waves\*\*/i,
+  'execution-routing caps autonomous remediation at two waves');
+grepSkill('execution-routing', /Budget exhausted ≠ approved/i,
+  'execution-routing never treats exhausted budget as approval');
+grepSkill('execution-routing', /Unit N.*route=<inline\|delegate>.*risk=<low\|elevated\|high>.*files=<paths>.*review=<none\|required:clean>.*waves=<0\.\.2>.*verify=<result>.*commit=<base\.\.head>/s,
+  'execution-routing ledger records route, risk, scope, review, waves, verification, and commits');
+grepSkill('execution-routing', /persist `waves=2`.*blocked.*resume cannot reset the budget/i,
+  'execution-routing persists exhausted remediation state across resume');
+
 // ── Summary ─────────────────────────────────────────────────────────────────
 console.log(`\n${passes} checks passed, ${failures} failed.`);
 if (failures > 0) process.exit(1);

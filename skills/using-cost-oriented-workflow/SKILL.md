@@ -77,14 +77,15 @@ Size decides *cost*; **risk decides how much process is non-negotiable.** Every 
 
 **The principle (for what the list doesn't name):** small code is not the same as low risk. If a change is hard to reverse, has a wide or invisible blast radius, moves a trust boundary, or fails in a way you'd notice late — it is **not** low risk. Don't let "it's only a few lines" rationalize skipping the gate.
 
-| Risk | Light path? | Per-task independent review | Final whole-work review |
-|---|---|---|---|
-| **low** | eligible (if also small + tightly-coupled) | not needed — self-review | required for planned multi-task work |
-| **elevated** | no | judgment — independent reviewer when the change is non-obvious | required |
-| **high** | no | **required** (independent reviewer; security-lensed if the risk is security) | required + security lens where it applies |
-| **Critical/Important fix** | — | **required** targeted re-review (fresh instance) | final verdict must reflect the fixed state |
+| Mode / unit | Independent per-task review |
+|---|---|
+| `standard / low` | `none` — self-review + final whole-work gate |
+| `standard / elevated` | `required-if-non-obvious` |
+| `standard / high` | `required` — add the security lens where applicable |
+| `production / any planned task` | `required` |
+| `Critical/Important fix` | `required:fresh-targeted` |
 
-Review *depth* scales with cost; the cells this table marks **required** do not. Risk is the one dimension cost may never compress. execution-routing and requesting-review both read this table.
+These per-task rows apply to planned units; the trivial light path remains inline + verify. Every per-task reviewer is an independent Sonnet instance, including production. Final whole-work review remains standard → Sonnet, production → Opus; production always takes it. In standard, it is required for multi-task plans, and a single planned unit may skip it only if that unit already had independent review. Review *depth* may scale with cost; every `required` cell is non-negotiable. execution-routing and requesting-review both read this table.
 
 **Tests follow risk too.** For elevated/high work, acceptance is *behavioral* — name the observable behaviors the change must exhibit (e.g. "expired token → 401, not 500") and make the verify command exercise them; compile-only is not acceptance for high-risk work. A fixed Critical/Important behavior bug does not close without a regression test that reproduces it. No test infra in the repo → that is a **surfaced decision** (add it, or record the risk acceptance), never a silent skip.
 
@@ -106,7 +107,7 @@ These are continuous cost-benefit trade-offs. There is no fixed answer; weigh th
 - **Process weight (the triage)** — size the task before anything else. A trivial, tightly-coupled change takes the light path (inline, verify, no plan file); only real multi-step or ambiguous work earns brainstorming and a plan. Don't ceremonialize a small change.
 - **Delegate vs inline** — the contract-cost rule (execution-routing). Writing the subagent contract should cost less than writing the code yourself, or do it inline.
 - **Contract thickness** — pin the seams, free the interior (execution-routing). Thin in standard, thicker in production.
-- **Review depth** — *how deep* a review goes scales with risk and diff size. *Whether* a review happens is set by the risk matrix above, not by cost: the cells it marks required (whole-work review on planned work, independent review on high-risk, re-review after a Critical/Important fix) are not negotiable.
+- **Review depth** — *how deep* scales with risk and diff size; *whether* follows the mode/risk matrix above.
 - **Tests** — in standard, only what genuinely protects the change; in production, thorough.
 - **Brainstorming intensity** — scales with how ambiguous or messy the request is. A clear request gets a short gate; a vague one gets real exploration.
 - **Exploration breadth** — none for a repo you already hold in context; scaled Explore agents for a new/unknown repo, sized to it.
