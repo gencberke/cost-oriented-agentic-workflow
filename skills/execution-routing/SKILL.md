@@ -98,9 +98,10 @@ digraph loop {
 The implementer writes its full report to a **report file** and returns only: **Status**, files changed, a one-line test summary, concerns, and the report path — it does **not** commit (see Commit policy). The reviewer reads the diff from a **package file** (`scripts/review-package BASE HEAD`, which also includes uncommitted working-tree changes) and returns a verdict + findings. Code bodies and full diffs stay in files — they never re-enter your context.
 
 Hand work over as files, not pasted text:
-- **Brief:** `scripts/task-brief PLAN_FILE N` extracts the task into `task-N-brief.md`; the dispatch points to it as the source of requirements.
-- **Report:** name it `task-N-report.md`; the implementer writes there.
-- **Diff:** `scripts/review-package BASE HEAD` writes the package file; pass its path to the reviewer. Use the BASE you recorded before dispatching — never `HEAD~1`.
+- **Workspace:** `scripts/cow-workspace` resolves the self-ignored, per-worktree artifact directory at `<repo-root>/.cost-oriented-agentic-workflow/run/`.
+- **Brief:** `scripts/task-brief PLAN_FILE N` extracts the task into `task-N-brief.md` there; the dispatch points to it as the source of requirements.
+- **Report:** place `task-N-report.md` beside the brief; the implementer writes there.
+- **Diff:** `scripts/review-package BASE HEAD` writes the package there; pass its path to the reviewer. Use the BASE you recorded before dispatching — never `HEAD~1`.
 
 ## Commit policy
 
@@ -131,7 +132,7 @@ A trivial light-path edit does not force a commit under any policy.
 
 ## Durable progress (anti-drift)
 
-Conversation memory does not survive compaction. Track completed units in a **ledger file** (e.g. `<git-dir>/cow/progress.md`), one line per finished unit: `Unit N: complete (commits <base7>..<head7>, review clean)`. On resume or after compaction, units marked complete there are DONE — do not re-dispatch them. Trust the ledger and `git log` over recollection.
+Conversation memory does not survive compaction. Track completed units in `<repo-root>/.cost-oriented-agentic-workflow/run/progress.md`, one line per finished unit: `Unit N: complete (commits <base7>..<head7>, review clean)`. `scripts/cow-workspace` copies a legacy `<git-dir>/cow/progress.md` forward when the new ledger is absent; it never deletes the legacy file. On resume, trust the ledger and `git log` over recollection. Because `git clean -fdx` can delete the ignored workspace, retain `git log` as the fallback ground truth.
 
 ## When all units are done
 

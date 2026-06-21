@@ -5,10 +5,10 @@
 # tasks intact.
 #
 # Usage: review-package BASE HEAD [OUTFILE]
-# Default OUTFILE: <git-dir>/cow/review-<base7>..<head7>.diff — named per commit
-# range, so a re-review after fixes always gets a distinct fresh file and
-# different ranges don't collide. Pass an explicit OUTFILE if two sessions might
-# review the identical range at the same time.
+# Default OUTFILE: <repo-root>/.cost-oriented-agentic-workflow/run/
+# review-<base7>..<head7>.diff — named per commit range, so a re-review after fixes
+# gets a distinct file. Pass OUTFILE if two sessions in one worktree might review
+# the identical range at the same time.
 set -euo pipefail
 
 if [ $# -lt 2 ] || [ $# -gt 3 ]; then
@@ -25,9 +25,7 @@ git rev-parse --verify --quiet "$head" >/dev/null || { echo "bad HEAD: $head" >&
 if [ $# -eq 3 ]; then
   out=$3
 else
-  dir=$(git rev-parse --git-path cow)
-  mkdir -p "$dir"
-  dir=$(cd "$dir" && pwd)
+  dir=$("$(cd "$(dirname "$0")" && pwd)/cow-workspace")
   out="$dir/review-$(git rev-parse --short "$base")..$(git rev-parse --short "$head").diff"
 fi
 

@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Resolve and ensure the per-worktree scratch directory used by the workflow.
+# It lives outside .git because Claude Code subagents may not be allowed to
+# write protected .git paths. The directory ignores itself so artifacts never
+# appear in git status or accidental commits.
+set -euo pipefail
+
+root=$(git rev-parse --show-toplevel)
+dir="$root/.cost-oriented-agentic-workflow/run"
+mkdir -p "$dir"
+printf '*\n' > "$dir/.gitignore"
+
+legacy=$(cd "$root" && git rev-parse --git-path cow)
+case "$legacy" in
+  /*|[A-Za-z]:/*) ;;
+  *) legacy="$root/$legacy" ;;
+esac
+
+if [ ! -e "$dir/progress.md" ] && [ -f "$legacy/progress.md" ]; then
+  cp "$legacy/progress.md" "$dir/progress.md"
+fi
+
+cd "$dir" && pwd

@@ -13,9 +13,10 @@ A dispatch describes **one task**: its requirements, the interfaces it touches, 
 
 ## Hand bulk over as files
 
-- **Brief:** `execution-routing/scripts/task-brief PLAN N` extracts the task to `task-N-brief.md`. Point the dispatch at it: "read this first — it is your requirements, exact values verbatim." Exact values (numbers, magic strings, signatures, test cases) live only in the brief.
-- **Report:** name it `task-N-report.md`; the subagent writes its full report there and returns only a short status.
-- **Diff (for reviewers):** `execution-routing/scripts/review-package BASE HEAD` writes the package file; pass its path. It never enters your context.
+- **Workspace:** `execution-routing/scripts/cow-workspace` resolves the self-ignored, per-worktree artifact directory at `<repo-root>/.cost-oriented-agentic-workflow/run/`.
+- **Brief:** `execution-routing/scripts/task-brief PLAN N` extracts the task to `task-N-brief.md` there. Point the dispatch at it: "read this first — it is your requirements, exact values verbatim." Exact values (numbers, magic strings, signatures, test cases) live only in the brief.
+- **Report:** place `task-N-report.md` beside the brief; the subagent writes its full report there and returns only a short status.
+- **Diff (for reviewers):** `execution-routing/scripts/review-package BASE HEAD` writes the package there; pass its path. It never enters your context.
 
 ## Pin the seams, free the interior
 
