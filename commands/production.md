@@ -6,7 +6,7 @@ Invoke the `cost-oriented-agentic-workflow:using-cost-oriented-workflow` skill n
 
 When you create the plan/task file, write the anchor header with `MODE: production` at the very top, per writing-plans. Production includes an explicit plan-approval gate before any code is written.
 
-If the user supplies an already-approved plan, invoke `cost-oriented-agentic-workflow:execution-routing` **before implementation** and execute the plan through that skill. Do not improvise a direct implement/review loop: every planned task must use an independent Sonnet reviewer with `model: sonnet`, the run must maintain the workspace ledger, and production must finish with a separate whole-work Opus review with `model: opus`.
+When the user asks to **execute or resume** an approved plan, invoke `cost-oriented-agentic-workflow:execution-routing` immediately — before inspecting progress or implementing. Resume must read its workspace `progress.md`, never look for ledger entries inside the plan. Do not improvise a direct loop: every planned task uses an independent reviewer with `model: sonnet`, and production finishes with a separate whole-work review with `model: opus`.
 
 If a task is provided below, begin the workflow on it — start with the triage; in production the bar for the light path is high, so most work goes through the brainstorming gate and an approved plan before code. If nothing is provided, confirm production mode is active and ask what to work on.
 

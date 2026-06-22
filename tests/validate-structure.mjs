@@ -176,15 +176,19 @@ grepSkill('systematic-debugging', /ROOT CAUSE/i, 'systematic-debugging keeps its
 
 const productionCommandText = read(path.join(cmdDir, 'production.md'));
 const standardCommandText = read(path.join(cmdDir, 'cost-oriented-agentic-workflow.md'));
-check(/already-approved plan.*execution-routing.*before implementation/is.test(standardCommandText),
-  'standard launcher routes approved plans through execution-routing before implementation');
+check(/execute or resume.*approved plan.*execution-routing.*before inspecting progress or implementing/is.test(standardCommandText),
+  'standard launcher routes approved-plan execution and resume before progress inspection');
+check(/Resume must read.*workspace `progress\.md`.*never look for ledger entries inside the plan/is.test(standardCommandText),
+  'standard launcher reads resume state from the workspace ledger');
 check(/standard \/ low.*self-review, not a per-task Agent.*fresh independent Sonnet Agent.*whole-work review/is.test(standardCommandText),
   'standard launcher preserves low-risk task economy and requires independent final review');
-check(/already-approved plan.*execution-routing.*before implementation/is.test(productionCommandText),
-  'production launcher routes approved plans through execution-routing before implementation');
-check(/independent Sonnet reviewer.*model: sonnet/is.test(productionCommandText),
+check(/execute or resume.*approved plan.*execution-routing.*before inspecting progress or implementing/is.test(productionCommandText),
+  'production launcher routes approved-plan execution and resume before progress inspection');
+check(/Resume must read.*workspace `progress\.md`.*never look for ledger entries inside the plan/is.test(productionCommandText),
+  'production launcher reads resume state from the workspace ledger');
+check(/every planned task.*independent reviewer.*model: sonnet/is.test(productionCommandText),
   'production launcher pins planned-task reviewers to Sonnet');
-check(/whole-work Opus review.*model: opus/is.test(productionCommandText),
+check(/whole-work review.*model: opus/is.test(productionCommandText),
   'production launcher pins the final whole-work reviewer to Opus');
 
 // Mode-aware review routing is data-driven so standard/low cannot silently
