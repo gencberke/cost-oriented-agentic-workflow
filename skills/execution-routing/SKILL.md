@@ -21,6 +21,8 @@ Resume exception for `user-owned`/`none`: allow dirty paths only when every path
 
 ## Pin run identity once
 
+Before reading or writing any run artifact, execute `scripts/cow-workspace` and use only the directory it prints. Never create `.cost-oriented-agentic-workflow/run/` or `progress.md` manually. After every artifact write and at the final gate, `git status --short -- .cost-oriented-agentic-workflow/` **must be empty**; a non-empty result means the workspace was not initialized correctly — hard-stop and run the helper before continuing.
+
 Before Task 1, create or read the workspace `progress.md` header:
 
 ```text

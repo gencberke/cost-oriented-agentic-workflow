@@ -229,6 +229,10 @@ grepSkill('execution-routing', /Unit N.*route=<inline\|delegate>.*risk=<low\|ele
   'execution-routing ledger records route, risk, scope, review, waves, verification, and commits');
 grepSkill('execution-routing', /persist `waves=2`.*blocked.*resume cannot reset the budget/i,
   'execution-routing persists exhausted remediation state across resume');
+grepSkill('execution-routing', /Before reading or writing any run artifact.*execute `scripts\/cow-workspace`/is,
+  'execution-routing initializes artifacts through cow-workspace before direct writes');
+grepSkill('execution-routing', /git status --short -- \.cost-oriented-agentic-workflow\/.*must be empty/is,
+  'execution-routing verifies workspace artifacts remain ignored at the final gate');
 
 // Phase 4 contracts: run identity, compaction idempotency, commit authority,
 // bounded outputs, verification ownership, and runtime prose budget.
