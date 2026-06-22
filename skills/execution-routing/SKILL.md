@@ -21,7 +21,7 @@ Resume exception for `user-owned`/`none`: allow dirty paths only when every path
 
 ## Pin run identity once
 
-Before reading or writing any run artifact, execute `scripts/cow-workspace` and use only the directory it prints. Never create `.cost-oriented-agentic-workflow/run/` or `progress.md` manually. After every artifact write and at the final gate, `git status --short -- .cost-oriented-agentic-workflow/` **must be empty**; a non-empty result means the workspace was not initialized correctly — hard-stop and run the helper before continuing.
+`SKILL_DIR` is the exact **Base directory for this skill** supplied at load (Windows Bash: normalize `\` to `/`). Before any artifact access, run absolute `"$SKILL_DIR/scripts/cow-workspace"`. Repo-relative `scripts/...` and suppressed helper failures (`2>/dev/null`, `||`) are forbidden and hard-stop. After artifact writes and at the final gate, `git status --short -- .cost-oriented-agentic-workflow/` **must be empty**.
 
 Before Task 1, create or read the workspace `progress.md` header:
 
@@ -113,15 +113,15 @@ This branch applies equally to inline and delegated work: standard/low uses self
 The implementer writes its full report to a **report file** and returns only: **Status**, files changed, a one-line test summary, concerns, and the report path — it does **not** commit (see Commit policy). The reviewer reads the diff from a **package file** and returns a verdict + findings. Code bodies and full diffs stay in files — they never re-enter your context.
 
 Hand work over as files, not pasted text:
-- **Workspace:** `scripts/cow-workspace` resolves the self-ignored, per-worktree artifact directory at `<repo-root>/.cost-oriented-agentic-workflow/run/`.
-- **Brief:** `scripts/task-brief PLAN_FILE N` extracts the task into `task-N-brief.md` there; the dispatch points to it as the source of requirements.
+- **Workspace:** `"$SKILL_DIR/scripts/cow-workspace"` resolves the self-ignored, per-worktree artifact directory at `<repo-root>/.cost-oriented-agentic-workflow/run/`.
+- **Brief:** `"$SKILL_DIR/scripts/task-brief" PLAN_FILE N` extracts the task into `task-N-brief.md` there; the dispatch points to it as the source of requirements.
 - **Report:** place `task-N-report.md` beside the brief; the implementer writes there.
-- **Task diff:** pass the task's exact plan `Files` paths: `scripts/review-package BASE HEAD -- PATH...`. This includes committed, staged, unstaged, and untracked content only for that scope. Use the BASE recorded before dispatching — never `HEAD~1`.
-- **Whole-work diff:** omit paths: `scripts/review-package MERGE_BASE HEAD`. Branch mode includes committed work only and exits `4` with dirty filenames when current HEAD is dirty.
+- **Task diff:** pass the task's exact plan `Files` paths: `"$SKILL_DIR/scripts/review-package" UNIT_BASE HEAD -- PATH...`. This includes committed, staged, unstaged, and untracked content only for that scope. Use the base recorded before dispatching — never `HEAD~1`.
+- **Whole-work diff:** omit paths: `"$SKILL_DIR/scripts/review-package" MERGE_BASE HEAD`. Branch mode includes committed work only and exits `4` with dirty filenames when current HEAD is dirty.
 
 ## Commit policy
 
-Default: **controller-per-unit.** The delegated implementer and the inline writer leave changes in the working tree; **you (the controller) commit each unit after it passes review**, so git history holds reviewed commits, not pre-review snapshots. Record BASE = HEAD before the unit; review the working tree with task-scoped `review-package ... -- PATH...`, then commit. Confirm the tree is clean before starting the next unit. Each committed unit is a ledger/recovery boundary.
+Default: **controller-per-unit.** Writers leave changes uncommitted; **the controller commits after review**. Persist `UNIT_BASE = HEAD` before edits; review from it, then record `commit=UNIT_BASE..new_HEAD` — never substitute `MERGE_BASE_SHA`. Confirm a clean tree before the next unit; each commit is a recovery boundary.
 
 Override only by repo or user preference, and note it in the anchor when non-default:
 - `implementer` — the delegated worker commits its own unit (then the dispatch and return protocol ask for commit SHAs instead of "files changed").
@@ -169,7 +169,7 @@ Never mark a unit complete with open Critical/Important findings. Record final-r
 
 The per-unit loop gates each task in isolation; it does not catch problems that only appear where units meet. After the last unit, before claiming the branch is finished:
 
-1. **One whole-work review** — read `MERGE_BASE_SHA` from the ledger and review `scripts/review-package MERGE_BASE_SHA HEAD`: standard → Sonnet, production → Opus. Apply the same bounded remediation gate. Standard may skip this only for a single planned unit that already had independent review; production never skips it.
+1. **One independent whole-work review** — read ledger `MERGE_BASE_SHA`, build `"$SKILL_DIR/scripts/review-package" MERGE_BASE_SHA HEAD`, and dispatch fresh: standard → Sonnet, production → Opus. This is never controller self-review, even on the target model. Apply bounded remediation. Standard may skip only for one unit already independently reviewed; production never skips.
 2. **Integrate** — hand off to **finishing-a-development-branch**: verify tests, then merge / PR / keep / discard, then clean up.
 
 ## Red flags

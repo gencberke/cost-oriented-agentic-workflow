@@ -13,10 +13,11 @@ A dispatch describes **one task**: its requirements, the interfaces it touches, 
 
 ## Hand bulk over as files
 
-- **Workspace:** `execution-routing/scripts/cow-workspace` resolves the self-ignored, per-worktree artifact directory at `<repo-root>/.cost-oriented-agentic-workflow/run/`.
-- **Brief:** `execution-routing/scripts/task-brief PLAN N` extracts the task to `task-N-brief.md` there. Point the dispatch at it: "read this first — it is your requirements, exact values verbatim." Exact values (numbers, magic strings, signatures, test cases) live only in the brief.
+- **Helper root:** resolve the quoted absolute sibling path `../execution-routing/scripts/` from this skill's supplied **Base directory**; never assume helpers are repo-relative.
+- **Workspace:** run absolute `cow-workspace` there to resolve the self-ignored, per-worktree artifact directory at `<repo-root>/.cost-oriented-agentic-workflow/run/`.
+- **Brief:** run absolute `task-brief PLAN N` there to extract `task-N-brief.md`. Point the dispatch at it: "read this first — it is your requirements, exact values verbatim." Exact values (numbers, magic strings, signatures, test cases) live only in the brief.
 - **Report:** place `task-N-report.md` beside the brief; the subagent writes its full report there and returns only a short status.
-- **Diff (for reviewers):** for a task, run `execution-routing/scripts/review-package BASE HEAD -- PATH...` with exactly its plan `Files`; for whole-work review, omit `-- PATH...` and require a clean current tree. Pass the resulting package path. It never enters your context.
+- **Diff (for reviewers):** run absolute `review-package UNIT_BASE HEAD -- PATH...` with exactly its plan `Files`; for whole-work review, omit `-- PATH...` and require a clean current tree. Pass the resulting package path. It never enters your context.
 
 ## Pin the seams, free the interior
 

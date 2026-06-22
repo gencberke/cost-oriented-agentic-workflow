@@ -234,10 +234,16 @@ grepSkill('execution-routing', /Unit N.*route=<inline\|delegate>.*risk=<low\|ele
   'execution-routing ledger records route, risk, scope, review, waves, verification, and commits');
 grepSkill('execution-routing', /persist `waves=2`.*blocked.*resume cannot reset the budget/i,
   'execution-routing persists exhausted remediation state across resume');
-grepSkill('execution-routing', /Before reading or writing any run artifact.*execute `scripts\/cow-workspace`/is,
-  'execution-routing initializes artifacts through cow-workspace before direct writes');
+grepSkill('execution-routing', /Base directory for this skill.*\$SKILL_DIR.*cow-workspace/is,
+  'execution-routing resolves helpers from the supplied skill base directory');
+grepSkill('execution-routing', /Repo-relative `scripts\/\.\.\.`.*suppressed helper failures/is,
+  'execution-routing forbids repo-relative helpers and swallowed initialization failures');
 grepSkill('execution-routing', /git status --short -- \.cost-oriented-agentic-workflow\/.*must be empty/is,
   'execution-routing verifies workspace artifacts remain ignored at the final gate');
+grepSkill('execution-routing', /commit=UNIT_BASE\.\.new_HEAD.*never substitute `MERGE_BASE_SHA`/is,
+  'execution-routing records per-unit commit ranges from the unit base');
+grepSkill('execution-routing', /independent whole-work review.*never controller self-review/is,
+  'execution-routing keeps final review independent from the controller');
 
 // Phase 4 contracts: run identity, compaction idempotency, commit authority,
 // bounded outputs, verification ownership, and runtime prose budget.
