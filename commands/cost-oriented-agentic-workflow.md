@@ -6,7 +6,7 @@ Invoke the `cost-oriented-agentic-workflow:using-cost-oriented-workflow` skill n
 
 When you create the plan/task file, write the anchor header with `MODE: standard` at the very top, per writing-plans.
 
-If the user supplies an already-approved plan, invoke `cost-oriented-agentic-workflow:execution-routing` **before implementation** and execute the plan through that skill. Maintain its workspace ledger and review matrix; do not improvise a direct loop. In particular, a planned `standard / low` unit uses self-review plus the whole-work gate — do not add a per-task independent reviewer merely because a plan exists.
+If the user supplies an already-approved plan, invoke `cost-oriented-agentic-workflow:execution-routing` **before implementation** and execute the plan through that skill. Maintain its workspace ledger and review matrix; do not improvise a direct loop. A planned `standard / low` unit gets self-review, not a per-task Agent; after the last unit, dispatch a **fresh independent Sonnet Agent** for whole-work review. Skip that final Agent only when the single unit already had independent review.
 
 If a task is provided below, begin the workflow on it — start with the triage (size the task first: the light path of inline + verify for a trivial, tightly-coupled change; brainstorming then a plan for ambiguous or multi-step work), scaled to how clear the request is. If nothing is provided, confirm the workflow is active and ask what to work on.
 
