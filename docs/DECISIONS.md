@@ -229,4 +229,61 @@ agentic-superpowers'ın 6 tool-izolasyonlu agent'ı (`scoped-implementer`, `spec
 - Ek ripple düzeltmeleri (bu turda yakalandı): `preparing-subagent-prompts`'ta return "commits"→"files changed" (A2) + "verbatim copy"→brief-carries (Q4).
 - Doğrulama: `npm test` (75 + 11) yeşil; "do NOT flag" anti-pattern guard'lı; causality iki reviewer prompt'unda. Sürüm **0.3.1 → 0.3.2**.
 
-**Kalan: C (pivot)** — prose'u bırak, ölç: behavioral eval (discovery/confirmation) + maliyet telemetrisi → sonra 5-8 dogfood ile eşik/maliyet ölç.
+**C, v0.4.0 ile uygulandı; aşağıdaki release kaydına bak.**
+
+### 2026-06-22 — v0.4.0: hardening, bounded review ve ölçüm altyapısı
+
+**Kaynak sınırı:** Otoriter repo Desktop’taki git kaynağıdır. Claude cache’i
+kurulu çıktıdır; hiçbir fazda elle patchlenmedi. Değişiklikler baseline + altı
+faz commit’i olarak ilerletildi.
+
+**Superpowers’tan alınan workspace çözümü:** Official 6.0.3’teki yazılabilir
+çalışma alanı fikri benimsendi, fakat cost’un worktree/ledger ihtiyaçlarına göre
+daraltıldı. Artifact’lar `.git` altına değil, her checkout’un
+`<repo-root>/.cost-oriented-agentic-workflow/run/` alanına yazılır; alan kendini
+ignore eder, `git add -A` içine giremez ve linked worktree’ler paylaşmaz. Legacy
+`<git-dir>/cow/progress.md` kopyalanır ama silinmez. `git clean -fdx` kaybına
+karşı plan + `git log` fallback’i korunur.
+
+**Review scope ve repository-state kararı:** `review-package` task modunda
+committed/staged/unstaged/untracked içeriği yalnız izinli repo-relative yollar
+için üretir; traversal/absolute path reddedilir, binary yalnız metadata verir.
+Whole-work mod committed range ile sınırlıdır ve güncel dirty tree’de exit 4
+verir. Default planlı yürütme temiz tree ile başlar.
+
+**Mode-aware review ve bounded remediation:** Standard-low self-review + final
+whole-work review ile ucuz kalır; standard-high ve production’daki her planlı
+task bağımsız Sonnet review alır. Accepted Critical/Important fix taze targeted
+re-review ister. Her task/final review en fazla iki autonomous remediation wave
+alır; aynı bulgu için ikinci kör fix yoktur ve `budget exhausted != approved`.
+
+**Resume/base/commit sözleşmesi:** Ledger `PLAN_FILE`, `MODE`, `COMMIT_POLICY`,
+`BASE_BRANCH`, `MERGE_BASE_SHA` değerlerini Task 1’den önce bir kez pinler. Final
+review ve finishing aynı immutable merge-base’i kullanır; feature upstream base
+sanılmaz; detached HEAD local merge göstermez. `COW_ENTRY_INJECTED` compaction’da
+duplicate entry load’u önler. Default commit policy `controller-per-unit` kalır;
+implementer yalnız açık `implementer` politikasında commit atar.
+
+**Output ve verification bütçesi:** Implementer dönüşü sekiz satırla, log yerine
+komut/test sayısı/sonuç ve ilgili RED-GREEN parçalarıyla sınırlıdır. Reviewer tüm
+Critical/Important bulguları korur, en fazla üç Minor döndürür. Finishing final
+verification’ın sahibidir; aynı-state kanıtı tekrar kullanılabilir, merge daima
+yeniden test edilir. Runtime prose hard ceiling 86.000 byte; beş sıcak dosya
+v0.3.2 boyutunun %110’unu geçemez.
+
+**C pivot kapandı:** Offline analyzer gerçek Claude Code ana oturumu + subagent
+JSONL’lerinden input/output/cache/message kırılımı üretir, malformed satırları
+atlayıp sayar ve fiyat verilmedikçe dolar iddiası yapmaz. Altı hidden-ground-truth
+fixture discovery/confirmation, recall, precision, severity, causality, scope
+discipline ve valid finding başına token ölçümünü tanımlar.
+
+**Bilinçli ayrışmalar:** Standard-low task’lara zorunlu reviewer veya standard
+moda zorunlu worktree eklenmedi; default implementer-commit yapılmadı; `-U10`
+ölçümsüz düşürülmedi; prompt-file indirection, wholesale SDD metni, full
+Drill/session-driver ve named-agent bağımlılığı alınmadı. Amaç minimum maliyette
+stabil ve güvenilir kişisel-ölçek çözüm olarak kaldı.
+
+**Doğrulama:** Runtime prose 86.000 byte altında; workspace/review helper’ları
+gerçek temp git repo ve linked worktree üzerinde; token analyzer sentetik ve
+gerçek session ile; altı fixture geçerli unified diff olarak doğrulandı. Release
+sürümü davranışsal değişiklikler nedeniyle `0.4.0`.

@@ -56,6 +56,7 @@ const jsonFiles = [
   '.claude-plugin/plugin.json',
   '.claude-plugin/marketplace.json',
   'hooks/hooks.json.example',
+  'package.json',
 ];
 const parsed = {};
 for (const f of jsonFiles) {
@@ -67,11 +68,16 @@ for (const f of jsonFiles) {
 
 const plugin = parsed['.claude-plugin/plugin.json'];
 const market = parsed['.claude-plugin/marketplace.json'];
+const packageMeta = parsed['package.json'];
 if (plugin && market) {
   check(typeof plugin.name === 'string' && plugin.name.length > 0, 'plugin.json has a name');
   const mp = (market.plugins || []).find((p) => p.name === plugin.name);
   check(!!mp, `marketplace lists plugin "${plugin.name}"`);
   if (mp) check(mp.version === plugin.version, `marketplace version matches plugin.json (${plugin.version})`);
+}
+if (plugin && packageMeta) {
+  check(plugin.version === packageMeta.version,
+    `package version matches plugin.json (${plugin.version})`);
 }
 
 // hooks.json.example must declare a SessionStart hook (the opt-in always-on path)
@@ -107,6 +113,12 @@ if (isDir(cmdDir)) {
     check(fm && !!fm.description, `commands/${f}: has a frontmatter description`);
   }
 }
+
+const qualifiedLauncher = '/cost-oriented-agentic-workflow:cost-oriented-agentic-workflow';
+check(read(path.join(root, 'README.md')).includes(qualifiedLauncher),
+  'README uses the qualified standard launcher command');
+check(read(path.join(root, 'hooks/README.md')).includes(qualifiedLauncher),
+  'hooks README uses the qualified standard launcher command');
 
 // ── 4. Relative markdown links resolve to a real file ───────────────────────
 const mdFiles = walk(root).filter((f) => f.endsWith('.md'));

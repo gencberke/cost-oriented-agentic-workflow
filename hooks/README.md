@@ -1,7 +1,8 @@
 # Optional always-on hook
 
 By default this plugin activates via the launcher command
-(`/cost-oriented-agentic-workflow` or `/cost-oriented-agentic-workflow:production`).
+(`/cost-oriented-agentic-workflow:cost-oriented-agentic-workflow` or
+`/cost-oriented-agentic-workflow:production`).
 The workflow is **not** forced onto every session.
 
 If you instead want the workflow loaded automatically in **every** session
@@ -15,5 +16,6 @@ skill plus the `COW_ENTRY_INJECTED` sentinel on `startup | clear | compact`, so
 the anchor does not load the entry twice. `run-hook.cmd` is a
 polyglot wrapper that runs the bash script on Windows (via Git Bash) and Unix
 alike. With the hook enabled, standard mode is the default; switch a given
-session to production by running the `:production` command, which writes
-`MODE: production` into the plan/task file's anchor header.
+session to production by running
+`/cost-oriented-agentic-workflow:production`, which writes `MODE: production`
+into the plan/task file's anchor header.
