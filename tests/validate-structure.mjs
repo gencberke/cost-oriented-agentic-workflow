@@ -175,6 +175,11 @@ grepSkill('verification-before-completion', /NO COMPLETION CLAIM/i, 'verificatio
 grepSkill('systematic-debugging', /ROOT CAUSE/i, 'systematic-debugging keeps its Iron Law');
 
 const productionCommandText = read(path.join(cmdDir, 'production.md'));
+const standardCommandText = read(path.join(cmdDir, 'cost-oriented-agentic-workflow.md'));
+check(/already-approved plan.*execution-routing.*before implementation/is.test(standardCommandText),
+  'standard launcher routes approved plans through execution-routing before implementation');
+check(/standard \/ low.*self-review plus the whole-work gate.*do not add a per-task independent reviewer/is.test(standardCommandText),
+  'standard launcher preserves the low-risk cost route for approved plans');
 check(/already-approved plan.*execution-routing.*before implementation/is.test(productionCommandText),
   'production launcher routes approved plans through execution-routing before implementation');
 check(/independent Sonnet reviewer.*model: sonnet/is.test(productionCommandText),
