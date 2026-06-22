@@ -174,6 +174,14 @@ grepSkill('execution-routing', /HEAD~1/i, 'execution-routing keeps the HEAD~1 wa
 grepSkill('verification-before-completion', /NO COMPLETION CLAIM/i, 'verification keeps its Iron Law');
 grepSkill('systematic-debugging', /ROOT CAUSE/i, 'systematic-debugging keeps its Iron Law');
 
+const productionCommandText = read(path.join(cmdDir, 'production.md'));
+check(/already-approved plan.*execution-routing.*before implementation/is.test(productionCommandText),
+  'production launcher routes approved plans through execution-routing before implementation');
+check(/independent Sonnet reviewer.*model: sonnet/is.test(productionCommandText),
+  'production launcher pins planned-task reviewers to Sonnet');
+check(/whole-work Opus review.*model: opus/is.test(productionCommandText),
+  'production launcher pins the final whole-work reviewer to Opus');
+
 // Mode-aware review routing is data-driven so standard/low cannot silently
 // inherit production's mandatory per-task reviewer (or vice versa).
 const routingFixturePath = path.join(root, 'tests/fixtures/review-routing.json');
