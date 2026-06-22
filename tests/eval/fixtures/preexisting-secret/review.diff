@@ -1,0 +1,32 @@
+diff --git a/src/main/resources/application.yml b/src/main/resources/application.yml
+index 1111111..2222222 100644
+--- a/src/main/resources/application.yml
++++ b/src/main/resources/application.yml
+@@ -11,6 +11,7 @@ server:
+
+ jwt:
+   secret: 9f7d2a6c4e8b1f3d5a7c9e2b4d6f8a1c
++  expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+
+ logging:
+   level:
+diff --git a/src/main/java/example/security/JwtService.java b/src/main/java/example/security/JwtService.java
+index 3333333..4444444 100644
+--- a/src/main/java/example/security/JwtService.java
++++ b/src/main/java/example/security/JwtService.java
+@@ -12,5 +12,6 @@ public class JwtService {
+     private final SecretKey signingKey;
+-    private static final long EXPIRATION_MS = 86_400_000L;
++    @Value("${jwt.expiration-ms}")
++    private long expirationMs;
+
+     public String generateToken(UserDetails user) {
+         return Jwts.builder()
+@@ -20,6 +21,6 @@ public class JwtService {
+                 .subject(user.getUsername())
+                 .issuedAt(new Date())
+-                .expiration(new Date(System.currentTimeMillis() + EXPIRATION_MS))
++                .expiration(new Date(System.currentTimeMillis() + expirationMs))
+                 .signWith(signingKey)
+                 .compact();
+     }

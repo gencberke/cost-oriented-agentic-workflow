@@ -7,6 +7,7 @@
   "scripts": {
     "check": "node tests/validate-structure.mjs",
     "test:scripts": "bash tests/scripts.test.sh",
+    "test:eval": "bash tests/eval/run-tests.sh",
     "test": "node tests/validate-structure.mjs && bash tests/scripts.test.sh"
   },
   "license": "MIT"

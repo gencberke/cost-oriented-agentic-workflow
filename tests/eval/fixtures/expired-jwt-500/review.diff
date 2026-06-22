@@ -1,0 +1,35 @@
+diff --git a/src/main/java/example/security/JwtService.java b/src/main/java/example/security/JwtService.java
+index 1111111..2222222 100644
+--- a/src/main/java/example/security/JwtService.java
++++ b/src/main/java/example/security/JwtService.java
+@@ -18,9 +18,17 @@ public class JwtService {
++    @Value("${jwt.expiration-ms}")
++    private long expirationMs;
++
+     public String generateToken(UserDetails user) {
+         return Jwts.builder()
+                 .subject(user.getUsername())
+                 .issuedAt(new Date())
++                .expiration(new Date(System.currentTimeMillis() + expirationMs))
+                 .signWith(signingKey)
+                 .compact();
+     }
+
++    public String extractSubject(String token) {
++        return Jwts.parser().verifyWith(signingKey).build()
++                .parseSignedClaims(token).getPayload().getSubject();
++    }
+ }
+diff --git a/src/main/java/example/security/JwtAuthFilter.java b/src/main/java/example/security/JwtAuthFilter.java
+index 3333333..4444444 100644
+--- a/src/main/java/example/security/JwtAuthFilter.java
++++ b/src/main/java/example/security/JwtAuthFilter.java
+@@ -31,7 +31,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
+         }
+
+         String token = authorization.substring(7);
+-        String username = jwtService.extractUsername(token);
++        String username = jwtService.extractSubject(token);
+         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+             UserDetails user = userDetailsService.loadUserByUsername(username);
+             if (jwtService.isTokenValid(token, user)) {

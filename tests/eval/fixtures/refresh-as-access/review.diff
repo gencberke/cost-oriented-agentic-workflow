@@ -1,0 +1,42 @@
+diff --git a/src/main/java/example/security/JwtService.java b/src/main/java/example/security/JwtService.java
+index 1111111..2222222 100644
+--- a/src/main/java/example/security/JwtService.java
++++ b/src/main/java/example/security/JwtService.java
+@@ -20,13 +20,23 @@ public class JwtService {
+     public String generateToken(UserDetails user) {
+         return Jwts.builder()
+                 .subject(user.getUsername())
++                .claim("type", "access")
+                 .expiration(new Date(System.currentTimeMillis() + accessExpirationMs))
+                 .signWith(signingKey)
+                 .compact();
+     }
+
++    public String generateRefreshToken(UserDetails user) {
++        return Jwts.builder()
++                .subject(user.getUsername())
++                .claim("type", "refresh")
++                .expiration(new Date(System.currentTimeMillis() + refreshExpirationMs))
++                .signWith(signingKey)
++                .compact();
++    }
++
+     public boolean isTokenValid(String token, UserDetails user) {
+         String subject = extractSubject(token);
+         return subject.equals(user.getUsername()) && !isExpired(token);
+     }
+ }
+diff --git a/src/main/java/example/security/JwtAuthFilter.java b/src/main/java/example/security/JwtAuthFilter.java
+index 3333333..4444444 100644
+--- a/src/main/java/example/security/JwtAuthFilter.java
++++ b/src/main/java/example/security/JwtAuthFilter.java
+@@ -39,7 +39,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
+         String username = jwtService.extractSubject(token);
+         UserDetails user = userDetailsService.loadUserByUsername(username);
+-        if (SecurityContextHolder.getContext().getAuthentication() == null
+-                && jwtService.isTokenValid(token, user)) {
++        boolean valid = jwtService.isTokenValid(token, user);
++        if (SecurityContextHolder.getContext().getAuthentication() == null && valid) {
+             SecurityContextHolder.getContext().setAuthentication(authenticated(user));
+         }
+         filterChain.doFilter(request, response);

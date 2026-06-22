@@ -1,0 +1,23 @@
+{
+  "fixture_version": 1,
+  "id": "expired-jwt-500",
+  "kind": "positive",
+  "findings": [
+    {
+      "id": "expired-token-escapes-filter",
+      "severity": ["Critical", "Important"],
+      "causality": "introduced",
+      "merge_blocker": true
+    }
+  ],
+  "forbidden": [],
+  "confirmation": {
+    "finding_id": "expired-token-escapes-filter",
+    "question": "Can an expired bearer token now escape JwtAuthFilter as an uncaught parser exception and become HTTP 500 rather than 401?"
+  },
+  "acceptance": {
+    "initial_runs": 3,
+    "minimum_raw_discoveries": 3,
+    "extend_inconsistent_to": 5
+  }
+}

@@ -1,0 +1,17 @@
+diff --git a/src/main/java/example/weather/WeatherService.java b/src/main/java/example/weather/WeatherService.java
+index 1111111..2222222 100644
+--- a/src/main/java/example/weather/WeatherService.java
++++ b/src/main/java/example/weather/WeatherService.java
+@@ -28,8 +28,12 @@ public class WeatherService {
+         return webClient.get()
+                 .uri(uriBuilder -> uriBuilder.path("/weather").queryParam("q", city).build())
+                 .retrieve()
++                .onStatus(HttpStatusCode::is4xxClientError, response ->
++                        Mono.error(new ResponseStatusException(
++                                HttpStatus.NOT_FOUND,
++                                "City not found: " + city)))
+                 .bodyToMono(OpenWeatherResponse.class)
+                 .map(this::toResponse)
+                 .block(Duration.ofSeconds(5));
+     }
+ }

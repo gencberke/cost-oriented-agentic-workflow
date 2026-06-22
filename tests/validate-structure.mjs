@@ -286,6 +286,35 @@ for (const [file, baseline] of Object.entries(baselineBytes)) {
     `${file} stays within 110% of v0.3.2 baseline (${current}/${baseline})`);
 }
 
+// Phase 5 contracts: offline token telemetry and hidden-ground-truth review evals.
+const analyzerPath = path.join(root, 'tests/eval/analyze-token-usage.py');
+const analyzerText = read(analyzerPath);
+for (const token of ['--json', '--input-price-per-million', '--output-price-per-million',
+  'cache_read_input_tokens', 'cache_creation_input_tokens', 'malformed_lines']) {
+  check(analyzerText.includes(token), `token analyzer keeps ${token}`);
+}
+const evalFixtureRoot = path.join(root, 'tests/eval/fixtures');
+const evalFixtureIds = [
+  'expired-jwt-500',
+  'refresh-as-access',
+  'legacy-access-type-rollout',
+  'upstream-4xx-collapsed',
+  'preexisting-secret',
+  'reset-password-npe-control',
+];
+for (const id of evalFixtureIds) {
+  for (const file of ['brief.md', 'review.diff', 'expected.json']) {
+    check(fs.existsSync(path.join(evalFixtureRoot, id, file)), `review eval ${id}/${file} exists`);
+  }
+}
+const dogfoodText = read(path.join(root, 'docs/DOGFOOD.md'));
+check(/ledger.*JSONL/s.test(dogfoodText) && /no dollar\s+claim/s.test(dogfoodText),
+  'dogfood separates ledger routing from optional JSONL cost estimates');
+check(/Provide only `brief\.md` and `review\.diff`.*Never expose `expected\.json`/s.test(dogfoodText),
+  'dogfood protects raw discovery from expected-result leakage');
+check(/three times.*extend only\s+that fixture to five/s.test(dogfoodText),
+  'dogfood uses per-fixture 3-to-5 repeat policy');
+
 // ── Summary ─────────────────────────────────────────────────────────────────
 console.log(`\n${passes} checks passed, ${failures} failed.`);
 if (failures > 0) process.exit(1);
