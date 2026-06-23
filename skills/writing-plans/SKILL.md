@@ -55,11 +55,14 @@ Use `### Task N:` headings exactly (the `task-brief` script extracts by "Task N"
   this task, so this is how neighbors learn its surface]
 
 **Risk:** elevated | high — [one-line reason]   ← omit this line when low (low is the default)
+**Route hint:** inline | delegate — [one observable contract-cost reason; advisory]
 **Acceptance:** [observable criteria — what "done" means for this task]
 **Verify:** `exact command` → expected result
 ````
 
 Set **Risk** by the hard-exclusion list + blast-radius principle in using-cost-oriented-workflow (auth, migrations, money, privacy, shared state, public API, dependencies, prod/CI config, irreversible side effects → elevated or high regardless of size). It drives review depth downstream, so a task that touches those gets its level recorded even when its diff is tiny. For **elevated/high** tasks, write **behavioral** Acceptance and a Verify that exercises it — the observable behaviors the change must exhibit (e.g. "expired token → 401, not 500"), not "compiles".
+
+Set **Route hint** once from the planned task boundary: `inline` when the implementation is one small, tightly coupled edit; `delegate` when the contract is cheaper than the self-contained multi-file or substantial implementation. The hint is advisory, not a model-tier field or authority over runtime evidence.
 
 - **standard mode:** pin the interface, acceptance, and the verify command; leave the interior to the implementer. You need not pre-write every line of code.
 - **production mode:** also write bite-sized steps with the actual test and implementation code (TDD), exact commands, and expected output — see test-driven-development.

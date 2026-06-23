@@ -26,11 +26,11 @@ digraph w {
 }
 ```
 
-Use when chunks have different root causes / live in different subsystems and each can be understood without the others. Don't use when fixing one might fix another, when you need full-system context, or when you're still exploring what's broken.
+Do not dispatch from symptom count alone. First make a cheap domain map. Use parallel read-only investigators when that map evidences disjoint subsystems and non-overlapping scopes, even before each root cause is known. Keep one investigation when a shared root cause/state is plausible, fixing one may fix another, or full-system context is required.
 
 ## Strict file ownership (the conflict guard — D7)
 
-Before dispatching, **partition the files** so each subagent owns a disjoint set. Two subagents must never write the same file. State each subagent's owned paths in its prompt ("you may edit only X and Y"). This non-overlapping ownership — not a worktree — is what prevents collisions in the common case.
+Before an implementation dispatch, **partition the files** so each subagent owns a disjoint set. Two writing subagents must never edit the same file. A diagnosis dispatch is explicitly read-only and gets a bounded subsystem/path scope. State the scope in every prompt. This non-overlap — not a worktree — prevents collisions.
 
 **Worktrees (D9):** not needed in standard single-stream work, and not needed for parallel work you can partition by file. **If two chunks would touch the same file, they are not parallelizable — sequence them; a worktree isolates checkouts but does not make concurrent edits to one file merge cleanly.** Reach for a git worktree only for production isolation, or to give disjoint parallel subagents their own checkouts. See using-git-worktrees.
 

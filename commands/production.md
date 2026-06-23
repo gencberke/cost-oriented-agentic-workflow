@@ -8,6 +8,6 @@ When you create the plan/task file, write the anchor header with `MODE: producti
 
 When the user asks to **execute or resume** an approved plan, invoke `cost-oriented-agentic-workflow:execution-routing` immediately — before inspecting progress or implementing. Resume must read its workspace `progress.md`, never look for ledger entries inside the plan. Do not improvise a direct loop: every planned task uses an independent reviewer with `model: sonnet`, and production finishes with a separate whole-work review with `model: opus`.
 
-If a task is provided below, begin the workflow on it — start with the triage; in production the bar for the light path is high, so most work goes through the brainstorming gate and an approved plan before code. If nothing is provided, confirm production mode is active and ask what to work on.
+If a task is provided below, begin the workflow on it. For any bug, test failure, or unexpected behavior, invoke `cost-oriented-agentic-workflow:systematic-debugging` **before inspecting the repository**; diagnose first, then return to size/risk triage for the implementation route. Otherwise start with triage; in production the light-path bar is high, so most work goes through brainstorming and an approved plan. If nothing is provided, confirm production mode is active and ask what to work on.
 
 $ARGUMENTS

@@ -39,6 +39,8 @@ For a new run, set the plan path, mode, and active commit policy (default `contr
 
 Delegating is not free — you pay to write the contract, dispatch, and review the return. Delegation only wins when the code you'd save outweighs that overhead.
 
+Start from the plan's non-binding `Route hint`, then compare it with actual scope; runtime evidence still governs. If scope, coupling, or risk changes the route, emit one `Re-route: <route> — <observable trigger>.` line before editing. Record only the actual `route=` in the ledger.
+
 **Compare:** the cost of writing a self-contained contract (scope + interfaces + acceptance criteria + verification command) against the cost of just writing the code yourself.
 
 ```dot

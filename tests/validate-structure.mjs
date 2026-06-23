@@ -164,15 +164,29 @@ function grepSkill(name, re, label) {
   if (!fs.existsSync(sp)) return fail(`policy: skills/${name} exists (${label})`);
   check(re.test(read(sp)), `policy: ${label}`);
 }
-grepSkill('using-cost-oriented-workflow', /light path/i, 'entry skill keeps the triage light-path');
+grepSkill('using-cost-oriented-workflow', /light[- ]path/i, 'entry skill keeps the triage light-path');
 grepSkill('using-cost-oriented-workflow', /main`?\/`?master/i, 'entry skill keeps the main/master guard');
 grepSkill('using-cost-oriented-workflow', /Risk classification/i, 'entry skill keeps the risk-classification spine');
 grepSkill('using-cost-oriented-workflow', /Hard exclusions/i, 'entry skill keeps the light-path hard exclusions');
+grepSkill('using-cost-oriented-workflow', /observable facts.*not hidden chain-of-thought.*Route:/is,
+  'entry skill emits a bounded visible route receipt');
+grepSkill('using-cost-oriented-workflow', /Light-path escape hatch.*second independent outcome.*dependency.*test harness.*hypothesis fails.*scope\/risk rises/is,
+  'entry skill re-triages concrete light-path expansion signals');
 grepSkill('writing-plans', /MODE:\s*standard/i, 'writing-plans keeps the anchor header');
 grepSkill('writing-plans', /CADENCE:/i, 'writing-plans anchor keeps the cadence line');
+grepSkill('writing-plans', /Route hint:\*\* inline \| delegate.*advisory/is,
+  'writing-plans records a non-binding per-task route hint');
 grepSkill('execution-routing', /HEAD~1/i, 'execution-routing keeps the HEAD~1 warning');
+grepSkill('execution-routing', /non-binding `Route hint`.*runtime evidence still governs.*Record only the actual `route=`/is,
+  'execution-routing may override route hints and records the actual route');
 grepSkill('verification-before-completion', /NO COMPLETION CLAIM/i, 'verification keeps its Iron Law');
 grepSkill('systematic-debugging', /ROOT CAUSE/i, 'systematic-debugging keeps its Iron Law');
+grepSkill('systematic-debugging', /tracked diagnostic edit.*return to size\/risk triage.*before writing/is,
+  'systematic-debugging separates diagnosis from implementation');
+grepSkill('systematic-debugging', /cheap domain map.*disjoint subsystems.*read-only Sonnet investigator/is,
+  'systematic-debugging routes evidenced disjoint domains to investigators');
+grepSkill('dispatching-parallel-agents', /symptom count alone.*cheap domain map.*read-only investigators/is,
+  'parallel diagnosis requires a domain map before dispatch');
 
 const productionCommandText = read(path.join(cmdDir, 'production.md'));
 const standardCommandText = read(path.join(cmdDir, 'cost-oriented-agentic-workflow.md'));
@@ -182,6 +196,8 @@ check(/Resume must read.*workspace `progress\.md`.*never look for ledger entries
   'standard launcher reads resume state from the workspace ledger');
 check(/standard \/ low.*self-review, not a per-task Agent.*fresh independent Sonnet Agent.*whole-work review/is.test(standardCommandText),
   'standard launcher preserves low-risk task economy and requires independent final review');
+check(/bug, test failure, or unexpected behavior.*systematic-debugging.*before inspecting the repository/is.test(standardCommandText),
+  'standard launcher invokes systematic debugging before bug exploration');
 check(/execute or resume.*approved plan.*execution-routing.*before inspecting progress or implementing/is.test(productionCommandText),
   'production launcher routes approved-plan execution and resume before progress inspection');
 check(/Resume must read.*workspace `progress\.md`.*never look for ledger entries inside the plan/is.test(productionCommandText),
@@ -190,6 +206,8 @@ check(/every planned task.*independent reviewer.*model: sonnet/is.test(productio
   'production launcher pins planned-task reviewers to Sonnet');
 check(/whole-work review.*model: opus/is.test(productionCommandText),
   'production launcher pins the final whole-work reviewer to Opus');
+check(/bug, test failure, or unexpected behavior.*systematic-debugging.*before inspecting the repository/is.test(productionCommandText),
+  'production launcher invokes systematic debugging before bug exploration');
 
 // Mode-aware review routing is data-driven so standard/low cannot silently
 // inherit production's mandatory per-task reviewer (or vice versa).

@@ -1,6 +1,6 @@
 ---
 name: systematic-debugging
-description: Use when you hit a bug, test failure, or unexpected behavior, before proposing or dispatching any fix — find the root cause first, because guess-and-check is the most expensive loop in this workflow.
+description: Use when you hit a bug, test failure, or unexpected behavior, before repository inspection or any fix — diagnose the root cause, then return to implementation triage because guess-and-check is the most expensive loop.
 ---
 
 # Systematic Debugging
@@ -15,12 +15,18 @@ NO FIX WITHOUT ROOT CAUSE FIRST
 
 You may not propose or dispatch a fix until you can name *why* it breaks. "Try X and see" is not a hypothesis.
 
+## Diagnosis lane
+
+This skill owns diagnosis, not implementation routing. Existing tests, git history, logs, searches, and read-only inspection are diagnosis. A tracked diagnostic edit, new test dependency, or test harness is implementation scope: stop and return to size/risk triage before writing it.
+
+For multiple symptoms, make one cheap domain map first. If they plausibly share state or a root cause, investigate together. If the map evidences disjoint subsystems and non-overlapping scopes, invoke `cost-oriented-agentic-workflow:dispatching-parallel-agents` and dispatch one read-only Sonnet investigator per problem domain.
+
 ## The loop (compressed)
 
 1. **Root cause.** Read the actual error and stack trace — they often name the fix. Reproduce it reliably (if you can't, gather data; don't guess). Check what changed recently (`git diff`, new deps, config). Trace the bad value back to where it originates and fix it at the source, not where the symptom surfaced.
 2. **Pattern.** Find similar working code in the repo; list every difference from the broken path, however small. The difference is usually the cause.
 3. **Hypothesis.** State one: "X is the root cause because Y." Make the smallest change that tests it — one variable at a time. Wrong? Form a new hypothesis; don't stack fixes on top of each other.
-4. **Fix.** Write a failing test that reproduces it (watch it fail for the *right* reason), make the single root-cause fix, verify the test goes green and nothing else broke.
+4. **Hand off.** State the evidenced root cause and the smallest behavior that would prove it fixed. Return to using-cost-oriented-workflow's implementation triage. That route decides inline vs plan/delegate; only then write the failing regression test, implement, and verify.
 
 ## Stop condition: 3 fixes failed → question the architecture
 
@@ -40,4 +46,4 @@ This **replaces a blind retry.** In execution-routing a subagent's retry budget 
 
 Systematic is *faster and cheaper* than thrashing, not slower: a short root-cause pass beats a long guess-loop and spends no dispatch per wrong guess. When you delegate the fix, hand the subagent the root cause you found — not "the test is failing, make it pass."
 
-**Related:** test-driven-development (the failing test in step 4) · verification-before-completion (confirm the fix worked) · execution-routing (where a BLOCKED or failed unit lands).
+**Related:** dispatching-parallel-agents (disjoint diagnosis) · test-driven-development (the post-triage failing test) · verification-before-completion (confirm the fix worked) · execution-routing (where a BLOCKED or failed unit lands).
