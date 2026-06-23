@@ -25,10 +25,15 @@ const rel = (p) => path.relative(root, p).replace(/\\/g, '/');
 const read = (p) => fs.readFileSync(p, 'utf8');
 const isDir = (p) => fs.existsSync(p) && fs.statSync(p).isDirectory();
 
+// Skip VCS, dependencies, build output, and the self-ignored runtime workspace.
+// The structural result must depend only on tracked plugin content, never on
+// generated or ignored artifacts (a run ledger or release zip must not be able
+// to add or fail a check).
+const WALK_SKIP = new Set(['.git', 'node_modules', 'dist', '.cost-oriented-agentic-workflow']);
 function walk(dir, acc = []) {
   for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
     if (e.isDirectory()) {
-      if (['.git', 'node_modules'].includes(e.name)) continue;
+      if (WALK_SKIP.has(e.name)) continue;
       walk(path.join(dir, e.name), acc);
     } else {
       acc.push(path.join(dir, e.name));
