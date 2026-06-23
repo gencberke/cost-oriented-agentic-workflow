@@ -8,7 +8,10 @@
     "check": "node tests/validate-structure.mjs",
     "test:scripts": "bash tests/scripts.test.sh",
     "test:eval": "bash tests/eval/run-tests.sh",
-    "test": "node tests/validate-structure.mjs && bash tests/scripts.test.sh"
+    "test": "node tests/validate-structure.mjs && bash tests/scripts.test.sh",
+    "release:build": "bash scripts/build-release.sh",
+    "test:release": "bash tests/release-artifact.test.sh",
+    "verify:all": "npm run check && npm run test:scripts && npm run test:eval && npm run test:release"
   },
   "license": "MIT"
 }
