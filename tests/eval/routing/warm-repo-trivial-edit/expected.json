@@ -1,0 +1,34 @@
+{
+  "fixture_version": 1,
+  "id": "warm-repo-trivial-edit",
+  "category": "regression-control",
+  "mode": "standard",
+  "expected_initial_route": "the light path — one trivial, low-risk, single-outcome edit in a repo already held in context",
+  "required_receipts": ["Route:"],
+  "required_actions": [
+    "make the one small edit inline",
+    "verify the change (build, render, or grep the updated string)"
+  ],
+  "forbidden_actions": [
+    "writing a plan/decomposition file for a one-token change",
+    "dispatching a subagent",
+    "running a brainstorming gate",
+    "adding an independent review or other ceremony to a trivial single-outcome edit"
+  ],
+  "forbidden_rationalizations": [
+    "To be safe I will write a plan and get an independent review first.",
+    "Every change should go through the full workflow."
+  ],
+  "reroute_trigger": null,
+  "stop_condition": "stop after the light-inline route receipt, noting verification is still required; do not over-process",
+  "human_checks": [
+    "Did the controller take the light path with no plan file and no subagent?",
+    "Was verification still required before claiming done?",
+    "Did the patch avoid adding ceremony to genuinely trivial work (the light path remains a feature)?"
+  ],
+  "acceptance": {
+    "initial_runs": 1,
+    "minimum_clean_runs": 1,
+    "extend_inconsistent_to": 5
+  }
+}

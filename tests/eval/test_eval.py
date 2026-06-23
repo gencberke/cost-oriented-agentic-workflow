@@ -23,6 +23,19 @@ FIXTURE_IDS = {
     "reset-password-npe-control",
 }
 
+ROUTING = HERE / "routing"
+ROUTING_BLOCKERS = {
+    "small-disjoint-diagnosis",
+    "tracked-diagnostic-harness",
+    "same-file-independent-outcomes",
+}
+ROUTING_CONTROLS = {
+    "unknown-repo-disjoint-domains",
+    "warm-repo-trivial-edit",
+    "dirty-working-tree-preservation",
+}
+ROUTING_IDS = ROUTING_BLOCKERS | ROUTING_CONTROLS
+
 
 def line(value: dict) -> str:
     return json.dumps(value, separators=(",", ":"))
@@ -195,6 +208,95 @@ class FixtureContractTests(unittest.TestCase):
             self.assertGreater(len(expected["confirmation"]["question"]), 30)
             self.assertEqual(expected["acceptance"]["initial_runs"], 3)
             self.assertEqual(expected["acceptance"]["extend_inconsistent_to"], 5)
+
+
+class RoutingFixtureContractTests(unittest.TestCase):
+    """Schema/contract checks for the route-only pressure-test fixtures.
+
+    These validate fixture *shape*, not model behavior. A malformed routing
+    fixture (missing field, wrong category arithmetic, leaked grading signal in
+    the prompt) fails the suite so the live route-only dogfood in docs/DOGFOOD.md
+    always grades against a well-formed contract. Behavioral grading itself is
+    the human-adjudicated layer; a passing schema proves nothing about a model.
+    """
+
+    LIST_FIELDS = (
+        "required_receipts",
+        "required_actions",
+        "forbidden_actions",
+        "forbidden_rationalizations",
+        "human_checks",
+    )
+    LEAK_TOKENS = ("expected_initial_route", "re-route:", "light-inline", "forbidden_")
+
+    def test_routing_fixture_set_and_readme(self) -> None:
+        self.assertTrue(ROUTING.is_dir(), "tests/eval/routing/ must exist")
+        actual = {path.name for path in ROUTING.iterdir() if path.is_dir()}
+        self.assertEqual(actual, ROUTING_IDS)
+        self.assertGreater((ROUTING / "README.md").stat().st_size, 200)
+
+    def test_each_routing_fixture_is_well_formed(self) -> None:
+        for fixture_id in sorted(ROUTING_IDS):
+            directory = ROUTING / fixture_id
+            with self.subTest(fixture=fixture_id):
+                self.assertEqual(
+                    {path.name for path in directory.iterdir()},
+                    {"prompt.md", "expected.json"},
+                )
+                prompt = (directory / "prompt.md").read_text(encoding="utf-8")
+                self.assertGreater(len(prompt), 100, "prompt.md must present a real scenario")
+                lowered = prompt.lower()
+                for token in self.LEAK_TOKENS:
+                    self.assertNotIn(token, lowered, f"prompt leaks grading signal: {token}")
+
+                expected = json.loads((directory / "expected.json").read_text(encoding="utf-8"))
+                self.assertEqual(expected["id"], fixture_id)
+                self.assertEqual(expected["fixture_version"], 1)
+                self.assertIn(expected["category"], {"release-blocker", "regression-control"})
+                self.assertIn(expected["mode"], {"standard", "production"})
+                self.assertIsInstance(expected["expected_initial_route"], str)
+                self.assertGreater(len(expected["expected_initial_route"]), 5)
+                self.assertIsInstance(expected["stop_condition"], str)
+                self.assertGreater(len(expected["stop_condition"]), 10)
+                self.assertTrue(
+                    expected["reroute_trigger"] is None or isinstance(expected["reroute_trigger"], str),
+                    "reroute_trigger must be a string or null",
+                )
+                for field in self.LIST_FIELDS:
+                    self.assertIsInstance(expected[field], list, f"{field} must be a list")
+                    self.assertTrue(all(isinstance(item, str) and item for item in expected[field]))
+                self.assertGreaterEqual(len(expected["required_actions"]), 1)
+                self.assertGreaterEqual(len(expected["forbidden_actions"]), 1)
+                self.assertGreaterEqual(len(expected["human_checks"]), 1)
+
+                acceptance = expected["acceptance"]
+                self.assertEqual(acceptance["extend_inconsistent_to"], 5)
+                if expected["category"] == "release-blocker":
+                    self.assertEqual(acceptance["initial_runs"], 3)
+                    self.assertEqual(acceptance["minimum_clean_runs"], 3)
+                else:
+                    self.assertEqual(acceptance["initial_runs"], 1)
+                    self.assertEqual(acceptance["minimum_clean_runs"], 1)
+
+    def test_blocker_partition_and_dogfood_failure_signatures(self) -> None:
+        declared_blockers = {
+            path.name
+            for path in ROUTING.iterdir()
+            if path.is_dir()
+            and json.loads((path / "expected.json").read_text(encoding="utf-8"))["category"]
+            == "release-blocker"
+        }
+        self.assertEqual(declared_blockers, ROUTING_BLOCKERS)
+
+        def forbidden_text(fixture_id: str) -> str:
+            data = json.loads((ROUTING / fixture_id / "expected.json").read_text(encoding="utf-8"))
+            return " ".join(data["forbidden_rationalizations"]).lower()
+
+        small = forbidden_text("small-disjoint-diagnosis")
+        self.assertIn("small", small)
+        self.assertIn("inline", small)
+        self.assertIn("approved", forbidden_text("tracked-diagnostic-harness"))
+        self.assertIn("same file", forbidden_text("same-file-independent-outcomes"))
 
 
 if __name__ == "__main__":

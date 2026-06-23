@@ -117,6 +117,61 @@ For each unit, copy the ledger line (`route`, `risk`, `review`, `waves`,
 `verify`, `commit`) and attach analyzer JSON for the session. Compare modes or
 releases from these artifacts, not from extra runtime prose.
 
+## Live route-only dogfood (v0.4.1)
+
+This is a low-cost protocol that measures **routing economy**, not feature
+output. It exists because the Flutter dogfood produced correct diagnoses but
+leaked tokens through three routing escape hatches. Fixtures live at
+`tests/eval/routing/<id>/` (`prompt.md` + hidden `expected.json`); the schema is
+described in `tests/eval/routing/README.md`.
+
+Load the development source directly (never the stale installed cache):
+
+```text
+claude --plugin-dir <repository-root>
+```
+
+Each route-only run:
+
+1. Starts in a **fresh session** — authoring context hides skill gaps.
+2. Invokes the launcher for the fixture's `mode`
+   (`/cost-oriented-agentic-workflow:cost-oriented-agentic-workflow` or
+   `:production`).
+3. Presents `prompt.md` **naturally** — no coaching about risk, routing, or the
+   expected route. Never show `expected.json`.
+4. **Stops** after the route receipt, the bounded domain map or first required
+   routing action, and any required `Re-route:` decision — at the fixture's
+   `stop_condition`. Do **not** implement the sample fix or feature.
+5. Saves the raw output **before** grading. Do not correct it.
+6. Grades the raw output against `expected.json`.
+7. Records model, mode, `required_receipts` seen, `forbidden_rationalizations`
+   avoided, verdict, and concise evidence.
+
+Keep the three layers honest and separate: **fixture/schema validation**
+(`npm run test:eval`) proves shape only; an **automatic receipt/signal check**
+(grep the raw output for receipts and forbidden rationalizations) is a cheap
+first pass, not proof; **human behavioral adjudication** of the `human_checks` is
+the real gate. A regex match does not prove model behavior.
+
+### Route-only acceptance gate
+
+- The three **release blockers** — `small-disjoint-diagnosis`,
+  `tracked-diagnostic-harness`, `same-file-independent-outcomes` — must pass
+  **three independent fresh runs each**.
+- The three **regression controls** — `unknown-repo-disjoint-domains`,
+  `warm-repo-trivial-edit`, `dirty-working-tree-preservation` — need at least
+  **one clean fresh run each**.
+- If a fixture's results vary, rerun only that fixture, up to five total runs.
+- A failed release-blocker fixture is a **failed release gate**. Do not average
+  unrelated fixtures together, and never weaken expected behavior after seeing
+  output.
+
+If authentication, CLI availability, or nested-session restrictions prevent live
+runs, do **not** fabricate results and do **not** mark the release accepted: keep
+the source improvements, leave the version at the prior release, and report the
+exact remaining gate. Preserve any captured evidence under the ignored workspace
+(`.cost-oriented-agentic-workflow/`), never committed.
+
 ## Repeat policy
 
 - Ordinary prose-only changes: one smoke run.
