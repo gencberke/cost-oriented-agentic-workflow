@@ -188,6 +188,44 @@ grepSkill('systematic-debugging', /cheap domain map.*disjoint subsystems.*read-o
 grepSkill('dispatching-parallel-agents', /symptom count alone.*cheap domain map.*read-only investigators/is,
   'parallel diagnosis requires a domain map before dispatch');
 
+// ── v0.4.1 routing escape-hatch invariants ──────────────────────────────────
+// Three loopholes the Flutter routing dogfood exposed: (1) "the fixes are small,
+// so I'll investigate the disjoint domains inline"; (2) a tracked diagnostic
+// edit silently inheriting the light diagnosis route; (3) two independent
+// outcomes collapsing onto one light-inline change because they share a file.
+// The tested language lives in the authoritative skill sections, not as loose
+// phrases — if a concept is reworded, update the token here in the same commit.
+
+// 6.1 — disjoint diagnosis is delegated independently of eventual fix size.
+grepSkill('systematic-debugging', /disjoint-domain diagnosis delegation is decided independently of how small the fixes look/i,
+  'systematic-debugging: diagnosis delegation is decided independently of eventual fix size');
+grepSkill('systematic-debugging', /apparent smallness never keeps the token-heavy investigation in the controller/i,
+  'systematic-debugging: smallness is not a valid override for disjoint diagnosis delegation');
+
+// 6.2 — a tracked diagnostic edit ends read-only diagnosis and re-routes first.
+grepSkill('systematic-debugging', /read-only diagnosis ends at that first tracked edit/i,
+  'systematic-debugging: a tracked diagnostic edit ends read-only diagnosis');
+grepSkill('systematic-debugging', /Re-route:[^\n]*receipt before that first tracked edit, never after/i,
+  'systematic-debugging: the Re-route receipt precedes the first tracked edit');
+grepSkill('systematic-debugging', /dependency.*configuration.*harness.*schema becomes a planned elevated diagnostic unit/is,
+  'systematic-debugging: dependency/harness/config/schema expansion becomes a planned elevated diagnostic unit');
+grepSkill('systematic-debugging', /approval of a diagnostic technique.*never preserves the earlier light-inline route/is,
+  'systematic-debugging: user approval of a method does not inherit the earlier route');
+grepSkill('systematic-debugging', /temporary diagnostic dependency or harness carries an explicit cleanup disposition/i,
+  'systematic-debugging: temporary diagnostic instrumentation carries a cleanup disposition');
+
+// 6.3 — file overlap is not a unit boundary; independent outcomes stay separate.
+grepSkill('writing-plans', /outcome \+ responsibility \+ verification seam.*not the file set/is,
+  'writing-plans: unit boundary is outcome + responsibility + verification seam, not the file set');
+grepSkill('writing-plans', /Two independent outcomes in one file are either separate sequential units or one .*delegated batch.*separate acceptance criteria and separate regression verification/is,
+  'writing-plans: same-file independent outcomes are separate units or a delegated batch with separate acceptance/verification');
+grepSkill('writing-plans', /same-file . same-unit, and overlapping edits are sequenced, never parallelized/i,
+  'writing-plans: same-file overlap is sequenced, not merged into one unit');
+grepSkill('using-cost-oriented-workflow', /Two independent user-visible outcomes are never one light-inline change/i,
+  'entry skill: two independent outcomes cannot remain light-inline');
+grepSkill('using-cost-oriented-workflow', /Same file, each fix small.*does not license light-inline/i,
+  'entry skill: "same file, each fix small" does not license light-inline');
+
 const productionCommandText = read(path.join(cmdDir, 'production.md'));
 const standardCommandText = read(path.join(cmdDir, 'cost-oriented-agentic-workflow.md'));
 check(/execute or resume.*approved plan.*execution-routing.*before inspecting progress or implementing/is.test(standardCommandText),

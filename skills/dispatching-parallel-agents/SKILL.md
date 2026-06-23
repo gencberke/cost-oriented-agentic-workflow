@@ -26,7 +26,7 @@ digraph w {
 }
 ```
 
-Do not dispatch from symptom count alone. First make a cheap domain map. Use parallel read-only investigators when that map evidences disjoint subsystems and non-overlapping scopes, even before each root cause is known. Keep one investigation when a shared root cause/state is plausible, fixing one may fix another, or full-system context is required.
+Do not dispatch from symptom count alone. First make a cheap domain map. Use parallel read-only investigators when that map evidences disjoint subsystems and non-overlapping scopes, even before each root cause is known and regardless of how small the eventual fixes look. Keep one investigation when a shared root cause/state is plausible, fixing one may fix another, or full-system context is required.
 
 ## Strict file ownership (the conflict guard — D7)
 

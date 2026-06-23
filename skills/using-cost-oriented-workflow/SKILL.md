@@ -54,13 +54,13 @@ digraph flow {
 | Evidence | Likely route |
 |---|---|
 | One evidenced root cause, one small low-risk diff, existing test path | `light-inline` |
-| Multiple independent outcomes or subsystems | planned units |
+| Two+ independent outcomes (even in one file) | separate units or one delegated batch |
 | Unknown repo with evidenced disjoint problem domains | cheap controller map, then read-only investigators |
 | New dependency, test harness, schema, migration, or config | planned elevated unit |
 | Self-contained multi-file or ~80–100+ line implementation | `delegate` |
 | Shared files/state or tight coupling | one batch or sequential execution |
 
-For a light path, the receipt is the agreed approach: no plan file or decomposition. For ambiguous new behavior use brainstorming; for clear multi-step work go directly to writing-plans. Size controls cost, while risk can still veto light-inline.
+For a light path, the receipt is the agreed approach: no plan file or decomposition. For ambiguous new behavior use brainstorming; for clear multi-step work go directly to writing-plans. Size controls cost, while risk can still veto light-inline. **Two independent user-visible outcomes are never one light-inline change** — even when both edits land in the same file, route them as separate sequential units or one delegated batch with separate acceptance and regression per outcome (writing-plans). "Same file, each fix small" does not license light-inline.
 
 ### Light-path escape hatch
 
@@ -117,29 +117,20 @@ These are continuous cost-benefit trade-offs. There is no fixed answer; weigh th
 - **Review depth** — *how deep* scales with risk and diff size; *whether* follows the mode/risk matrix above.
 - **Tests** — in standard, only what genuinely protects the change; in production, thorough.
 - **Brainstorming intensity** — scales with how ambiguous or messy the request is. A clear request gets a short gate; a vague one gets real exploration.
-- **Exploration breadth** — none for a repo you already hold in context. In an unknown repo, map cheaply first; when multiple domains are demonstrably disjoint, use focused read-only investigators.
+- **Exploration breadth** — none for a repo you already hold in context. In an unknown repo, map cheaply first; when multiple domains are demonstrably disjoint, use focused read-only investigators — decided from the map, independent of how small the eventual fixes look.
 
 ## Anti-drift is structure, not stern wording
 
 Long sessions drift when there is no cheap artifact to re-anchor against. That artifact is the **persistent task list + the anchor header** at the top of the plan/task file. Re-read the header each loop. Do not rely on forceful language to hold the line — rely on re-reading the small, durable record.
 
-**Anchor header** (writing-plans creates it; keep it current). It holds, in a few lines:
-
-```
-MODE: standard | production
-COMMIT_POLICY: controller-per-unit | implementer | user-owned | none
-ROUTING: brainstorm-gate → plan/contract → delegate-by-contract-cost → review-per-risk-matrix → verify-before-done
-CADENCE: continuous — run planned tasks without pausing; STOP only on: blocked · decision ambiguity · plan/code conflict · scope or risk escalation · external/irreversible action · retry budget exhausted · new credential or permission · failed baseline/verification · human asked to checkpoint
-ON RESUME/COMPACTION: if COW_ENTRY_INJECTED is absent, invoke cost-oriented-agentic-workflow:using-cost-oriented-workflow exactly once; if present, do not reload it. In both cases trust the plan + ledger + git log over memory.
-```
+**Anchor header** — writing-plans creates and owns the canonical block at the top of the plan/task file; keep it current and re-read it each loop. It pins, in a few lines: `MODE`, `COMMIT_POLICY`, the `ROUTING` chain, a one-line `CADENCE`/STOP list, and the `ON RESUME/COMPACTION` rule (if `COW_ENTRY_INJECTED` is absent invoke the entry skill exactly once, else do not reload it).
 
 After compaction/resume, plan + progress ledger + `git log` are ground truth regardless of how the entry skill was loaded.
 
 ## Token-economy posture
 
-- Controller reads summaries and verification results; bulk artifacts (diffs, briefs, reports) move as **files**, not pasted text.
-- Do not re-explore a repo you already have context for.
 - Specify the model explicitly on every subagent dispatch — an omitted model silently inherits your expensive controller model.
+- Move bulk artifacts (diffs, briefs, reports) as **files**, not pasted text; don't re-explore a repo you already hold in context.
 
 ## Instruction priority
 
