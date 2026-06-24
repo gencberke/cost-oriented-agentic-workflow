@@ -11,7 +11,10 @@
     "test": "node tests/validate-structure.mjs && bash tests/scripts.test.sh",
     "release:build": "bash scripts/build-release.sh",
     "test:release": "bash tests/release-artifact.test.sh",
-    "verify:all": "npm run check && npm run test:scripts && npm run test:eval && npm run test:release"
+    "verify:all": "npm run check && npm run test:scripts && npm run test:eval && npm run test:release",
+    "clean:generated:dry": "node scripts/clean-generated.mjs",
+    "clean:generated": "node scripts/clean-generated.mjs --apply",
+    "runtime:build": "node scripts/build-runtime-package.mjs"
   },
   "license": "MIT"
 }

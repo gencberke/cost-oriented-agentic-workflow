@@ -75,6 +75,36 @@ Task review packages include committed, staged, unstaged, and allowed untracked
 content only for task-owned paths. Whole-work packages contain committed
 `BASE..HEAD` changes only and refuse a dirty current tree.
 
+## Development repository vs. runtime package
+
+This repository is the **development tree**: it carries the skills and commands,
+but also tests, evals, docs, release tooling, and Git history. It is *not* the
+clean source to install from — installing the whole repo would copy development
+artifacts into Claude Code's plugin cache.
+
+Generate the minimal, installable **runtime package** instead:
+
+```text
+npm run runtime:build
+```
+
+Built from Git-tracked content only, it produces a clean plugin directory plus a
+ZIP, a SHA-256 checksum, and a manifest, written **outside** this repository
+(default `../cost-oriented-agentic-workflow-runtime/`). The runtime package
+contains only `.claude-plugin/`, `commands/`, `skills/`, the opt-in `hooks/`
+files, `README.md`, and `LICENSE` — it excludes `.git/`, `tests/`, `docs/`,
+`scripts/`, `dist/`, `package.json`, `CHANGELOG.md`, dogfood evidence, and other
+development files. Install later from that generated directory or ZIP; you
+perform the installation yourself.
+
+To clear local generated artifacts (`dist/`, dogfood evidence) safely without
+`git clean`:
+
+```text
+npm run clean:generated:dry   # preview what would be removed
+npm run clean:generated        # remove them
+```
+
 ## Install and use
 
 In Claude Code:

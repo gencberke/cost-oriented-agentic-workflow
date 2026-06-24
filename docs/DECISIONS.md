@@ -379,3 +379,43 @@ prose budget (85.432) + strict manifest validation + release-artifact testi
 yeşil; canlı blocker dogfood 3/3×3 + control 1/1×3. Tüm pre-release gate'ler
 geçtiği için sürüm **0.4.0 → 0.4.1** (`plugin.json` + `marketplace.json` +
 `package.json` birlikte).
+
+### 2026-06-24 — v0.4.2: kaynak repo / runtime paket ayrımı (cleanup)
+
+**Kapsam:** yalnız temizlik + paketleme. Routing, davranış, mimari, review/
+remediation, standard/production semantiği değişmez. 0.4.1 dogfood'unda görüldü
+ki dizinden kurulum (directory-marketplace) çalışma ağacının TAMAMINI cache'e
+kopyalıyor — `tests/`, `docs/`, `scripts/` ve hatta ignored dogfood evidence
+dahil. Çözüm: kaynak repoyu (geliştirme ağacı) minimal runtime paketinden ayır.
+
+**Kararlar:**
+- **Geliştirme reposu eksiksiz kalır.** `tests/`, `docs/`, `scripts/`, eval
+  fixture'ları, `CHANGELOG.md`, `.git` geçmişi korunur — geçerli geliştirme
+  varlıkları; yalnız runtime pakete girmezler.
+- **Runtime dağıtımı elle değil, üretilir.** `scripts/build-runtime-package.mjs`
+  git-tracked içerikten deterministik bir runtime dizini + ZIP + SHA-256 +
+  manifest üretir. Elle dosya kopyalama reddedildi: kaynak değişince paket
+  bayatlar ve allowlist insan elinde drift eder.
+- **Allowlist, denylist-only kopyalamadan güvenlidir.** Paket explicit bir
+  allowlist'ten kurulur (`.claude-plugin`, `commands`, `skills`, opt-in `hooks`,
+  `README.md`, `LICENSE`) ve ayrıca denylist ile çapraz denetlenir. İleride
+  eklenen bir geliştirme dosyası sessizce pakete sızamaz — allowlist dışındaysa
+  hariç kalır.
+- **Runtime çıktısı repo DIŞINDA.** Varsayılan `../cost-oriented-agentic-
+  workflow-runtime/`. Repo içinde üretmek dizinden-kurulumda cache'i yeniden
+  kirletirdi; dışarıda tutmak marketplace/cache kontaminasyonunu kökten önler.
+  Builder repo-içi veya `.git`/`skills`/`commands` output path'lerini reddeder
+  ve yalnız kendi versiyonlu çıktı klasörünü/ZIP'ini değiştirir; rastgele dizini
+  asla recursive temizlemez.
+- **Yalnız git-tracked içerik.** Paket çalışma ağacından recursive kopyalanmaz;
+  `git show HEAD:<path>` / `git archive` kullanılır → `skills/` veya `hooks/`
+  içine bırakılmış untracked dosyalar sızamaz. Exec bitleri (`session-start`,
+  üç `execution-routing/scripts/*`, `run-hook.cmd`) korunur.
+- **Güvenli temizlik.** `scripts/clean-generated.mjs` yalnız hardcoded bir
+  allowlist'i (`dist/`, `.cost-oriented-agentic-workflow/eval/`) siler; `git
+  clean -fdx` kullanılmaz (o, ignored workspace'i ve recovery state'i de
+  silerdi). `.cost-oriented-agentic-workflow/run/` korunur.
+
+Sürüm **0.4.1 → 0.4.2** (cleanup/packaging; davranış değişikliği yok). Testler
+ve dogfood bu cleanup-only yamada bilinçli olarak yeniden koşulmadı; kurulum/
+rollout yapılmadı. Sonraki mimari faz: **0.5.0**.
