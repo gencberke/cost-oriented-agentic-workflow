@@ -3,6 +3,45 @@
 All notable changes to the cost-oriented-agentic-workflow plugin are documented
 here. This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.4.2] - 2026-06-24
+
+A cleanup and packaging release. It separates the development repository from a
+minimal, installable runtime package and removes stale generated artifacts.
+There are no routing, behavior, architecture, review, or quality changes.
+
+### Added
+
+- `scripts/build-runtime-package.mjs` — a deterministic, zero-dependency runtime
+  packager (Node standard library + Git). It builds an **allowlist-only** package
+  from Git-tracked content (`.claude-plugin/`, `commands/`, `skills/`, the opt-in
+  `hooks/` files, `README.md`, `LICENSE`), cross-checked against a denylist, into
+  a clean plugin directory + ZIP (`git archive`, executable modes preserved) + a
+  SHA-256 checksum + a deterministic sorted manifest. Output is written
+  **outside** the repository (default `../cost-oriented-agentic-workflow-runtime/`)
+  so a clean install never imports development artifacts. The builder refuses
+  unsafe output paths and a dirty tracked tree, and self-validates (versions,
+  hashes, modes, ZIP entries, no self-containment, source unmodified) before
+  reporting success.
+- `scripts/clean-generated.mjs` — a narrow, hardcoded-allowlist cleaner for
+  `dist/` and `.cost-oriented-agentic-workflow/eval/`; dry-run by default,
+  `--apply` to delete. It never runs `git clean`, and never removes tracked
+  source, `.git`, or the `.cost-oriented-agentic-workflow/run/` recovery state.
+- `runtime:build`, `clean:generated`, and `clean:generated:dry` package scripts;
+  a "Development repository vs. runtime package" section in `README.md`; and a
+  dated decision in `docs/DECISIONS.md`.
+
+### Changed
+
+- Versions bumped to `0.4.2` across `.claude-plugin/plugin.json`,
+  `.claude-plugin/marketplace.json`, and `package.json`. No skill prose, command,
+  launcher, or workflow-behavior change.
+
+### Notes
+
+- Packaging only: the full test suites and the live dogfood were intentionally
+  not rerun, and no installation, marketplace update, or cache change was
+  performed. The next feature phase remains `0.5.0`.
+
 ## [0.4.1] - 2026-06-23
 
 A narrowly scoped stabilization release. It closes the three routing escape

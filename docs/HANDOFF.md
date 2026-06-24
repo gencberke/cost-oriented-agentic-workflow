@@ -12,9 +12,44 @@ Bu dosya güncel operasyonel snapshot’tır. Tasarım gerekçeleri ve tarihçe 
 - Otoriter kaynak:
   `C:\Users\gencberke\Desktop\cost-oriented-agentic-workflow`.
 - `.claude/plugins/cache` kurulu çıktıdır; elle patchlenmez.
-- Branch: `feat/v0.4.0-hardening-and-evals`; sürüm: `0.4.1` (patch — routing
-  kaçış yolları kapatıldı + reproducible release). Ayrıntı: `DECISIONS.md`
-  2026-06-23 kaydı ve `CHANGELOG.md`.
+- Branch: `feat/v0.4.0-hardening-and-evals`; sürüm: `0.4.2` (cleanup/packaging —
+  kaynak repo / runtime paket ayrımı). Ayrıntı: `DECISIONS.md` 2026-06-24 kaydı
+  ve `CHANGELOG.md`. Önceki: `0.4.1` (routing kaçış yolları + reproducible
+  release, 2026-06-23).
+
+## Kaynak repo vs. runtime paket (0.4.2)
+
+- Bu repo **otoriter geliştirme ağacıdır**: skills + commands yanında tests,
+  docs, scripts, eval fixture'ları, release tooling ve `.git` geçmişi taşır.
+  Temiz kurulum kaynağı **değildir** — tümüyle kurmak dev artefaktlarını cache'e
+  taşır.
+- **Runtime paketi üretilir, elle tutulmaz.** Build komutu:
+
+  ```text
+  node scripts/build-runtime-package.mjs
+  # veya: npm run runtime:build
+  ```
+
+  Git-tracked içerikten allowlist'le (`.claude-plugin`, `commands`, `skills`,
+  opt-in `hooks`, `README.md`, `LICENSE`) temiz bir runtime dizini + ZIP +
+  SHA-256 + manifest üretir; çıktı repo **dışında**, varsayılan
+  `../cost-oriented-agentic-workflow-runtime/`. ZIP `git archive` ile üretilir,
+  exec bitleri korunur. Builder dirty tracked tree ve repo-içi output path'leri
+  reddeder; başarı raporlamadan önce kendini doğrular.
+- **Güvenli temizlik:**
+
+  ```text
+  node scripts/clean-generated.mjs            # dry-run (önizleme)
+  node scripts/clean-generated.mjs --apply     # dist/ + .cost-oriented-agentic-workflow/eval/ siler
+  ```
+
+  `git clean` kullanılmaz; tracked source, `.git` ve
+  `.cost-oriented-agentic-workflow/run/` korunur.
+- Kurulum kullanıcıya bırakılmıştır: üretilen runtime dizininden veya ZIP'ten
+  kurulur. Bu yamada **kurulum/aktivasyon yapılmadı**, marketplace/cache
+  değiştirilmedi.
+- Bu cleanup-only yamada **tam testler ve dogfood bilinçli olarak yeniden
+  koşulmadı** (davranış değişmediği için). Sonraki mimari faz: **0.5.0**.
 
 ## Güncel mimari
 
