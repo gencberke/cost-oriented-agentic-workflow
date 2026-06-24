@@ -114,15 +114,22 @@ Both load `using-cost-oriented-workflow`. For always-on activation, see
 ## Validation and measurement
 
 ```text
-npm test
-npm run test:eval
+npm test               # structure + real temporary-repository helper behavior
+npm run test:eval      # offline token accounting + review and routing fixtures
+npm run release:build  # build dist/<name>-<version>.zip from the release commit
+npm run test:release   # independently verify the packaged artifact
+npm run verify:all     # check + helpers + eval + packaged-artifact verification
 python tests/eval/analyze-token-usage.py SESSION.jsonl [--json OUTPUT]
 ```
 
 `npm test` covers structure plus real temporary-repository helper behavior.
-`test:eval` covers offline token accounting and the six hidden-ground-truth
-review fixtures. See [docs/DOGFOOD.md](docs/DOGFOOD.md) for raw discovery,
-confirmation, scoring, and repeat policy.
+`test:eval` covers offline token accounting, the six hidden-ground-truth review
+fixtures, and the six route-only pressure-test fixtures in `tests/eval/routing/`.
+`release:build` and `test:release` produce and independently verify a clean,
+reproducible ZIP (no `.git/`, correct executable modes, version agreement). See
+[docs/DOGFOOD.md](docs/DOGFOOD.md) for raw discovery, the live route-only
+protocol, scoring, and repeat policy, and [CHANGELOG.md](CHANGELOG.md) for
+release history.
 
 ## Credits
 

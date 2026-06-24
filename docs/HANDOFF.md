@@ -12,7 +12,9 @@ Bu dosya güncel operasyonel snapshot’tır. Tasarım gerekçeleri ve tarihçe 
 - Otoriter kaynak:
   `C:\Users\gencberke\Desktop\cost-oriented-agentic-workflow`.
 - `.claude/plugins/cache` kurulu çıktıdır; elle patchlenmez.
-- Branch: `feat/v0.4.0-hardening-and-evals`; release hedefi: `0.4.0`.
+- Branch: `feat/v0.4.0-hardening-and-evals`; sürüm: `0.4.1` (patch — routing
+  kaçış yolları kapatıldı + reproducible release). Ayrıntı: `DECISIONS.md`
+  2026-06-23 kaydı ve `CHANGELOG.md`.
 
 ## Güncel mimari
 
@@ -28,6 +30,23 @@ triage → plan/contract → inline|delegate → mode/risk review
 - Critical/Important fix: taze targeted re-review zorunlu.
 - Bir task/final review için en fazla iki autonomous remediation wave vardır;
   bütçe tükenmesi onay anlamına gelmez.
+
+### v0.4.1 routing invariantları (kaçış yolları kapalı)
+
+- **Disjoint teşhis fix boyutundan bağımsız delege edilir.** Ucuz domain map
+  disjoint problem alanlarını gösterince teşhis bounded read-only investigator'lara
+  gider; "fix'ler küçük" token-ağır araştırmayı controller'da tutamaz. Küçüklük
+  yalnız teşhis sonrası implementation routing'i etkiler.
+- **Tracked diagnostic edit route geçişidir.** Read-only teşhis ilk tracked
+  edit'te biter; edit'ten ÖNCE `Re-route:` receipt; dependency/harness/config/
+  schema planlı elevated diagnostic unit olur; teknik onayı eski route'u
+  korumaz; geçici instrumentation'ın cleanup disposition'ı vardır.
+- **Aynı dosya bağımsız outcome'ları birleştirmez.** Birim sınırı = outcome +
+  sorumluluk + doğrulama seam'i (dosya kümesi değil). İki bağımsız outcome → ayrı
+  sıralı unit'ler ya da ayrı acceptance/regression'lı tek delegated batch; asla
+  tek light-inline. Overlap sıralanır, paralelleştirilmez.
+- Yapısal invariantlar `validate-structure.mjs`'de; route-only davranış
+  `tests/eval/routing/` fixture'larında ve `DOGFOOD.md` canlı protokolünde.
 
 ## Workspace ve resume
 
@@ -75,25 +94,32 @@ ve compaction’da plan + ledger + `git log` ground truth’tur. Hook
 ## Release doğrulaması
 
 ```text
-npm test
-npm run test:eval
-bash -n hooks/session-start hooks/run-hook.cmd \
+npm run verify:all        # check + helpers + eval + paketlenmiş artefakt testi
+npm run release:build      # dist/<ad>-<sürüm>.zip (temiz commit'ten, git archive)
+npm run test:release       # paketlenmiş artefaktı bağımsız doğrula
+claude plugin validate . --strict
+bash -n hooks/session-start hooks/run-hook.cmd scripts/build-release.sh \
   skills/execution-routing/scripts/{cow-workspace,task-brief,review-package} \
-  tests/scripts.test.sh tests/eval/run-tests.sh
+  tests/scripts.test.sh tests/eval/run-tests.sh tests/release-artifact.test.sh
 ```
 
 Runtime bütçesi: bütün `SKILL.md` dosyaları ve üç dispatch template toplamı
-86.000 byte altında; entry/execution ve üç prompt kendi v0.3.2 boyutunun %110’u
-altında kalmalıdır.
+86.000 byte altında (şu an 85.432); entry/execution ve üç prompt kendi v0.3.2
+boyutunun %110’u altında kalmalıdır. Eval runner Python 3'ü **çalıştırarak**
+seçer (Windows App-execution-alias'ı PATH'te çözülüp çalışmadığı için atlar,
+`py` launcher'ını dener).
 
 ## Rollout
 
 1. Source release commit’i ve temiz tree’yi doğrula.
-2. Claude Code içinde `/plugin update` kullan; cache’e elle yazma.
-3. Kurulu manifestin `0.4.0` olduğunu ve source/cache hash’lerinin eşleştiğini
-   doğrula.
+2. Yerel marketplace `cost-oriented-agentic-workflow-dev`'i resmî Claude plugin
+   komutuyla güncelle (`/plugin` veya `claude plugin marketplace update`);
+   cache’e elle yazma.
+3. Kurulu manifestin `0.4.1` olduğunu ve source/cache içeriğinin eşleştiğini
+   doğrula (yalnız Claude’un ürettiği cache-sahipli metadata hariç).
 4. Yeni session aç.
 5. Standard-low, production-low, high-risk discovery, two-wave stop,
-   compaction resume ve scoped-untracked smoke’larını sırayla çalıştır.
+   compaction resume, scoped-untracked ve route-only smoke’larını çalıştır.
 
-Release kararlarının ayrıntısı `DECISIONS.md` içindeki 2026-06-22 v0.4.0 kaydıdır.
+Release kararlarının ayrıntısı `DECISIONS.md` içindeki 2026-06-23 v0.4.1
+kaydıdır (önceki v0.4.0 kaydı 2026-06-22).

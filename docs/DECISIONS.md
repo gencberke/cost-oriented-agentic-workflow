@@ -287,3 +287,95 @@ stabil ve güvenilir kişisel-ölçek çözüm olarak kaldı.
 gerçek temp git repo ve linked worktree üzerinde; token analyzer sentetik ve
 gerçek session ile; altı fixture geçerli unified diff olarak doğrulandı. Release
 sürümü davranışsal değişiklikler nedeniyle `0.4.0`.
+
+### 2026-06-23 — v0.4.1: routing kaçış yollarının kapatılması + reproducible release
+
+**Provenans:** v0.4.0 gerçek bir Flutter hata-ayıklama görevinde dogfood edildi.
+Debugging *kalitesi* geçti (kök-neden disiplini, doğru teşhisler), ama routing
+*ekonomisi* üç noktada sızdırdı. Bu **patch** yama yalnız o üç deliği kapatır ve
+release artefaktını sağlamlaştırır; mimari (Opus controller / Sonnet writer /
+risk maliyeti ezer / bağımsız review / bounded retry-remediation / kanıt-temelli
+verification / sıfır runtime bağımlılık) değişmez — 0.5.0 değildir.
+
+**Neden debugging geçti ama routing ekonomisi başarısız oldu:** Model kök-nedeni
+doğru buluyor; ama "judgment" gördüğü her yerde maliyet lehine kapıyı kırpma
+sistemik teması (v0.3'te review/bağımsızlık kırpma) burada *routing/delegasyon*
+kırpmaya kaydı. Teşhis doğru, fakat token-ağır işi controller'da tutma
+rasyonalizasyonu üç biçimde çıktı:
+
+1. **"Küçük oldukları için inline incelerim."** Ucuz domain map disjoint problem
+   alanlarını doğru ayırdı, sonra "fix'ler küçük" diye bağımsız investigator'lara
+   devretmek yerine controller-led derin trace yaptı. Düzeltme: disjoint-domain
+   teşhis delegasyonu **eventual fix boyutundan bağımsız** karar verilir;
+   görünür küçüklük token-ağır araştırmayı controller'da tutamaz; küçüklük yalnız
+   teşhis SONRASI implementation routing'i etkiler. Shared kök-neden makulse
+   sıralı (tek) teşhis hâlâ geçerli — tetik semptom sayısı değil, kanıtlanmış
+   disjoint-domain haritasıdır. (Otoriter: `systematic-debugging`; kısa referans:
+   `dispatching-parallel-agents` + entry skill.)
+
+2. **Tracked diagnostic instrumentation eski route'u sessizce devraldı.** Logging
+   interceptor / mock-server dependency / harness eklemek "hâlâ teşhis" sanılıp
+   light route'ta kaldı. Düzeltme: read-only teşhis **ilk tracked diagnostic
+   edit'te biter**. Edit'ten ÖNCE görünür `Re-route:` receipt (sonra değil);
+   triage'a dönüş; dependency/harness/config/schema **planlı elevated diagnostic
+   unit** olur (writing-plans → execution-routing). Kullanıcının tekniği
+   onaylaması "bu yöntemi kullanabilir miyiz?"i cevaplar, "bu genişlemiş iş nasıl
+   yürütülür?"ü değil — eski light-inline route'u korumaz. Geçici instrumentation
+   açık bir cleanup disposition taşır: kanıt sonrası kaldır, ya da gerekçeli
+   regression test olarak bilinçli tut. (Otoriter: `systematic-debugging` +
+   launcher.)
+
+3. **Aynı dosya bağımsız outcome'ları birleştirdi.** İki bağımsız kullanıcı-görünür
+   outcome aynı dosyada diye tek light-inline değişikliğe çökertildi. Düzeltme:
+   birim sınırı **outcome + sorumluluk + doğrulama seam'i**; dosya kümesi değil,
+   sahiplik/sıralama bilgisidir. İki bağımsız outcome → ayrı sıralı unit'ler VEYA
+   her outcome için ayrı acceptance + ayrı regression taşıyan tek delegated batch;
+   asla tek light-inline. "Aynı dosya + her fix küçük" light yol lisansı değildir.
+   Mevcut "same-file ≠ same-unit" ilkesi korunur (overlap sıralanır, asla
+   paralelleştirilmez), enforcement'ı güçlendirilir. (Otoriter: `writing-plans`;
+   `execution-routing` + entry skill ile hizalı.)
+
+**Merkezîleştirme, şişirme değil:** Her kural tek otoriter skill'de yaşar, ötekiler
+kısa referans verir. Prose 86.000 byte tavanı altında kalır: entry skill'deki
+`writing-plans` ile birebir kopyalanmış anchor bloğu referansa indirgendi →
+85.432/86.000. Tavan testle korunur.
+
+**Neden 0.5.0 mimarisi ertelendi:** repository-intake skill, repo-snapshot helper,
+`agents/` tanımları, makine-okunur workflow state engine, aktif `PreToolUse`
+enforcement hook, tam discovery/implementation dual-routing state machine,
+otomatik runtime cost feedback ve session driver kapsam **dışı**. Gerekçe: bunlar
+mimari değişiklik; patch yalnız ölçülmüş üç deliği kapatmalı, yeni bağımlılık/
+review tier/retry-remediation bütçesi getirmemeli. Teşhis routing'i ile sonraki
+implementation routing'ini ayıran küçük kelime netleştirmeleri yapıldı ama tam
+dual-routing mimarisine dönüştürülmedi.
+
+**Yeni gate'ler:** 12 yapısal invariant (`validate-structure.mjs`); altı route-only
+pressure-test fixture (`tests/eval/routing/` — üç release-blocker + üç regression
+control) + şema validator (`RoutingFixtureContractTests`); canlı route-only dogfood
+protokolü (`DOGFOOD.md`). Validator artık ignored workspace/`dist`'i taramaz →
+deterministik check (üretilen artefakt bir check ekleyemez/düşüremez).
+
+**Release sağlamlaştırma:** `hooks/session-start` git index exec bit (100644 →
+100755 — helper testi ve SessionStart onu doğrudan çalıştırır); reproducible
+`scripts/build-release.sh` (git archive: `.git`/`node_modules`/`dist`/workspace
+hariç, exec bit korunur, deterministik `dist/<ad>-<sürüm>.zip`); bağımsız
+`tests/release-artifact.test.sh`; eval runner artık Python 3'ü **çalıştırarak**
+seçer (Windows "App execution alias" PATH'te çözülüp çalışmıyordu) + `py`
+launcher; `dist/` gitignore; `release:build`/`test:release`/`verify:all`.
+
+**Canlı dogfood (Opus controller, standart mod, `claude --plugin-dir <kaynak>`):**
+route-only dry-run; her run route receipt + ilk routing aksiyonu + gereken
+`Re-route:`te durur, implement etmez. Sonuç: üç release-blocker (small-disjoint-
+diagnosis, tracked-diagnostic-harness, same-file-independent-outcomes) **3/3
+temiz**; üç regression-control (unknown-repo-disjoint-domains, warm-repo-trivial-
+edit, dirty-working-tree-preservation) **1/1 temiz**. İlk dry-run harness'i
+"subagent dispatch etme" kısıtıyla A/D'yi confound etmişti (investigator dispatch'i
+bastırdı); harness "dispatch'i tarif et, yürütme" diye düzeltilip yeniden koşuldu
+(değişen-bağlam rerun, sonuç-seçme değil). Kanıt ignored
+`.cost-oriented-agentic-workflow/eval/` altında, commit'lenmez.
+
+**Doğrulama ve sürüm:** structural (187) + helper (40) + eval (9) + bash syntax +
+prose budget (85.432) + strict manifest validation + release-artifact testi
+yeşil; canlı blocker dogfood 3/3×3 + control 1/1×3. Tüm pre-release gate'ler
+geçtiği için sürüm **0.4.0 → 0.4.1** (`plugin.json` + `marketplace.json` +
+`package.json` birlikte).
