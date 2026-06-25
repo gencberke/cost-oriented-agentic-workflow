@@ -8,6 +8,7 @@
     "check": "node tests/validate-structure.mjs",
     "test:scripts": "bash tests/scripts.test.sh",
     "test:foundation": "node tests/state.test.mjs && node tests/repo-intake.test.mjs",
+    "test:agents": "node tests/agent-contracts.test.mjs",
     "test:eval": "bash tests/eval/run-tests.sh",
     "test": "node tests/validate-structure.mjs && bash tests/scripts.test.sh",
     "release:build": "bash scripts/build-release.sh",

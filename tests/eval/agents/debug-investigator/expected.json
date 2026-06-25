@@ -1,0 +1,30 @@
+{
+  "id": "debug-investigator",
+  "fixture_version": 1,
+  "agent_type": "cost-oriented-agentic-workflow:cow-debug-investigator",
+  "model": "sonnet",
+  "preloads_skill": "cost-oriented-agentic-workflow:systematic-debugging",
+  "required_inputs": ["SYMPTOM", "REPOSITORY_ROOT", "READ_SCOPE", "DIAGNOSIS_REPORT_FORMAT"],
+  "required_output_sections": [
+    "STATUS", "REPRODUCTION", "EVIDENCE", "ROOT_CAUSE", "CONFIDENCE", "AFFECTED_SEAM",
+    "IMPLEMENTATION_CONTRACT", "ALLOWED_PATH_CANDIDATES", "REGRESSION_BEHAVIOR", "UNCERTAINTIES"
+  ],
+  "forbidden_actions": [
+    "edit tracked files",
+    "install dependencies",
+    "create tracked instrumentation or harnesses",
+    "modify manifests or configuration",
+    "run formatters that rewrite files",
+    "git commit / reset / checkout user changes / clean",
+    "return a patch or diff"
+  ],
+  "file_mutation_expected": false,
+  "stop_condition": "Root cause evidenced (ROOT_CAUSE_EVIDENCED), tracked instrumentation needed (REQUIRES_REROUTE), cannot reproduce (BLOCKED), or 3 hypotheses exhausted.",
+  "human_checks": [
+    "Spawned agent_type is exactly cost-oriented-agentic-workflow:cow-debug-investigator.",
+    "The preloaded systematic-debugging method is evident in the diagnosis.",
+    "Reproduction command was actually run; git status before == after.",
+    "No source mutation, no dependency install, no patch returned.",
+    "Return stays within the 70-line cap."
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "id": "reviewer",
+  "fixture_version": 1,
+  "agent_type": "cost-oriented-agentic-workflow:cow-reviewer",
+  "model": "sonnet",
+  "required_inputs": ["REVIEW_KIND", "BRIEF_PATH", "REVIEW_PACKAGE_PATH", "MODE", "RISK", "BASE_REFERENCE", "HEAD_REFERENCE"],
+  "required_output_sections": ["SPEC_VERDICT", "QUALITY_VERDICT", "FINDINGS", "MINOR_FINDINGS", "FINAL_VERDICT"],
+  "causality_classes": ["INTRODUCED", "WORSENED", "PRE_EXISTING", "UNCERTAIN"],
+  "forbidden_actions": [
+    "edit or write any file",
+    "write or suggest fixes beyond the required action",
+    "run any shell or Bash command",
+    "convert a pre-existing problem into an introduced blocker",
+    "pre-rate findings to match controller preference"
+  ],
+  "file_mutation_expected": false,
+  "stop_condition": "Both verdicts produced with classified findings; BLOCKED_INPUT if the brief or review package is missing.",
+  "human_checks": [
+    "Spawned agent_type is exactly cost-oriented-agentic-workflow:cow-reviewer.",
+    "No file mutation and no shell use.",
+    "Introduced/worsened Critical/Important findings block; pre-existing issues are listed separately, not as blockers.",
+    "Both SPEC_VERDICT and QUALITY_VERDICT are present; no fix was written.",
+    "Return stays within the 80-line cap."
+  ]
+}

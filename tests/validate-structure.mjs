@@ -141,13 +141,18 @@ for (const file of mdFiles) {
   }
 }
 
-// ── 5. Qualified cross-refs point at a real skill OR command ────────────────
-// `cost-oriented-agentic-workflow:<name>` is valid if <name> is a skill dir or
-// a command (e.g. `:production` is the production launcher command, not a skill).
+// ── 5. Qualified cross-refs point at a real skill, command, OR agent ────────
+// `cost-oriented-agentic-workflow:<name>` is valid if <name> is a skill dir, a
+// command (e.g. `:production`), or a plugin agent (e.g. `:cow-implementer` — the
+// scoped identifier used to dispatch a plugin agent, added in v0.5.0 Phase 2).
 const commandNames = isDir(cmdDir)
   ? fs.readdirSync(cmdDir).filter((f) => f.endsWith('.md')).map((f) => f.replace(/\.md$/, ''))
   : [];
-const validRefs = new Set([...skillNames, ...commandNames]);
+const agentsDir = path.join(root, 'agents');
+const agentNames = isDir(agentsDir)
+  ? fs.readdirSync(agentsDir).filter((f) => f.endsWith('.md')).map((f) => f.replace(/\.md$/, ''))
+  : [];
+const validRefs = new Set([...skillNames, ...commandNames, ...agentNames]);
 const refRe = /cost-oriented-agentic-workflow:([a-z][a-z0-9-]*)/g;
 const textExt = new Set(['.md', '.mjs', '.json', '.cmd', '.sh', '.txt']);
 for (const file of walk(root)) {
@@ -156,7 +161,7 @@ for (const file of walk(root)) {
   let m;
   while ((m = refRe.exec(text)) !== null) {
     const n = m[1];
-    check(validRefs.has(n), `${rel(file)}: ref cost-oriented-agentic-workflow:${n} resolves (skill or command)`);
+    check(validRefs.has(n), `${rel(file)}: ref cost-oriented-agentic-workflow:${n} resolves (skill, command, or agent)`);
   }
 }
 

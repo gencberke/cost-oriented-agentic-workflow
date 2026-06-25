@@ -1,0 +1,24 @@
+{
+  "id": "repo-investigator",
+  "fixture_version": 1,
+  "agent_type": "cost-oriented-agentic-workflow:cow-repo-investigator",
+  "model": "sonnet",
+  "required_inputs": ["SNAPSHOT_PATH", "PROFILE_CONTRACT_PATH", "TASK_CONTEXT", "OUTPUT_FORMAT", "READ_SCOPE"],
+  "required_output_sections": ["STATUS", "PROFILE_JSON", "UNCERTAINTIES"],
+  "forbidden_actions": [
+    "edit or write any file",
+    "write the repo-profile file itself",
+    "run any shell or Bash command",
+    "regenerate the deterministic snapshot",
+    "browse beyond READ_SCOPE or the snapshot hotspots",
+    "label a command verified without controller-supplied evidence"
+  ],
+  "file_mutation_expected": false,
+  "stop_condition": "Profile draft returned, the reading bound is hit (STATUS: PARTIAL), or a required input is missing (STATUS: BLOCKED_INPUT).",
+  "human_checks": [
+    "Spawned agent_type is exactly cost-oriented-agentic-workflow:cow-repo-investigator.",
+    "No tracked file changed and no Bash was used.",
+    "PROFILE_JSON tags claims as verified / inferred / unknown and does not mark commands verified.",
+    "Return stays within the 80-line cap."
+  ]
+}

@@ -299,5 +299,83 @@ class RoutingFixtureContractTests(unittest.TestCase):
         self.assertIn("same file", forbidden_text("same-file-independent-outcomes"))
 
 
+AGENTS = HERE / "agents"
+AGENT_IDS = {"repo-investigator", "debug-investigator", "implementer", "reviewer"}
+# Only the implementer mutates tracked files; the others are read-only.
+AGENT_MUTATORS = {"implementer"}
+
+
+class AgentFixtureContractTests(unittest.TestCase):
+    """Schema/contract checks for the plugin-agent fixtures (Phase 2).
+
+    These validate fixture *shape*, not agent behavior. A malformed agent fixture
+    (missing field, wrong scoped identifier, mutation flag inconsistent with the
+    read-only contract) fails the suite so the live agent smokes always grade
+    against a well-formed contract. A passing schema proves nothing about how an
+    agent actually behaves — that is the human-adjudicated live-smoke layer.
+    """
+
+    def test_agent_fixture_set_and_readme(self) -> None:
+        self.assertTrue(AGENTS.is_dir(), "tests/eval/agents/ must exist")
+        actual = {path.name for path in AGENTS.iterdir() if path.is_dir()}
+        self.assertEqual(actual, AGENT_IDS)
+        self.assertGreater((AGENTS / "README.md").stat().st_size, 200)
+
+    def test_each_agent_fixture_is_well_formed(self) -> None:
+        for fixture_id in sorted(AGENT_IDS):
+            directory = AGENTS / fixture_id
+            with self.subTest(fixture=fixture_id):
+                self.assertEqual(
+                    {path.name for path in directory.iterdir()},
+                    {"prompt.md", "expected.json"},
+                )
+                self.assertGreater((directory / "prompt.md").stat().st_size, 100)
+
+                expected = json.loads((directory / "expected.json").read_text(encoding="utf-8"))
+                self.assertEqual(expected["id"], fixture_id)
+                self.assertEqual(expected["fixture_version"], 1)
+                # Scoped identifier tail must agree with the fixture id.
+                self.assertEqual(
+                    expected["agent_type"],
+                    f"cost-oriented-agentic-workflow:cow-{fixture_id}",
+                )
+                self.assertEqual(expected["model"], "sonnet")
+
+                for field in ("required_inputs", "required_output_sections", "forbidden_actions", "human_checks"):
+                    self.assertIsInstance(expected[field], list, f"{field} must be a list")
+                    self.assertGreaterEqual(len(expected[field]), 1)
+                    self.assertTrue(all(isinstance(x, str) and x for x in expected[field]))
+
+                self.assertIsInstance(expected["file_mutation_expected"], bool)
+                self.assertEqual(
+                    expected["file_mutation_expected"],
+                    fixture_id in AGENT_MUTATORS,
+                    "only the implementer fixture may expect file mutation",
+                )
+                self.assertIsInstance(expected["stop_condition"], str)
+                self.assertGreater(len(expected["stop_condition"]), 10)
+
+                # A human check must confirm the exact scoped agent type was spawned.
+                self.assertTrue(
+                    any(expected["agent_type"] in check for check in expected["human_checks"]),
+                    "a human_check must confirm the spawned scoped agent_type",
+                )
+
+    def test_role_specific_fixture_invariants(self) -> None:
+        debug = json.loads((AGENTS / "debug-investigator" / "expected.json").read_text(encoding="utf-8"))
+        self.assertEqual(debug["preloads_skill"], "cost-oriented-agentic-workflow:systematic-debugging")
+
+        reviewer = json.loads((AGENTS / "reviewer" / "expected.json").read_text(encoding="utf-8"))
+        self.assertEqual(
+            set(reviewer["causality_classes"]),
+            {"INTRODUCED", "WORSENED", "PRE_EXISTING", "UNCERTAIN"},
+        )
+
+        implementer = json.loads((AGENTS / "implementer" / "expected.json").read_text(encoding="utf-8"))
+        joined = " ".join(implementer["forbidden_actions"]).lower()
+        self.assertIn("commit", joined)
+        self.assertTrue("state" in joined or "cow-state" in joined)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
