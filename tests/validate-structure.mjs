@@ -437,6 +437,54 @@ check(/Provide only `brief\.md` and `review\.diff`.*Never expose `expected\.json
 check(/three times.*extend only\s+that fixture to five/s.test(dogfoodText),
   'dogfood uses per-fixture 3-to-5 repeat policy');
 
+// ── Phase 3A: discovery control-plane structure + reference budgets ──────────
+// Detailed readiness/discovery rules live in on-demand references (measured
+// separately from the always-on bucket); the entry skill keeps only the ordering
+// and pointers. These assert the live discovery contract in coherent groups.
+const readRef = (rel) => { const ap = path.join(root, rel); return fs.existsSync(ap) ? read(ap) : ''; };
+const READINESS = 'skills/using-cost-oriented-workflow/references/repository-readiness.md';
+const DISCOVERY = 'skills/using-cost-oriented-workflow/references/discovery-routing.md';
+for (const [relRef, ceil] of [[READINESS, 4500], [DISCOVERY, 4500]]) {
+  const b = Buffer.byteLength(readRef(relRef), 'utf8');
+  check(b > 0 && b <= ceil, `${relRef} within its on-demand reference ceiling (${b}/${ceil})`);
+}
+// Normalize markdown emphasis + line wraps so assertions check semantic content.
+const norm = (s) => s.replace(/\*/g, '').replace(/\s+/g, ' ');
+const readinessRef = norm(readRef(READINESS));
+const discoveryRef = norm(readRef(DISCOVERY));
+const rawReadiness = readRef(READINESS);
+const rawDiscovery = readRef(DISCOVERY);
+const entrySkillText = norm(read(path.join(skillsDir, 'using-cost-oriented-workflow', 'SKILL.md')));
+const sysDebugText = norm(read(path.join(skillsDir, 'systematic-debugging', 'SKILL.md')));
+
+check(/Repository readiness precedes broad exploration/i.test(entrySkillText),
+  'routing: entry skill orders repository readiness before broad exploration');
+check(/Activation order/i.test(readinessRef) && /must not broadly read source files/i.test(readinessRef),
+  'routing: readiness reference defines the activation order and forbids broad source reading first');
+check(rawReadiness.includes('cost-oriented-agentic-workflow:cow-repo-investigator')
+  && rawDiscovery.includes('cost-oriented-agentic-workflow:cow-debug-investigator'),
+  'routing: references name the exact scoped investigator identifiers');
+check(/never rely on automatic selection/i.test(readinessRef) && /never auto-select/i.test(entrySkillText),
+  'routing: exact scoped dispatch, never automatic agent selection');
+check(/silently fall back to a generic agent/i.test(readinessRef),
+  'routing: no silent generic fallback');
+check(/(validate-agent-output|accept-agent-output)/.test(readinessRef)
+  && /never manually declares an unvalidated profile valid/i.test(readinessRef),
+  'routing: profile acceptance is mandatory before the profile is trusted');
+check(/stays `pending` here/.test(entrySkillText) && /implementation=pending/.test(entrySkillText),
+  'routing: entry skill keeps discovery separate from a pending implementation route');
+check(/stays `pending` in Phase 3A/.test(discoveryRef) && /legacy 0\.4\.x execution path is unchanged/i.test(discoveryRef),
+  'routing: implementation stays pending; the legacy execution path is unchanged');
+check(/at most three targeted source\/config reads/i.test(discoveryRef) && /at most one bounded Grep or Glob/i.test(discoveryRef),
+  'routing: controller-map has a concrete read budget');
+check(/Maximum 2\./.test(discoveryRef) && /at most two .{0,3}cow-debug-investigator/i.test(discoveryRef),
+  'routing: disjoint domains dispatch at most two investigators');
+check(/REQUIRES_REROUTE/.test(sysDebugText) && /TRACKED_DIAGNOSTIC_INSTRUMENTATION/.test(sysDebugText)
+  && /Re-route:[^\n]*before that first tracked edit/i.test(sysDebugText),
+  'routing: tracked diagnostic instrumentation re-routes before any tracked edit');
+check(/cow-state.mjs root-cause/.test(sysDebugText) && /controller[^.]*adjudicates the diagnosis/i.test(sysDebugText),
+  'routing: the controller (not the investigator) owns diagnosis adjudication + state');
+
 // ── Summary ─────────────────────────────────────────────────────────────────
 console.log(`\n${passes} checks passed, ${failures} failed.`);
 if (failures > 0) process.exit(1);

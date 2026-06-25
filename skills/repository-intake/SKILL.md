@@ -5,9 +5,8 @@ description: Use before working in an unfamiliar or possibly-changed repository:
 
 # Repository Intake
 
-Give the controller a **cheap, cached map** so it never reads broadly itself (broad
-reading is the cost leak this removes). Intake is a **fast path, not ceremony** —
-skip it whenever the map is already warm.
+Give the controller a **cheap, cached map** so it never reads broadly itself. Intake
+is a **fast path, not ceremony** — skip it whenever the map is already warm.
 
 ## When intake runs
 
@@ -20,8 +19,7 @@ subsystem.
 Skip intake — emit `Profile: warm — skip intake.` — when **any** holds:
 - a current `repo-profile.json` exists and `check-profile` reports `VALID`; or
 - the repo is already in the controller's working context this session; or
-- the task is a trivial, low-risk, single-outcome **light-inline** edit (the light
-  path is never gated on intake); or
+- the task is a trivial, low-risk, single-outcome **light-inline** edit; or
 - `mode = standard` and the task is fully specified against known paths.
 
 ## Snapshot helper (deterministic, zero-dependency)
@@ -47,28 +45,30 @@ node "$SKILL_DIR/scripts/repo-snapshot.mjs" check-profile <ws>/run/repo-profile.
 | `MISSING` | 3 | no profile file | run intake |
 | `INVALID` | 4 | unparseable / no fingerprint | run intake |
 
-Fingerprint = manifests + instruction files + directory shape + languages, **not**
-`HEAD` — ordinary source commits don't invalidate it; only dependency / structure /
-instruction changes do.
+Fingerprint excludes `HEAD`: ordinary source commits don't invalidate it; only
+dependency / structure / instruction changes do.
 
 ## Responsibilities
 
 - **Controller:** run the snapshot (one cheap call); decide if a deeper read is
   needed; **synthesize** `repo-profile.json` / `.md`; mark subsystems
   `mapped` / `unmapped`. Never read the tree broadly.
-- **Future repository investigator (Phase 2 — does not exist yet):** deep-reads an
-  `unmapped` subsystem, read-only. Until it ships the controller does a minimal
-  scoped read itself; **do not dispatch an agent that does not exist.**
+- **Repository investigator** (`cost-oriented-agentic-workflow:cow-repo-investigator`):
+  dispatched read-only with `OUTPUT_FORMAT=PROFILE_DRAFT` to draft the profile (or
+  `TASK_DISCOVERY` for one subsystem). Dispatch the exact scoped id — never
+  auto-select, never a generic fallback.
 
-The profile is **semantic** output; this skill defines and validates its contract,
-it does not author it —
+The profile is **semantic** output; the agent drafts it, `repo-profile.mjs` validates
+and atomically promotes it (the controller never trusts it unvalidated), and this
+skill defines its contract —
 [references/repository-profile-contract.md](references/repository-profile-contract.md).
 
 ## Failure behavior
 
-`git` unavailable / not a repo → the helper exits non-zero clearly; fall back to a
-minimal scoped map, record the profile absent. A bad manifest never aborts the
-snapshot, which never fails the task.
+`git` unavailable / not a repo → the helper exits non-zero; fall back to a minimal
+scoped map and record the profile absent. A bad manifest never aborts the snapshot.
 
-> Phase 1 status: foundation only — not yet wired into the entry skill or routing.
-> Invoke intake deliberately; integration is Phase 3.
+> Phase 3A: intake is **live** — the entry skill establishes repository readiness on
+> activation (`using-cost-oriented-workflow/references/repository-readiness.md`), and
+> profile acceptance is mandatory via `repo-profile.mjs`. Implementation routing is
+> still the legacy path.

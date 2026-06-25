@@ -29,11 +29,13 @@ Mode is recorded in the **anchor header** at the top of the plan/task file. If n
 Before the first repository action, choose the **process lane**. Show one short receipt using observable facts, not hidden chain-of-thought:
 
 ```text
-Route: systematic-debugging → diagnosis — two independent symptoms; implementation deferred.
-Route: light-inline — one small, low-risk, tightly coupled change.
+Route: lane=debug; repository=warm; discovery=controller-map; implementation=pending; risk=low
+Route: lane=light-inline; repository=warm; discovery=controller-map; implementation=pending; risk=low
 ```
 
-Say nothing more about routing while it stays unchanged. If evidence changes it, show exactly one `Re-route: <route> — <trigger>.` line before the next tracked edit.
+Say nothing more about routing while it stays unchanged. If evidence changes it, show exactly one `Re-route: reason=<code>; discovery=<new-route>; implementation=pending` line before the next tracked edit.
+
+**Repository readiness precedes broad exploration.** On activation: state → snapshot → profile → intake-if-not-warm → discovery route, *before* reading source. `VALID` profile = warm path; else dispatch the exact `cost-oriented-agentic-workflow:cow-repo-investigator` (never auto-select) and accept its draft via `repo-profile.mjs`. Discovery route is separate from the implementation route, which stays **`pending`** here. Detail: references/repository-readiness.md, references/discovery-routing.md.
 
 ```dot
 digraph flow {
@@ -117,7 +119,7 @@ These are continuous cost-benefit trade-offs. There is no fixed answer; weigh th
 - **Review depth** — *how deep* scales with risk and diff size; *whether* follows the mode/risk matrix above.
 - **Tests** — in standard, only what genuinely protects the change; in production, thorough.
 - **Brainstorming intensity** — scales with how ambiguous or messy the request is. A clear request gets a short gate; a vague one gets real exploration.
-- **Exploration breadth** — none for a repo you already hold in context. In an unknown repo, map cheaply first; when multiple domains are demonstrably disjoint, use focused read-only investigators — decided from the map, independent of how small the eventual fixes look.
+- **Exploration breadth** — none for a repo you already hold in context; otherwise establish repository readiness, then route discovery from the cheap map (references/repository-readiness.md, references/discovery-routing.md), independent of eventual fix size.
 
 ## Anti-drift is structure, not stern wording
 
