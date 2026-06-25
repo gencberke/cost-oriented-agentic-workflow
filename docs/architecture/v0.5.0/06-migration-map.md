@@ -38,7 +38,9 @@ Phase 0 — this is the contract Phases 1–7 execute.
 The 0.4.2 runtime allowlist is `.claude-plugin/{plugin,marketplace}.json`,
 `commands/**`, `skills/**`, the four `hooks/*` files, `README.md`, `LICENSE`.
 0.5.0 additions:
-- **`agents/**`** → added to the allowlist (new top-level runtime dir).
+- **`agents/**`** → added to the allowlist (new top-level runtime dir). **Deferred:**
+  Phase 2 adds the agent files to the repo but does **not** change the runtime builder;
+  they load from source via `--plugin-dir` until a later phase ships them.
 - **New runtime scripts** (`cow-state.mjs`, `repo-snapshot.mjs`) live under
   `skills/**`, so they are already covered — no allowlist change needed, and the
   dev-only top-level `scripts/` stays excluded (preserves 0.4.2 separation).

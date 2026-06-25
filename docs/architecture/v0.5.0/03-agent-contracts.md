@@ -11,7 +11,52 @@ at 5; subagents get fresh isolated context.
 
 Minimum viable set (do not add more — `7.4`): `cow-repo-investigator`,
 `cow-debug-investigator`, `cow-implementer`, `cow-reviewer`. All live in
-`agents/` at the plugin root and are added to the runtime allowlist (`06`).
+`agents/` at the plugin root.
+
+## Phase 2 implemented contracts (AUTHORITATIVE — supersede the per-agent tables below where they differ)
+
+Implemented in `agents/*.md`, validated by `tests/agent-contracts.test.mjs`, and
+confirmed by live `--plugin-dir` smokes (Claude Code 2.1.186). Scoped dispatch
+identifiers: `cost-oriented-agentic-workflow:cow-repo-investigator`,
+`…:cow-debug-investigator`, `…:cow-implementer`, `…:cow-reviewer`.
+
+| Agent | model | effort | maxTurns | tools | skills preload | return cap | body bytes |
+|---|---|---|---|---|---|---|---|
+| cow-repo-investigator | sonnet | low | 10 | Read, Glob, Grep | — | 80 lines | 2186/4500 |
+| cow-debug-investigator | sonnet | medium | 14 | Read, Glob, Grep, Bash | `cost-oriented-agentic-workflow:systematic-debugging` | 70 lines | 2407/6000 |
+| cow-implementer | sonnet | high | 30 | Read, Glob, Grep, Bash, Write, Edit | — | 8 lines | 2264/6500 |
+| cow-reviewer | sonnet | medium | 12 | Read, Glob, Grep | — | 80 lines | 2305/5500 |
+
+Corrections vs the Phase-0 tables below (decided with evidence, per the task's §2):
+- **Model: `sonnet` for all four** (Phase 0 set `cow-repo-investigator` to haiku). The
+  investigator now drafts a *semantic* profile (judgment); the deterministic snapshot
+  is `repo-snapshot.mjs` (Phase 1), which it does not redo. Uniform Sonnet also matches
+  the global invariant. A production whole-work `cow-reviewer` may still be dispatched
+  with a per-invocation `model: opus` override (no fifth agent).
+- **`maxTurns` tightened** (repo 15→10, debug 20→14, reviewer 15→12; implementer 30).
+- **Tool boundaries finalized:** `Bash` **removed** from `cow-repo-investigator` (no shell;
+  it reads the snapshot, never runs it) and from `cow-reviewer` (pure read-only review).
+  Only `cow-implementer` has `Write`/`Edit`; only it and `cow-debug-investigator` have
+  `Bash`. No agent has `Agent`, `Skill`, MCP, or `PowerShell`.
+- **Skill preload, not the Skill tool:** no agent lists `Skill` in `tools`
+  (CC docs: "to preload Skills, use the `skills` field rather than listing `Skill`").
+  `cow-debug-investigator` preloads exactly `cost-oriented-agentic-workflow:systematic-debugging`
+  — the **qualified** form, which disambiguates from Superpowers' same-named skill.
+  `claude plugin validate --strict` does **not** resolve `skills:` references (it passed
+  with a deliberately bogus name), so runtime injection was **proven by smoke**: the
+  agent quoted the skill's Iron Law verbatim with no Skill tool and no access to the
+  file. The Phase-0 "implementer may load `test-driven-development` via the Skill tool"
+  is **removed**; TDD guidance lives in the brief/body.
+- **`cow-debug-investigator` Bash is read-only by contract** (tests, builds, read-only
+  git, log filtering). Tracked edits/installs/commits are forbidden; it returns
+  `REQUIRES_REROUTE` instead. Deterministic Bash enforcement is deferred to the hook phase.
+- **Output contracts** are the explicit envelopes in `agents/*.md` (e.g. the
+  investigators' multi-field contracts), superseding Phase 0's "≤40-line" caps.
+- **`memory` and `isolation` are omitted** on every agent (confirmed in the CC plugin
+  schema); enabling either would persist reasoning or detach the feature branch.
+- **Runtime allowlist NOT changed in Phase 2.** The agent files exist in the repo but the
+  runtime-package builder does **not** yet ship `agents/**`; that addition is deferred
+  (`06`). Until then the agents are loaded from source via `--plugin-dir`.
 
 ## Cross-cutting decisions (apply to all four)
 
