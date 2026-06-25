@@ -365,13 +365,30 @@ const dispatchTemplates = [
   'skills/execution-routing/task-reviewer-prompt.md',
   'skills/requesting-review/code-reviewer.md',
 ];
+// Runtime prose budget, refined for the 0.5.0 control plane (Phase 1).
+//
+// The "always-on" core — the entry/routing skills the controller loads as part of
+// steady-state context, plus the dispatch templates — is capped together at 86,000
+// bytes to protect controller context. An ON-DEMAND skill is loaded only when its
+// specific process runs (e.g. repository-intake fires only when a repo needs
+// mapping); it is NOT part of the steady-state controller context. Such skills are
+// therefore measured SEPARATELY against their own small ceilings. This keeps a new
+// on-demand skill from silently inflating the always-on budget, and — because the
+// always-on set is unchanged — guarantees the existing counted prose does not grow.
+const ON_DEMAND_SKILL_CEILINGS = { 'repository-intake': 3500 };
 const runtimeProseFiles = [
-  ...skillDirs.map((name) => `skills/${name}/SKILL.md`),
+  ...skillDirs.filter((name) => !(name in ON_DEMAND_SKILL_CEILINGS)).map((name) => `skills/${name}/SKILL.md`),
   ...dispatchTemplates,
 ];
 const runtimeBytes = runtimeProseFiles.reduce((sum, file) =>
   sum + Buffer.byteLength(read(path.join(root, file)), 'utf8'), 0);
-check(runtimeBytes <= 86000, `runtime prose stays within 86000 bytes (${runtimeBytes})`);
+check(runtimeBytes <= 86000, `always-on runtime prose stays within 86000 bytes (${runtimeBytes})`);
+for (const [name, ceiling] of Object.entries(ON_DEMAND_SKILL_CEILINGS)) {
+  const f = `skills/${name}/SKILL.md`;
+  if (!fs.existsSync(path.join(root, f))) { fail(`on-demand skill ${f} exists`); continue; }
+  const bytes = Buffer.byteLength(read(path.join(root, f)), 'utf8');
+  check(bytes <= ceiling, `${f} within its on-demand ceiling (${bytes}/${ceiling})`);
+}
 
 const baselineBytes = {
   'skills/using-cost-oriented-workflow/SKILL.md': 13013,

@@ -70,20 +70,30 @@ The fingerprint is a SHA-256 over **structure that affects how the repo is
 navigated**, *not* over HEAD:
 
 ```text
-fingerprint = sha256(sorted(
-  manifest files + their hashes:   package.json, pyproject.toml, go.mod,
-                                   pom.xml, build.gradle, Cargo.toml, *.csproj,
-                                   pubspec.yaml, Gemfile, composer.json, …
-  + top-level directory names (depth 1–2)
-  + presence/paths of test roots, CI config, lockfiles
-  + declared languages
+fingerprint = sha256(JSON(
+    repository identity:             root (first) commit sha
+  + instruction files + hashes:     CLAUDE.md, AGENTS.md, .cursorrules,
+                                     .github/copilot-instructions.md, …   (Phase-1 add)
+  + manifest files + their hashes:  package.json, pyproject.toml, go.mod,
+                                     pom.xml, build.gradle, Cargo.toml, *.csproj,
+                                     pubspec.yaml, Gemfile, composer.json, …
+  + directory names (depth 1–2) + test roots + CI config + lockfile names
+  + declared languages (name + ext only — NOT file counts)
 ))
 ```
 
-Ordinary commits (editing source inside an already-mapped tree) do **not** change
-manifests, top-level shape, or declared languages, so the fingerprint — and the
-profile — stay valid. This is deliberate: the profile maps *where things live*, and
-that rarely changes commit-to-commit. Only dependency/structure changes (which DO
+> **Phase 1 correction (`§7.3`).** The fingerprint now also covers **instruction
+> files** (so a `CLAUDE.md`/equivalent change invalidates it) and the repository's
+> **root-commit identity**. File **counts** are deliberately excluded so that adding
+> a source file to an already-mapped directory does not churn the fingerprint —
+> only new directory *names* (navigation shape) do. Manifest/instruction hashes are
+> over **working-tree** content, so an uncommitted dependency edit is reflected.
+
+Excluded from the fingerprint (so they never cause false staleness): `HEAD`,
+commit timestamps, dirty status, recent commit history, snapshot creation time,
+and source-file contents/counts. Ordinary commits (editing source inside an
+already-mapped tree) change none of the hashed inputs, so the fingerprint — and the
+profile — stay valid. Only dependency/structure/instruction changes (which DO
 change navigation) invalidate it. This avoids W1's re-exploration on every commit.
 
 ### A.6 `repo-snapshot.json` — deterministic snapshot fields
@@ -94,35 +104,54 @@ schema. **No file contents, no secrets** (`09`):
 ```jsonc
 {
   "schemaVersion": 1,
-  "generatedAt": "<ISO8601>",
-  "headCommit": "<sha>",          // recorded, NOT part of fingerprint
-  "fingerprint": "<sha256>",
-  "git": { "isRepo": true, "branch": "...", "dirty": false, "trackedFileCount": 0 },
-  "languages": [{ "name": "TypeScript", "fileCount": 0, "ext": ".ts" }],   // top N
-  "manifests": [{ "path": "package.json", "type": "npm", "sha": "..." }],
+  "generatedAt": "<ISO8601>",                     // NOT hashed
+  "repository": { "rootCommit": "<sha>", "name": "<dir basename>" },  // identity
+  "worktree": {
+    "isLinked": false,                            // git-dir != git-common-dir
+    "branch": "main", "head": "<sha>",            // head recorded, NOT hashed
+    "upstream": "origin/main" /* or null */,
+    "dirty": false, "trackedFileCount": 0,
+    "dirtyPaths": []                              // paths only, no diff content
+  },
+  "instructionFiles": [{ "path": "CLAUDE.md", "sha256": "...", "bytes": 0 }],  // Phase-1 add
+  "manifests": [{ "path": "package.json", "type": "npm", "sha256": "...", "bytes": 0 }],
+  "languages": [{ "name": "TypeScript", "ext": ".ts", "fileCount": 0 }],   // top N, count desc
   "buildCommands": ["npm run build"],   // parsed from manifest scripts only
   "testCommands": ["npm test"],         // parsed from manifest scripts only
   "entryPoints": ["src/index.ts"],      // declared (manifest main/bin), not guessed
   "topLevelDirs": ["src", "test", "docs"],
   "directoryShape": [{ "dir": "src", "childDirs": ["api","ui"], "fileCount": 42 }], // depth ≤ 2
-  "testRoots": ["test", "src/**/*.test.ts"],
+  "testRoots": ["test", "glob:*.{test,spec}.*"],
   "ciConfig": [".github/workflows/ci.yml"],
+  "recentCommits": [{ "sha": "<sha>", "subject": "..." }],   // informational, NOT hashed
   "notable": ["monorepo:false", "lockfile:package-lock.json"],
-  "truncated": false                    // true if any list hit its cap
+  "truncated": { "languages": false /* per-section + "output" flag */ },
+  "fingerprint": "<sha256>"
 }
 ```
 
-Determinism: lists are sorted; counts are exact; no timestamps inside hashed
-inputs. Re-running on the same tree yields byte-identical output except
-`generatedAt`/`headCommit`.
+> **Phase 1 correction.** Flat `git`/`headCommit` became `repository` + `worktree`
+> objects; `instructionFiles` and `recentCommits` were added; `truncated` is a
+> per-section object (not a bare bool). Structure is derived from `git ls-files`
+> (tracked), so gitignored heavy dirs never appear; an explicit skip-list is the
+> belt-and-suspenders. Determinism: every list is sorted (languages by count desc
+> then name); no timestamps inside hashed inputs. Re-running on the same tree yields
+> byte-identical output except `generatedAt`.
 
-### A.7 Output-size limits
+### A.7 Output-size limits (concrete bounds, `§7.2`)
 
-- `languages` ≤ 10; `manifests` ≤ 20; `topLevelDirs` ≤ 50; `directoryShape` depth
-  ≤ 2 and ≤ 200 dir entries; `entryPoints` ≤ 20. On overflow set `truncated:true`.
-- `repo-snapshot.json` target ≤ 16 KB; `repo-profile.json` ≤ 8 KB;
-  `repo-profile.md` ≤ 150 lines. The controller reads the **profile**, not the raw
-  tree.
+Every discovery bound is explicit and enforced by `repo-snapshot.mjs` (constant
+`BOUNDS`); on overflow the section is sliced and its `truncated.<section>` flag set
+(ordering preserved, never silently dropped):
+
+- `languages` ≤ 10; `manifests` ≤ 20; `instructionFiles` ≤ 20; `topLevelDirs` ≤ 50;
+  `directoryShape` depth ≤ 2 and ≤ 200 dir entries; `entryPoints` ≤ 20;
+  `dirtyPaths` ≤ 200; `recentCommits` ≤ 20.
+- Overall `repo-snapshot.json` ≤ 16 KB (16384 bytes): if the serialized snapshot
+  exceeds the cap, the lowest-value sections (`recentCommits`, then
+  `directoryShape`) are trimmed and `truncated.output` is set.
+- `repo-profile.json` ≤ 8 KB; `repo-profile.md` ≤ 150 lines. The controller reads
+  the **profile**, not the raw tree.
 
 ### A.8 Investigator vs controller responsibilities
 

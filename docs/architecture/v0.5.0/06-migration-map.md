@@ -23,11 +23,12 @@ Phase 0 — this is the contract Phases 1–7 execute.
 | `hooks/hooks.json.example` | **MODIFY → REPLACE LATER** | gains `PreToolUse` + `PreCompact` entries; once enforcement is proven, ship an **active** `hooks/hooks.json` that no-ops when inactive | Stays `.example` until Phase 5 |
 | `skills/execution-routing/scripts/{cow-workspace,task-brief,review-package}` | **KEEP** | unchanged; `cow-state` added alongside | Runtime helpers (allowlisted via `skills/**`) |
 | (new) `skills/execution-routing/scripts/cow-state.mjs` | **ADD** | state helper (`04` A.8); Node-invoked, mode 100644 | runtime |
-| (new) `skills/repository-intake/SKILL.md` + `scripts/repo-snapshot.mjs` | **ADD** | repository intake (`02` A) | runtime |
+| (new) `skills/repository-intake/SKILL.md` + `scripts/repo-snapshot.mjs` + `references/repository-profile-{contract.md,template.json,template.md}` | **ADD** | repository intake (`02` A) + profile contract (`§8`) | runtime |
 | (new) `agents/cow-{repo-investigator,debug-investigator,implementer,reviewer}.md` | **ADD** | plugin agents (`03`) | runtime |
 | `scripts/{build-release.sh,clean-generated.mjs,build-runtime-package.mjs}` | **KEEP** | dev tooling; runtime builder gains `agents/**` to the allowlist | stays dev-only/denied from runtime |
-| `tests/validate-structure.mjs` | **MODIFY** | + state-schema doc check, agent-frontmatter checks, hook-table check, doc-dir recognition | Layer 1 (`05`) |
-| `tests/scripts.test.sh` | **MODIFY** | + `cow-state` & `repo-snapshot` behavioral cases | Layer 2 |
+| `tests/validate-structure.mjs` | **MODIFY** | Phase 1: prose-budget split (on-demand `repository-intake` ceiling, `§9.1`). Later: agent-frontmatter, hook-table checks | Layer 1 (`05`) |
+| `tests/scripts.test.sh` | **KEEP** | Phase-1 decision: helper behavioral tests live in new **zero-dep Node** suites (cross-platform, temp-repo), not this bash file | Layer 2 |
+| (new) `tests/state.test.mjs` + `tests/repo-intake.test.mjs` | **ADD** | deterministic `cow-state` + `repo-snapshot` + profile + runtime-path tests; `npm run test:foundation` | Layer 2 |
 | `tests/eval/` (routing fixtures, analyzer) | **MODIFY** | + dual-routing fixtures, + hook-decision & agent-contract layers, + token budgets | Layers 3–7 |
 | `tests/release-artifact.test.sh` | **MODIFY** | verify `agents/**` (+ active `hooks/hooks.json` later) present & well-formed in the package | Layer 8 |
 | Runtime allowlist (`build-runtime-package.mjs`) | **MODIFY** | add `agents/**`; add `hooks/hooks.json` only when shipped active; new scripts already covered by `skills/**` | `10` #9 |
@@ -38,13 +39,15 @@ The 0.4.2 runtime allowlist is `.claude-plugin/{plugin,marketplace}.json`,
 `commands/**`, `skills/**`, the four `hooks/*` files, `README.md`, `LICENSE`.
 0.5.0 additions:
 - **`agents/**`** → added to the allowlist (new top-level runtime dir).
-- **New runtime scripts** (`cow-state`, `repo-snapshot.mjs`) live under
+- **New runtime scripts** (`cow-state.mjs`, `repo-snapshot.mjs`) live under
   `skills/**`, so they are already covered — no allowlist change needed, and the
   dev-only top-level `scripts/` stays excluded (preserves 0.4.2 separation).
+  (Verified by `tests/repo-intake.test.mjs`: both paths match the builder's
+  `ALLOW_PREFIX` `skills/` and no `DENY_PREFIX`.)
 - **`hooks/hooks.json`** → added to the allowlist **only in Phase 5**, when the hook
   ships active (it no-ops when the workflow is inactive). Until then only
   `hooks.json.example` ships (current behavior).
-- Executable modes: `repo-snapshot.mjs`/`cow-state` are Node-invoked (mode 100644,
+- Executable modes: `repo-snapshot.mjs`/`cow-state.mjs` are Node-invoked (mode 100644,
   like the validator); the existing exec-bit set (`session-start`, three
   execution-routing scripts) is unchanged. The release-artifact test asserts the
   new files are present and that no dev-only path leaks (existing guarantees).
@@ -58,7 +61,7 @@ State (`state.json`) is **additive and backward-compatible**:
 - On resume/upgrade, `cow-state init --reconstruct` maps the existing anchor
   directly: `MODE→mode`, `COMMIT_POLICY→commitPolicy`, `BASE_BRANCH→baseBranch`,
   `MERGE_BASE_SHA→mergeBaseSha`, `PLAN_FILE→plan.path`; ledger lines → completed
-  units and `review.waves`; `git log` → committed work. An exhausted
+  units and `remediationWaves.count`; `git log` → committed work. An exhausted
   remediation/retry recorded in the ledger stays exhausted (no reset).
 - 0.4.x plan files remain executable unchanged; `writing-plans` is KEEP. No plan
   rewrite is required to adopt 0.5.0.
