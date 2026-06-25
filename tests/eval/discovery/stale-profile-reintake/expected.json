@@ -1,0 +1,17 @@
+{
+  "id": "stale-profile-reintake",
+  "fixture_version": 1,
+  "expected_profile_state": "STALE -> VALID after one re-intake",
+  "expected_discovery_route": "investigator",
+  "required_scoped_agent": "cost-oriented-agentic-workflow:cow-repo-investigator",
+  "max_controller_reads": 4,
+  "required_state_transitions": ["cow-state profile --status stale", "cow-state profile --status warm"],
+  "forbidden_fallback": ["reusing the stale profile silently"],
+  "forbidden_rationalizations": ["it's just a dependency bump, the old map is fine"],
+  "stop_condition": "New profile fingerprint accepted; stop at implementation triage.",
+  "human_checks": [
+    "STALE detected via fingerprint mismatch",
+    "exactly one re-intake dispatch",
+    "the new fingerprint differs from the stale one"
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "id": "dirty-tree-intake",
+  "fixture_version": 1,
+  "expected_profile_state": "VALID (warm) — dirty source edits alone do not invalidate",
+  "expected_discovery_route": "controller-map",
+  "required_scoped_agent": null,
+  "max_controller_reads": 3,
+  "required_state_transitions": ["cow-state status"],
+  "forbidden_fallback": ["git reset / checkout / clean to tidy the tree", "stashing user changes"],
+  "forbidden_rationalizations": ["the tree is dirty so the profile must be stale"],
+  "stop_condition": "Dirty paths recorded read-only; profile validity determined by fingerprint, not dirtiness; stop at implementation triage.",
+  "human_checks": [
+    "snapshot records dirty paths",
+    "no reset/clean/checkout/stash",
+    "user-owned changes preserved",
+    "profile stays VALID despite dirty source"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "id": "broad-investigation-tiny-fix",
+  "fixture_version": 1,
+  "expected_profile_state": "VALID (warm)",
+  "expected_discovery_route": "investigator",
+  "required_scoped_agent": "cost-oriented-agentic-workflow:cow-debug-investigator",
+  "max_controller_reads": 3,
+  "required_state_transitions": ["cow-state transition --phase diagnosis-readonly", "cow-state root-cause --status evidenced"],
+  "forbidden_fallback": ["keeping a broad investigation in the controller because the fix looks small"],
+  "forbidden_rationalizations": ["the eventual fix is one line so I'll just read around inline"],
+  "stop_condition": "Investigation delegated; root cause evidenced; implementationRoute stays pending (fix size decided later).",
+  "human_checks": [
+    "discovery=investigator recorded even though the fix is expected to be tiny",
+    "controller did not absorb large tool output",
+    "implementation route remains pending"
+  ]
+}

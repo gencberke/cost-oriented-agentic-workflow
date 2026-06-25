@@ -377,5 +377,65 @@ class AgentFixtureContractTests(unittest.TestCase):
         self.assertTrue("state" in joined or "cow-state" in joined)
 
 
+DISCOVERY = HERE / "discovery"
+DISCOVERY_IDS = {
+    "unknown-repository-intake", "warm-profile-skip", "stale-profile-reintake",
+    "single-domain-debugging", "small-disjoint-debugging", "broad-investigation-tiny-fix",
+    "invalid-profile-output", "dirty-tree-intake",
+}
+DISCOVERY_ROUTES = {"controller-map", "investigator", "parallel-investigators", "none"}
+
+
+class DiscoveryFixtureContractTests(unittest.TestCase):
+    """Schema/contract checks for the Phase 3A discovery control-plane fixtures.
+
+    Validates fixture *shape* only — readiness/route/scoped-agent/budget contracts.
+    A malformed fixture fails the suite so the live discovery smokes always grade
+    against a well-formed contract. A passing schema is not behavioral proof.
+    """
+
+    def test_discovery_fixture_set_and_readme(self) -> None:
+        self.assertTrue(DISCOVERY.is_dir(), "tests/eval/discovery/ must exist")
+        self.assertEqual({p.name for p in DISCOVERY.iterdir() if p.is_dir()}, DISCOVERY_IDS)
+        self.assertGreater((DISCOVERY / "README.md").stat().st_size, 200)
+
+    def test_each_discovery_fixture_is_well_formed(self) -> None:
+        for fid in sorted(DISCOVERY_IDS):
+            d = DISCOVERY / fid
+            with self.subTest(fixture=fid):
+                self.assertEqual({p.name for p in d.iterdir()}, {"prompt.md", "expected.json"})
+                self.assertGreater((d / "prompt.md").stat().st_size, 50)
+                e = json.loads((d / "expected.json").read_text(encoding="utf-8"))
+                self.assertEqual(e["id"], fid)
+                self.assertEqual(e["fixture_version"], 1)
+                self.assertIsInstance(e["expected_profile_state"], str)
+                self.assertIn(e["expected_discovery_route"], DISCOVERY_ROUTES)
+                agent = e["required_scoped_agent"]
+                self.assertTrue(agent is None or agent.startswith("cost-oriented-agentic-workflow:cow-"),
+                                "required_scoped_agent must be null or a scoped cow-* identifier")
+                self.assertIsInstance(e["max_controller_reads"], int)
+                self.assertGreaterEqual(e["max_controller_reads"], 0)
+                self.assertLessEqual(e["max_controller_reads"], 10)
+                for field in ("required_state_transitions", "forbidden_fallback",
+                              "forbidden_rationalizations", "human_checks"):
+                    self.assertIsInstance(e[field], list)
+                    self.assertGreaterEqual(len(e[field]), 1)
+                    self.assertTrue(all(isinstance(x, str) and x for x in e[field]))
+                self.assertIsInstance(e["stop_condition"], str)
+                self.assertGreater(len(e["stop_condition"]), 10)
+
+    def test_discovery_fixture_agent_coherence(self) -> None:
+        def agent(fid: str):
+            return json.loads((DISCOVERY / fid / "expected.json").read_text(encoding="utf-8"))["required_scoped_agent"]
+        # Warm / dirty fixtures dispatch no investigator.
+        self.assertIsNone(agent("warm-profile-skip"))
+        self.assertIsNone(agent("dirty-tree-intake"))
+        # Debugging fixtures dispatch the debug investigator; intake fixtures the repo investigator.
+        for fid in ("single-domain-debugging", "small-disjoint-debugging", "broad-investigation-tiny-fix"):
+            self.assertEqual(agent(fid), "cost-oriented-agentic-workflow:cow-debug-investigator")
+        for fid in ("unknown-repository-intake", "stale-profile-reintake", "invalid-profile-output"):
+            self.assertEqual(agent(fid), "cost-oriented-agentic-workflow:cow-repo-investigator")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
