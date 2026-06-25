@@ -127,7 +127,7 @@ function defaultState(now) {
     mode: 'standard',
     phase: 'triage',
     processLane: 'none',
-    repositoryProfile: { status: 'absent', fingerprint: null },
+    repositoryProfile: { status: 'absent', fingerprint: null, snapshotPath: null, profilePath: null, updatedAt: null },
     discoveryRoute: 'none',
     implementationRoute: 'none',
     risk: 'low',
@@ -159,6 +159,11 @@ function validateState(s) {
   if (!inEnum(s.phase, PHASES)) e.push(`phase invalid: ${JSON.stringify(s.phase)}`);
   if (!inEnum(s.processLane, PROCESS_LANES)) e.push(`processLane invalid: ${JSON.stringify(s.processLane)}`);
   if (!s.repositoryProfile || !inEnum(s.repositoryProfile.status, PROFILE_STATUS)) e.push('repositoryProfile.status invalid');
+  else {
+    for (const k of ['snapshotPath', 'profilePath', 'updatedAt']) {
+      if (s.repositoryProfile[k] != null && typeof s.repositoryProfile[k] !== 'string') e.push(`repositoryProfile.${k} must be a string or null`);
+    }
+  }
   if (!inEnum(s.discoveryRoute, DISCOVERY_ROUTES)) e.push(`discoveryRoute invalid: ${JSON.stringify(s.discoveryRoute)}`);
   if (!inEnum(s.implementationRoute, IMPLEMENTATION_ROUTES)) e.push(`implementationRoute invalid: ${JSON.stringify(s.implementationRoute)}`);
   if (!inEnum(s.risk, RISKS)) e.push(`risk invalid: ${JSON.stringify(s.risk)}`);
@@ -443,6 +448,22 @@ function cmdRoute(root, p, argv) {
   }, fmt);
 }
 
+// Record the repository-profile result. Updates ONLY repositoryProfile.* — the
+// profile helper (repo-profile.mjs) is authoritative for validity; state records it.
+function cmdProfile(root, p, argv) {
+  const flags = parseFlags(argv, { bool: ['json', 'oneline'], value: ['status', 'snapshot', 'profile', 'fingerprint'] });
+  const fmt = detectFmt(flags);
+  if (!flags.status) die(`profile requires --status <${PROFILE_STATUS.join('|')}>`);
+  if (!inEnum(flags.status, PROFILE_STATUS)) die(`invalid --status: ${flags.status}`);
+  return mutate(root, p, (s) => {
+    s.repositoryProfile.status = flags.status;
+    if (flags.snapshot !== undefined) s.repositoryProfile.snapshotPath = safeRepoPath(root, flags.snapshot, 'snapshot');
+    if (flags.profile !== undefined) s.repositoryProfile.profilePath = safeRepoPath(root, flags.profile, 'profile');
+    if (flags.fingerprint !== undefined) s.repositoryProfile.fingerprint = flags.fingerprint;
+    s.repositoryProfile.updatedAt = nowISO();
+  }, fmt);
+}
+
 function cmdRootCause(root, p, argv) {
   const flags = parseFlags(argv, { bool: ['json', 'oneline'], value: ['status', 'report'] });
   const fmt = detectFmt(flags);
@@ -566,6 +587,7 @@ Usage: node cow-state.mjs <command> [flags]   ([--json|--oneline] on every comma
   status                                  print position (ABSENT/INACTIVE ok; corrupt -> exit 3)
   transition --phase X [--reroute]        move phase (guards enforced)
   route --discovery V | --implementation V  record a route choice
+  profile --status V [--snapshot P] [--profile P] [--fingerprint F]  record repo-profile result
   root-cause --status V [--report PATH]   record diagnosis status
   plan --start|--approve|--done [--path PATH]
   unit --id N [--paths a,b] [--base SHA]  open a unit + allowed paths
@@ -589,7 +611,7 @@ function main() {
   const p = paths(root);
   const handlers = {
     init: cmdInit, status: cmdStatus, transition: cmdTransition, route: cmdRoute,
-    'root-cause': cmdRootCause, plan: cmdPlan, unit: cmdUnit, verify: cmdVerify,
+    profile: cmdProfile, 'root-cause': cmdRootCause, plan: cmdPlan, unit: cmdUnit, verify: cmdVerify,
     review: cmdReview, attempt: cmdAttempt, block: cmdBlock, complete: cmdComplete,
   };
   const h = handlers[command];

@@ -5,42 +5,45 @@ synthesized from the deterministic `repo-snapshot.json` (and, from Phase 2, an
 optional read-only investigator's notes). It is what makes a repo *warm*: a valid
 profile lets the controller skip broad re-exploration.
 
-This document is the **contract** the profile must satisfy. Phase 1 only *defines
-and validates* this contract (via `repo-snapshot.mjs check-profile`). It does **not**
-author profiles — generation is a future investigator's job. Do not hand-wave a
-profile into existence here.
+This document is the **contract** the profile must satisfy. As of Phase 3A,
+`repo-profile.mjs` enforces it: the `cow-repo-investigator` agent returns a profile
+**draft** inside a delimited envelope, and `repo-profile.mjs accept-agent-output`
+validates and atomically promotes it. The controller never trusts an unvalidated
+profile, and a `PARTIAL` draft is never promoted to a warm (`VALID`) profile.
 
-Artifacts (both in the ignored workspace `<repo-root>/.cost-oriented-agentic-workflow/run/`):
+Artifacts (all in the ignored workspace `<repo-root>/.cost-oriented-agentic-workflow/run/`):
 
-- `repo-profile.json` — machine-readable profile (the source of truth for warm/stale).
-- `repo-profile.md` — a short human-readable echo of the same facts.
+- `repo-profile-agent-output.txt` — the raw agent envelope (input to acceptance).
+- `repo-profile.candidate.json` — the extracted candidate (written atomically first).
+- `repo-profile.json` — the promoted, validated profile (source of truth for warm/stale).
+- `repo-profile.md` — a bounded human-readable echo, rendered from the JSON.
 
-## Required fields (`repo-profile.json`)
+## Required fields (`repo-profile.json`) — enforced by `repo-profile.mjs`
 
 | Field | Type | Meaning |
 |---|---|---|
 | `schemaVersion` | number | profile schema version (currently `1`) |
-| `fingerprint` | string | the `repo-snapshot.mjs` fingerprint this profile was built against; basis for warm/stale |
-| `status` | enum | `ready` \| `warm` \| `stale` \| `partial` — overall profile state |
-| `generatedAtCommit` | string\|null | the HEAD sha when the profile was synthesized (informational, **not** part of the fingerprint) |
-| `instructionSources` | array | instruction files that govern the repo (`CLAUDE.md`, etc.) — **paths only**, mirrored from the snapshot |
-| `languages` | array | declared language/stack signals (mirrors the snapshot) |
-| `buildCommands` | array | build commands — **verified** or explicitly marked unverified (see below) |
-| `testCommands` | array | test commands — same verified/unverified rule |
-| `subsystems` | array | module boundaries: `{ name, paths[], status: mapped\|unmapped, notes }` |
-| `conventions` | array | short, observable repo conventions (e.g. "tests colocated as `*.test.ts`") |
-| `riskHotspots` | array | hard-exclusion surfaces (auth, migrations, money, secrets, …) — paths/globs |
-| `unmapped` | array | subsystems/paths not yet read; the deep-read backlog |
-| `uncertainty` | array | explicit unknowns/assumptions ("DI framework inferred, not confirmed") |
-| `verifiedCommands` | array | the subset of build/test commands actually run and observed to succeed, each with how it was verified |
-| `generatedAt` / `updatedAt` | string | ISO 8601 creation / last-update timestamps |
+| `fingerprint` | string | sha256; must equal the current `repo-snapshot.json` fingerprint (basis for warm/stale) |
+| `status` | enum | `ready` \| `partial` — `ready` = complete (promotable to warm); `partial` = bound hit / unmapped subsystems remain |
+| `generatedAtCommit` | string\|null | HEAD sha when synthesized (informational, **not** part of the fingerprint) |
+| `instructionSources` | string[] | instruction files (`CLAUDE.md`, …) — **repo-relative paths only**, mirrored from the snapshot |
+| `languages` | `{name,ext}[]` | declared language/stack signals (mirrors the snapshot) |
+| `buildCommands` | `{command,confidence}[]` | `confidence ∈ verified\|inferred\|unknown` (see below) |
+| `testCommands` | `{command,confidence}[]` | same shape and rule |
+| `subsystems` | `{name,paths[],status,confidence,notes}[]` | `status ∈ mapped\|unmapped`; `paths` are repo-relative (globs allowed) |
+| `conventions` | string[] | short, observable repo conventions |
+| `riskHotspots` | string[] | hard-exclusion surfaces (auth, migrations, money, secrets, …) — repo-relative paths/globs |
+| `unmapped` | string[] | subsystems/paths not yet read; the deep-read backlog |
+| `uncertainty` | string[] | explicit unknowns/assumptions |
+| `updatedAt` | string | ISO 8601 (set on acceptance if absent) |
 
-## Verified vs. unverified commands
+## Confidence: verified / inferred / unknown
 
-A command may appear in `buildCommands` / `testCommands` as a **candidate** (parsed
-from a manifest), but it must **not** be presented as verified unless it is listed
-in `verifiedCommands` with evidence of an actual successful run. Never label an
-unrun command "verified."
+Every command and subsystem carries a `confidence` tag. The investigator has **no
+shell**, so in an agent **draft** a command may be `inferred` (parsed from a
+manifest) or `unknown` — **never `verified`**; `repo-profile.mjs validate-agent-output`
+rejects a draft that labels a command `verified`. Only the controller, after an
+actual successful run, may promote a command to `verified` (a later phase).
 
 ## Forbidden content (hard rules)
 
@@ -63,9 +66,12 @@ secrets or hidden reasoning are persisted.
 
 ## Freshness
 
-`repo-snapshot.mjs check-profile <repo-profile.json>` is the only authority on
-freshness. It returns `VALID` (fingerprint matches), `STALE` (structure/config or
-schema changed), `MISSING` (no file), or `INVALID` (unparseable / no fingerprint).
-A profile whose `fingerprint` no longer matches the live repo is stale regardless
-of how recently it was written. See `repository-profile-template.json` and
-`repository-profile-template.md` for shapes.
+Two deterministic helpers, same vocabulary: `repo-snapshot.mjs check-profile` and
+`repo-profile.mjs status` both return `VALID` (fingerprint matches), `STALE`
+(structure/config or schema changed), `MISSING` (no file), or `INVALID`
+(unparseable / no fingerprint); `repo-profile.mjs status` additionally reports
+`PARTIAL` for an accepted-but-incomplete profile. A profile whose `fingerprint` no
+longer matches the live repo is stale regardless of how recently it was written.
+The controller maps the result onto the state enum via `cow-state.mjs profile`
+(`VALID→warm`, `STALE→stale`, `MISSING/INVALID→absent`). See
+`repository-profile-template.json` and `repository-profile-template.md` for shapes.

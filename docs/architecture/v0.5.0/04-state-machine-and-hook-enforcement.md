@@ -24,8 +24,9 @@ never write it.
   "mode": "standard",                   // standard | production
   "phase": "triage",                    // see A.3 enum (idle when inactive; init lands at triage)
   "processLane": "none",                // none | light-inline | brainstorm | plan | debug
-  "repositoryProfile": { "status": "absent", "fingerprint": null },
-                                        // absent | building | ready | warm | stale
+  "repositoryProfile": { "status": "absent", "fingerprint": null,
+                         "snapshotPath": null, "profilePath": null, "updatedAt": null },
+                                        // status: absent | building | ready | warm | stale (Phase 3A added the 3 path/time fields)
   "discoveryRoute": "none",             // none | controller-map | investigator | parallel-investigators
   "implementationRoute": "none",        // none | inline | delegated | planned-sequential | delegated-batch
   "risk": "low",                        // low | elevated | high
@@ -142,6 +143,7 @@ control position, never the source of truth for code or completion.
 | `cow-state status [--json\|--oneline]` | state | — | print position (oneline for SessionStart) |
 | `cow-state transition --phase X [--reroute]` | state | phase | move phase; `--reroute` stamps a Re-route marker |
 | `cow-state route --discovery V \| --implementation V` | state | routes | record a route choice |
+| `cow-state profile --status V [--snapshot P] [--profile P] [--fingerprint F]` | state | repositoryProfile | record the validated repo-profile result (Phase 3A); updates only `repositoryProfile.*` |
 | `cow-state root-cause --status V [--report P]` | state | rootCause | record diagnosis status |
 | `cow-state plan --start\|--approve\|--done [--path P]` | state | plan | plan lifecycle |
 | `cow-state unit --id N --paths a,b --base SHA` | state | currentUnit | open a unit + allowed paths |

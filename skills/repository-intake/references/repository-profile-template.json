@@ -1,30 +1,31 @@
 {
   "schemaVersion": 1,
-  "fingerprint": "REPLACE-WITH-repo-snapshot.mjs-fingerprint",
+  "fingerprint": "REPLACE-WITH-repo-snapshot.mjs-fingerprint-64-hex",
   "status": "ready",
   "generatedAtCommit": "REPLACE-WITH-HEAD-sha-or-null",
-  "instructionSources": [
-    { "path": "CLAUDE.md", "sha256": "REPLACE", "bytes": 0 }
-  ],
+  "instructionSources": ["CLAUDE.md"],
   "languages": [
-    { "name": "TypeScript", "ext": ".ts", "fileCount": 0 }
+    { "name": "TypeScript", "ext": ".ts" }
   ],
-  "buildCommands": ["npm run build"],
-  "testCommands": ["npm test"],
-  "verifiedCommands": [
-    { "command": "npm test", "verifiedBy": "ran once, exit 0", "at": "REPLACE-ISO8601" }
+  "buildCommands": [
+    { "command": "npm run build", "confidence": "inferred" }
+  ],
+  "testCommands": [
+    { "command": "npm test", "confidence": "inferred" }
   ],
   "subsystems": [
     {
       "name": "example-subsystem",
       "paths": ["src/example/**"],
       "status": "mapped",
+      "confidence": "inferred",
       "notes": "one-line observable note, no source bodies"
     },
     {
       "name": "legacy",
       "paths": ["src/legacy/**"],
       "status": "unmapped",
+      "confidence": "unknown",
       "notes": "not yet read; deep-read backlog"
     }
   ],
@@ -37,6 +38,5 @@
   "uncertainty": [
     "DI framework inferred from imports, not confirmed"
   ],
-  "generatedAt": "REPLACE-ISO8601",
   "updatedAt": "REPLACE-ISO8601"
 }

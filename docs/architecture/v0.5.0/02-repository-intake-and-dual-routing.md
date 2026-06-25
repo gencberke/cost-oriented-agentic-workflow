@@ -203,6 +203,39 @@ the deep read is delegated to the cheap investigator.
 
 ---
 
+### A.12 Profile acceptance (Phase 3A) — `repo-profile.mjs`
+
+The `cow-repo-investigator` returns a profile **draft** but cannot write files, so a
+deterministic helper owns parsing, validation, fingerprint comparison, and **atomic
+promotion**: `skills/repository-intake/scripts/repo-profile.mjs` (Node + git, zero
+deps). The controller never trusts an unvalidated profile; a `PARTIAL` draft is never
+promoted to a warm (`VALID`) profile.
+
+Agent envelope (`OUTPUT_FORMAT=PROFILE_DRAFT`, controller-selected, never inferred):
+
+```text
+STATUS: READY | PARTIAL | BLOCKED_INPUT
+PROFILE_JSON_BEGIN
+<exactly one JSON object — the schema in references/repository-profile-contract.md>
+PROFILE_JSON_END
+UNCERTAINTIES_BEGIN
+- ...
+UNCERTAINTIES_END
+```
+
+Run-dir artifacts (all ignored, worktree-local): `repo-profile-agent-output.txt`
+(raw) → `repo-profile.candidate.json` (extracted, written first) →
+`repo-profile.json` (promoted) → `repo-profile.md` (rendered). Commands:
+`validate-agent-output`, `accept-agent-output`, `validate`, `status`
+(`VALID`/`STALE`/`MISSING`/`INVALID`/`PARTIAL`), `render`. It extracts only the
+delimited JSON (rejecting multiple blocks/ambiguous text), checks
+schemaVersion + fingerprint-vs-snapshot + safe paths + verified/inferred/unknown
+confidence (rejecting a `verified` command from a shell-less agent) + secret/env
+denylist + the 8 KB cap, preserves the previous valid profile on failure, and writes
+atomically. The controller records the result via `cow-state.mjs profile` (`04` A.8):
+`VALID→warm`, `STALE→stale`, `MISSING`/`INVALID→absent`. One corrected redispatch is
+allowed after a validation failure (errors as changed context); a second blocks intake.
+
 ## Part B — Dual routing contract
 
 Two **independent** axes, decided in order, each with a visible receipt and a state

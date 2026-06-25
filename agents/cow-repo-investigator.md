@@ -35,25 +35,42 @@ missing. Do **not** explore to compensate.
 
 ## Output (≤ 80 lines)
 
-Return exactly this envelope and nothing else:
+`OUTPUT_FORMAT` is set by the controller to **`PROFILE_DRAFT`** or
+**`TASK_DISCOVERY`** — never infer it from wording. Return exactly the matching
+delimited envelope and nothing else (the controller's `repo-profile.mjs` extracts
+only the delimited region; stray text or a second block is rejected).
+
+`PROFILE_DRAFT`:
 
 ```text
 STATUS: READY | PARTIAL | BLOCKED_INPUT
-PROFILE_JSON:
-<single JSON object matching PROFILE_CONTRACT_PATH>
-UNCERTAINTIES:
+PROFILE_JSON_BEGIN
+<exactly one JSON object matching PROFILE_CONTRACT_PATH>
+PROFILE_JSON_END
+UNCERTAINTIES_BEGIN
 - <each open question or assumption>
+UNCERTAINTIES_END
 ```
 
-`STATUS: PARTIAL` when the bound was hit before the profile was complete (say which
-subsystems stay `unmapped`). The JSON must tag every claim as **verified** (present
-in the snapshot or a file you actually read), **inferred** (reasoned, not
-confirmed), or **unknown**.
+`TASK_DISCOVERY`:
 
-Because you have no shell, you cannot run anything: never label a build or test
-command `verified` unless the controller supplied run evidence — otherwise list it
-as an inferred candidate. Mirror the snapshot's structure facts; do not invent
-paths.
+```text
+STATUS: READY | PARTIAL | BLOCKED_INPUT
+DISCOVERY_REPORT_BEGIN
+<bounded findings for the one task domain>
+DISCOVERY_REPORT_END
+UNCERTAINTIES_BEGIN
+- ...
+UNCERTAINTIES_END
+```
+
+`STATUS: PARTIAL` when the read bound was hit before completion (name the subsystems
+left `unmapped`). In `PROFILE_JSON`, every command and subsystem carries a
+`confidence` of **verified** / **inferred** / **unknown**. Because you have **no
+shell**, you cannot run anything: a command is `inferred` (from a manifest) or
+`unknown` — **never `verified`** (acceptance rejects a `verified` command from a
+draft). Mirror the snapshot's structure facts; do not invent paths. Emit exactly one
+`PROFILE_JSON` object.
 
 ## Boundaries
 

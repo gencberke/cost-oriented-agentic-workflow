@@ -5,23 +5,23 @@
 > reasoning. The JSON is the source of truth; this mirrors it for humans.
 
 - **Fingerprint:** `<sha256 from repo-snapshot.mjs>`
-- **Status:** ready | warm | stale | partial
+- **Status:** ready | partial
 - **Generated at commit:** `<HEAD sha or n/a>` (informational; not fingerprinted)
 - **Updated:** `<ISO 8601>`
 
 ## Stack
 
 - **Languages:** TypeScript (.ts), …
-- **Build:** `npm run build`
-- **Test:** `npm test`  *(verified: ran once, exit 0)*
+- **Build:** `npm run build` *(inferred)*
+- **Test:** `npm test` *(inferred)*  — confidence is `verified` only after an actual run
 - **Instruction sources:** `CLAUDE.md`
 
 ## Subsystems
 
-| Subsystem | Paths | Status | Notes |
+| Subsystem | Paths | Status | Confidence |
 |---|---|---|---|
-| example-subsystem | `src/example/**` | mapped | one-line observable note |
-| legacy | `src/legacy/**` | unmapped | deep-read backlog |
+| example-subsystem | `src/example/**` | mapped | inferred |
+| legacy | `src/legacy/**` | unmapped | unknown |
 
 ## Conventions
 
