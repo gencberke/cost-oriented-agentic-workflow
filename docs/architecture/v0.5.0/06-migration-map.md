@@ -22,7 +22,7 @@ Phase 0 — this is the contract Phases 1–7 execute.
 | `hooks/session-start` (opt-in) | **MODIFY** | lean injection: `COW_ENTRY_INJECTED` + resume rule + `cow-state status --oneline`, not the full entry skill | `01` #7 |
 | `hooks/hooks.json.example` | **MODIFY → REPLACE LATER** | gains `PreToolUse` + `PreCompact` entries; once enforcement is proven, ship an **active** `hooks/hooks.json` that no-ops when inactive | Stays `.example` until Phase 5 |
 | `skills/execution-routing/scripts/{cow-workspace,task-brief,review-package}` | **KEEP** | unchanged; `cow-state` added alongside | Runtime helpers (allowlisted via `skills/**`) |
-| (new) `skills/execution-routing/scripts/cow-state` | **ADD** | state helper (`04` A.8) | runtime |
+| (new) `skills/execution-routing/scripts/cow-state.mjs` | **ADD** | state helper (`04` A.8); Node-invoked, mode 100644 | runtime |
 | (new) `skills/repository-intake/SKILL.md` + `scripts/repo-snapshot.mjs` | **ADD** | repository intake (`02` A) | runtime |
 | (new) `agents/cow-{repo-investigator,debug-investigator,implementer,reviewer}.md` | **ADD** | plugin agents (`03`) | runtime |
 | `scripts/{build-release.sh,clean-generated.mjs,build-runtime-package.mjs}` | **KEEP** | dev tooling; runtime builder gains `agents/**` to the allowlist | stays dev-only/denied from runtime |

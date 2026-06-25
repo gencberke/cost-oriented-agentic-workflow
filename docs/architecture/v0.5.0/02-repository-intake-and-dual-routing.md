@@ -10,8 +10,8 @@ helper (intake); entry skill + systematic-debugging + execution-routing
 > must therefore live under an allowlisted path. Following the existing
 > `skills/execution-routing/scripts/*` pattern, the new runtime helpers are:
 > `skills/repository-intake/scripts/repo-snapshot.mjs` and
-> `skills/execution-routing/scripts/cow-state`. The task's logical names
-> (`scripts/repo-snapshot.mjs`, `cow-state`) refer to these. `06-migration-map.md`
+> `skills/execution-routing/scripts/cow-state.mjs` (both Node-invoked, mode 100644).
+> The task's logical names (`scripts/repo-snapshot.mjs`, `cow-state`) refer to these. `06-migration-map.md`
 > adds `agents/**` (and an active `hooks/hooks.json` only once enforcement ships)
 > to the allowlist; the dev-only `scripts/` stays excluded.
 

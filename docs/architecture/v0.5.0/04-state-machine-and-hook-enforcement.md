@@ -22,7 +22,7 @@ never write it.
   "schemaVersion": 1,
   "active": true,                       // global hook guard
   "mode": "standard",                   // standard | production
-  "phase": "idle",                      // see A.3 enum
+  "phase": "triage",                    // see A.3 enum (idle when inactive; init lands at triage)
   "processLane": "none",                // none | light-inline | brainstorm | plan | debug
   "repositoryProfile": { "status": "absent", "fingerprint": null },
                                         // absent | building | ready | warm | stale
@@ -36,22 +36,32 @@ never write it.
   "currentUnit": { "id": null, "allowedPaths": [], "base": null },
   "verification": { "status": "none", "command": null },
                                         // none | pending | passed | failed
-  "review": { "status": "none", "waves": 0 },
-                                        // none | required | in-progress | clean | findings-open
+  "review": { "status": "none" },       // none | required | in-progress | clean | findings-open
   "attempts": { "implementer": 0, "max": 2 },
   "remediationWaves": { "count": 0, "max": 2 },
   "baseBranch": null,
   "mergeBaseSha": null,
   "commitPolicy": "controller-per-unit",// controller-per-unit | implementer | user-owned | none
-  "blockedReason": null,                // short enum-like token, NOT prose, e.g. "retry-exhausted"
-  "updatedAt": "<ISO8601>"
+  "blocked": { "code": null, "artifactPath": null, "priorPhase": null },
+                                        // code: enum token or null; artifactPath: repo-relative or null
+  "timestamps": { "createdAt": "<ISO8601>", "updatedAt": "<ISO8601>" }
 }
 ```
 
-Required: `schemaVersion, active, mode, phase, updatedAt`. All others optional with
-the defaults shown. `blockedReason` is a short token from a fixed set
+Required: `schemaVersion, active, mode, phase, timestamps`. All others optional with
+the defaults shown. `blocked.code` is a short token from a fixed set
 (`retry-exhausted | remediation-exhausted | plan-conflict | ambiguous | needs-credential
-| baseline-failed | human-checkpoint`) — never free prose (`10` point 5).
+| baseline-failed | human-checkpoint`) — never free prose (`10` point 5); any longer
+diagnosis lives in a separate ignored artifact referenced by `blocked.artifactPath`.
+
+> **Phase 1 corrections (implemented in `cow-state.mjs`; this doc updated to match,
+> per the task's §6.2 contradiction rule).** Three Phase-0 fields were refined:
+> (1) `blockedReason` (bare string) → `blocked: { code, artifactPath, priorPhase }`
+> — pairs the enum code with an optional artifact path and the phase to resume to;
+> (2) `updatedAt` → `timestamps: { createdAt, updatedAt }`; (3) `review.waves` was
+> **removed** — it duplicated `remediationWaves.count`, which is the single
+> authoritative wave counter (reset to 0 by `review --start`, incremented by
+> `review --wave`, capped at `max`). No semantic gate changed.
 
 ### A.3 `phase` enum & transition table
 
@@ -81,19 +91,36 @@ any → blocked (on STOP condition)   blocked → (human) → resumes prior phas
 layers when `state.json` is missing:
 - `mode`, `commitPolicy`, `baseBranch`, `mergeBaseSha`, `plan.path` ← plan anchor
   header (existing 0.4.x anchor).
-- completed units, `review.waves`, blocked-with-`waves=2` ← `progress.md` ledger.
+- completed units and ledger `waves=N` (→ `remediationWaves.count`),
+  blocked-with-`waves=2` ← `progress.md` ledger.
 - committed work ← `git log` (KEEP: ledger + git log are ground truth on resume).
 - counters reconstruct **conservatively**: a unit the ledger marks blocked at
   `waves=2` stays exhausted (resume cannot reset the budget — existing rule). If the
   ledger is gone (`git clean -fdx`), counters reset to 0 but `repositoryProfile` and
   `plan` are re-derived from git; the controller re-confirms before continuing.
 
-### A.5 Corruption behavior
-`cow-state` validates JSON + `schemaVersion` on every read. On parse/version
-failure it **exits non-zero with a clear message** and does **not** overwrite the
-file. Hooks treat a non-readable/parse-failing state as **inactive ⇒ no-op
-(fail-open)**. The controller surfaces the corruption and runs
-`init --reconstruct`. Never silently discard a corrupt state.
+### A.5 Corruption behavior & state classification
+State is a **validated projection and coordination cache** — never more
+authoritative than Git, the approved plan, or the progress ledger (`00` §6). Every
+read classifies the worktree into exactly one of four states, using `state.json`
+plus an `state.active` marker file (written by `init`, removed by `complete`) that
+distinguishes "never activated" from "active but state lost":
+
+| Class | Evidence | `status` | Mutating commands |
+|---|---|---|---|
+| **ABSENT** | no `state.json`, no marker | succeeds, reports `absent` (exit 0) | refuse (`init` first) |
+| **INACTIVE** | valid `state.json`, `active=false` | succeeds, reports `inactive` (exit 0) | refuse (`init` to start) |
+| **ACTIVE_VALID** | valid `state.json`, `active=true` | prints position | operate normally |
+| **ACTIVE_CORRUPT** | marker present but `state.json` missing, **or** `state.json` unparseable/schema-invalid/wrong `schemaVersion` | **fails (exit 3)**, preserves the file | refuse |
+
+`cow-state` validates JSON + `schemaVersion` + every enum/counter on each read. On
+any corruption it **exits non-zero (3) with a clear message** and **never
+overwrites** the file — corrupt evidence is preserved. It never silently
+reinterprets a corrupt state as inactive. Recovery is the **explicit**
+`init --reconstruct`, which first renames any corrupt `state.json` aside
+(`state.json.corrupt-<ts>`) before rebuilding from the authoritative layers. Hooks
+(Phases 4–5) treat absent/inactive/unreadable state as **no-op (fail-open)**; that
+hook behavior is **not** implemented in Phase 1.
 
 ### A.6 Atomic write & concurrency
 - **Atomic write:** write to `state.json.tmp` then `fs.renameSync` over
@@ -124,8 +151,13 @@ control position, never the source of truth for code or completion.
 | `cow-state block --reason <token>` | state | blocked | hard STOP |
 | `cow-state complete` | state | active=false | end the workflow cleanly |
 
-Node stdlib + git only; lives at `skills/execution-routing/scripts/cow-state`
-(runtime-allowlisted via `skills/**`).
+Node stdlib + git only; lives at `skills/execution-routing/scripts/cow-state.mjs`
+(runtime-allowlisted via `skills/**`; §4.1). It is **Node-invoked** (mode 100644,
+no exec bit): `node <plugin>/skills/execution-routing/scripts/cow-state.mjs <cmd>`.
+The `cow-state <cmd>` shorthand in this table and the receipts (`02` B.3) names that
+invocation. The worktree root is resolved from the caller's CWD via
+`git rev-parse --show-toplevel`, so each linked worktree gets its own state. Every
+command accepts `--json` / `--oneline`; mutating commands print the new position.
 
 ---
 

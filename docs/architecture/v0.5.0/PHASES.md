@@ -15,10 +15,11 @@ Global prerequisite: this Phase-0 doc set committed on `feat/v0.5.0-control-plan
 - **Objective:** Land the deterministic substrate: `cow-state` + `state.json`
   schema, and `repository-intake` + `repo-snapshot.mjs` + profile. No routing,
   agents, or hooks yet.
-- **Likely files:** `skills/execution-routing/scripts/cow-state`;
+- **Likely files:** `skills/execution-routing/scripts/cow-state.mjs`;
   `skills/repository-intake/SKILL.md` + `scripts/repo-snapshot.mjs`;
-  `tests/scripts.test.sh` (+cases); `tests/validate-structure.mjs` (+state/profile
-  schema checks); `docs/architecture/v0.5.0/*` (reference only).
+  `tests/state.test.mjs` + `tests/repo-intake.test.mjs` (new zero-dep Node suites,
+  run via `test:foundation`); `tests/validate-structure.mjs` (+prose-budget split
+  for the on-demand skill, +runtime-path check); `docs/architecture/v0.5.0/*`.
 - **Allowed scope:** new helper + new skill + tests + their docs.
 - **Prohibited scope:** editing routing skills' behavior, launchers, agents, hooks,
   version, runtime allowlist (beyond what `skills/**` already covers), review matrix.
@@ -32,9 +33,12 @@ Global prerequisite: this Phase-0 doc set committed on `feat/v0.5.0-control-plan
   + dirty-tree + size caps + no-secrets.
 - **Acceptance gate:** L1+L2 green; `cow-state` never writes prose; snapshot
   re-run byte-identical (modulo timestamp); reconstruct rebuilds from anchor+ledger.
-- **Rollback point:** revert the commit; 0.4.2 behavior is untouched (new files only).
-- **Commit boundary:** `feat: add cow-state and repository-intake foundation`.
-- **Artifacts for next phase:** `state.json` schema + helper; profile schema.
+- **Rollback point:** revert the commits; 0.4.2 behavior is untouched (new files only).
+- **Commit boundary:** two commits — `feat: add workflow state foundation` then
+  `feat: add repository intake foundation` (state lands first; intake depends on the
+  shared workspace convention). See `PHASE-1-HANDOFF.md`.
+- **Artifacts for next phase:** `state.json` schema + helper; snapshot + profile
+  contract; `PHASE-1-HANDOFF.md`.
 
 ## Phase 2 — Plugin agents
 

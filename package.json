@@ -7,6 +7,7 @@
   "scripts": {
     "check": "node tests/validate-structure.mjs",
     "test:scripts": "bash tests/scripts.test.sh",
+    "test:foundation": "node tests/state.test.mjs",
     "test:eval": "bash tests/eval/run-tests.sh",
     "test": "node tests/validate-structure.mjs && bash tests/scripts.test.sh",
     "release:build": "bash scripts/build-release.sh",
