@@ -153,6 +153,20 @@ const readState = (root) => JSON.parse(fs.readFileSync(path.join(runDir(root), '
   check(readState(root).phase === 'triage', 'profile command does not change phase');
 }
 
+// ── BOM tolerance (Phase 3A.1): a leading UTF-8 BOM must not read as INVALID ──
+{
+  const { dir, root } = newRepo();
+  const fp = setupSnapshot(dir);
+  fs.writeFileSync(profPath(root), '\uFEFF' + JSON.stringify(validProfile(fp), null, 2) + '\n');
+  const st = node(PROFILE, dir, 'status', '--snapshot', path.join(runDir(dir), 'repo-snapshot.json'));
+  check(st.status === 0 && /VALID/.test(st.stdout), 'BOM: a BOM-prefixed profile reads as VALID, not INVALID');
+  // a BOM-prefixed snapshot is also tolerated by acceptance
+  const snap = path.join(runDir(root), 'repo-snapshot.json');
+  fs.writeFileSync(snap, '\uFEFF' + fs.readFileSync(snap, 'utf8'));
+  const raw = writeRaw(root, '\uFEFF' + envelope('READY', validProfile(fp)));
+  check(accept(dir, raw).status === 0, 'BOM: a BOM-prefixed snapshot + envelope still accept');
+}
+
 for (const d of tmps) { try { fs.rmSync(d, { recursive: true, force: true }); } catch { /* ignore */ } }
 console.log(`\nprofile: ${passes} checks passed, ${fails} failed.`);
 if (fails > 0) process.exit(1);

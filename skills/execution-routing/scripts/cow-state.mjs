@@ -200,7 +200,7 @@ function classify(p) {
   try { raw = fs.readFileSync(p.state, 'utf8'); }
   catch (err) { return { kind: 'ACTIVE_CORRUPT', reason: `state.json unreadable: ${err.message}` }; }
   let parsed;
-  try { parsed = JSON.parse(raw); }
+  try { parsed = JSON.parse(raw.replace(/^\uFEFF/, '')); } // tolerate a leading UTF-8 BOM
   catch { return { kind: 'ACTIVE_CORRUPT', reason: 'state.json is not valid JSON' }; }
   const errs = validateState(parsed);
   if (errs.length) return { kind: 'ACTIVE_CORRUPT', reason: `state.json failed schema validation: ${errs[0]}` };

@@ -387,7 +387,10 @@ const runtimeProseFiles = [
 ];
 const runtimeBytes = runtimeProseFiles.reduce((sum, file) =>
   sum + Buffer.byteLength(read(path.join(root, file)), 'utf8'), 0);
-check(runtimeBytes <= 86000, `always-on runtime prose stays within 86000 bytes (${runtimeBytes})`);
+// 86,000 is the absolute ceiling; Phase 3A.1 tightened the maintainable GATE to
+// 85,000 (≥1,000 bytes headroom for Phase 3B) by moving duplicated operational
+// detail into on-demand references — never by deleting safety rules.
+check(runtimeBytes <= 85000, `always-on runtime prose stays within the 85000-byte gate (${runtimeBytes}; absolute ceiling 86000)`);
 for (const [name, ceiling] of Object.entries(ON_DEMAND_SKILL_CEILINGS)) {
   const f = `skills/${name}/SKILL.md`;
   if (!fs.existsSync(path.join(root, f))) { fail(`on-demand skill ${f} exists`); continue; }
@@ -444,7 +447,8 @@ check(/three times.*extend only\s+that fixture to five/s.test(dogfoodText),
 const readRef = (rel) => { const ap = path.join(root, rel); return fs.existsSync(ap) ? read(ap) : ''; };
 const READINESS = 'skills/using-cost-oriented-workflow/references/repository-readiness.md';
 const DISCOVERY = 'skills/using-cost-oriented-workflow/references/discovery-routing.md';
-for (const [relRef, ceil] of [[READINESS, 4500], [DISCOVERY, 4500]]) {
+const ROUTING_CUES = 'skills/using-cost-oriented-workflow/references/routing-cues.md';
+for (const [relRef, ceil] of [[READINESS, 5500], [DISCOVERY, 4500], [ROUTING_CUES, 2500]]) {
   const b = Buffer.byteLength(readRef(relRef), 'utf8');
   check(b > 0 && b <= ceil, `${relRef} within its on-demand reference ceiling (${b}/${ceil})`);
 }
@@ -484,6 +488,25 @@ check(/REQUIRES_REROUTE/.test(sysDebugText) && /TRACKED_DIAGNOSTIC_INSTRUMENTATI
   'routing: tracked diagnostic instrumentation re-routes before any tracked edit');
 check(/cow-state.mjs root-cause/.test(sysDebugText) && /controller[^.]*adjudicates the diagnosis/i.test(sysDebugText),
   'routing: the controller (not the investigator) owns diagnosis adjudication + state');
+
+// ── Phase 3A.1: warm-profile boundary + moved-content + safety invariants ────
+check(/Profile validity controls repository intake\. Task uncertainty controls/i.test(readinessRef),
+  'warm rule: profile validity (intake) and task uncertainty (task discovery) are separate decisions');
+check(/VALID`?[^\n]*no `?PROFILE_DRAFT`? dispatch/i.test(readinessRef),
+  'warm rule: a VALID profile triggers no PROFILE_DRAFT dispatch');
+check(/do not authorize `?PROFILE_DRAFT`?/i.test(readinessRef),
+  'warm rule: dirty source paths alone do not authorize PROFILE_DRAFT');
+check(/dirty tree alone never authorizes intake/i.test(entrySkillText),
+  'warm rule: entry skill states a dirty tree alone never authorizes intake');
+const cuesRef = readRef('skills/using-cost-oriented-workflow/references/routing-cues.md');
+check(/Positive route cues/i.test(cuesRef) && /light-inline/.test(cuesRef) && /delegate/i.test(cuesRef),
+  'moved detail: the positive route cues live in routing-cues.md');
+check(/references\/routing-cues\.md/.test(entrySkillText),
+  'moved detail: the entry skill points to the routing-cues reference');
+check(/Hard exclusions/i.test(entrySkillText) && /Risk classification/i.test(entrySkillText),
+  'safety: the reclaim kept risk classification + hard exclusions in the entry skill');
+check(/NO FIX WITHOUT ROOT CAUSE FIRST/.test(sysDebugText),
+  'safety: systematic-debugging keeps the root-cause Iron Law after the reclaim');
 
 // ── Summary ─────────────────────────────────────────────────────────────────
 console.log(`\n${passes} checks passed, ${failures} failed.`);

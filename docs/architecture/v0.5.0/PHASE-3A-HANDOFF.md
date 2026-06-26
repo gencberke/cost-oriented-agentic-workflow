@@ -16,10 +16,17 @@ targeted a throwaway fixture repo, never the temp plugin (the marker's only
 location). So the marker could only come from the **injected preload** — proving the
 qualified `skills:` preload works at runtime. Source repo unchanged. Evidence:
 `.cost-oriented-agentic-workflow/eval/agents/preload-sentinel-proof.stream.jsonl`
-(ignored). The strict "zero tool calls" procedure was infeasible (the agent prioritizes
-its diagnosis contract over a contentless recall, observed across three framings); the
-random-sentinel-unreachable-by-tools proof establishes the same fact and is documented
-openly, not weakened.
+(ignored).
+
+**Correction (precise wording).** The originally-requested **zero-tool recall
+procedure did NOT pass**: across three framings the agent prioritized its operational
+diagnosis contract over a contentless recall and made tool calls instead of replying
+from context alone. Preload was therefore demonstrated a different way — with a random
+marker present **only** in the temporary preloaded skill copy, where **no agent tool
+accessed the temporary plugin path** (every tool call targeted the throwaway fixture).
+This is an **equivalent accessibility proof** (the marker was unreachable except via
+the preload), **not** literal compliance with the original zero-tool procedure. The
+original procedure is not claimed as passed.
 
 ## Profile acceptance (§6)
 
@@ -89,21 +96,26 @@ authoritative for spawn counts (a prose mention of an agent is not a dispatch).
 | C stale-profile | **STALE → warm** | one `cow-repo-investigator` re-intake | none | new fingerprint accepted, **no silent reuse** of the stale profile |
 | D single-bug | warm | one `cow-debug-investigator` | none (bug left unfixed) | root cause evidenced via `cow-state root-cause`; no implementer; stopped, route pending |
 | E disjoint-bugs | warm | **two** `cow-debug-investigator` (≤2, disjoint scopes) | none | both diagnosed; no implementer; stopped |
-| F dirty-tree | **VALID** despite dirty | (see note) | none — **user edits preserved**, no reset/clean/checkout/stash | profile VALID; dirty paths recorded read-only |
+| F dirty-tree | **VALID** despite dirty | `cow-repo-investigator` **`OUTPUT_FORMAT=PROFILE_DRAFT`** — *wrong; fixed in Phase 3A.1* | none — **user edits preserved**, no reset/clean/checkout/stash | dirty handling correct, but the profile was **wrongly regenerated** |
 
-All six pass. Controllers ran on Opus; investigators on Sonnet; every dispatch used
-the exact scoped identifier; in every smoke the controller **stopped at implementation
-triage with `implementationRoute` pending** and dispatched no `cow-implementer`/`cow-reviewer`.
+The dirty-handling assertions (preserve user edits, no destructive git,
+VALID-despite-dirty) passed for F; A–E passed fully. Controllers ran on Opus,
+investigators on Sonnet; every dispatch used the exact scoped identifier; in every
+smoke the controller **stopped at implementation triage with `implementationRoute`
+pending** and dispatched no `cow-implementer`/`cow-reviewer`.
 
 Notes (recorded for honesty, not weakening): (1) Smoke A's first run was cut by an
 **account session limit** before profile finalization — an environment limit, not a
 repo defect; the re-run (after reset) completed cleanly. (2) Smoke B was retried once
 for a **harness defect** — a `--token` in the task wording was parsed by the `claude`
-CLI as an option; reworded, it passed. (3) Smoke F: the controller dispatched a
-`cow-repo-investigator` even though the profile was VALID (a minor deviation — the
-strict warm-skip seen in B was not taken under a dirty tree); all **required**
-dirty-handling assertions (preserve user edits, no destructive git, VALID-despite-dirty)
-passed. This warm-skip-under-dirty nuance is a Phase 3B calibration item.
+CLI as an option; reworded, it passed. (3) **Smoke F correction (Phase 3A.1
+analyzer).** Smoke F's dispatch was conclusively `OUTPUT_FORMAT: PROFILE_DRAFT` — i.e.
+the controller **regenerated the profile (intake)** for a VALID-but-dirty repo, the
+**wrong** behavior, not a "warm-skip deviation." Phase 3A.1 fixes this: the
+repository-readiness reference now states that a VALID profile (even dirty) triggers
+**no `PROFILE_DRAFT`** dispatch and that dirty source alone never authorizes intake; a
+structural invariant enforces the wording; and a focused warm-dirty smoke re-verifies
+**zero PROFILE_DRAFT** dispatches. See `PHASE-3A.1-HANDOFF.md`.
 
 ## Boundary statements (must hold entering Phase 3B)
 

@@ -1,0 +1,13 @@
+{
+  "id": "no-controller-reinvestigation",
+  "fixture_version": 1,
+  "repositoryProfileState": "VALID",
+  "repoInvestigatorPurpose": "TASK_DISCOVERY",
+  "discoveryRoute": "investigator",
+  "controllerReadBudget": { "targetReadsBefore": 3, "broadQueriesBefore": 1, "targetReadsAfter": 1, "broadQueriesAfter": 0 },
+  "expectations": [
+    "after delegation: at most 1 targeted adjudication read, 0 new broad queries (unless a visible Re-route explains why)",
+    "the controller consumes the returned report rather than re-tracing the subsystem"
+  ],
+  "forbidden": ["a new broad repository query after delegation without a Re-route", "re-reading the delegated scope to redo the investigator's work"]
+}

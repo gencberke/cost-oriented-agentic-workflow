@@ -29,6 +29,10 @@ const PROFILE_STATUS = ['ready', 'partial'];
 const SECRET_RE = /(-----BEGIN [A-Z ]*PRIVATE KEY-----|AKIA[0-9A-Z]{16}|password\s*[:=]|secret\s*[:=]|api[_-]?key\s*[:=]|process\.env\.|\b[A-Z][A-Z0-9_]{3,}=[^\s]+)/i;
 
 const die = (msg, code = 1) => { process.stderr.write(`repo-profile: ERROR: ${msg}\n`); process.exit(code); };
+// Tolerate a leading UTF-8 BOM (e.g. a profile written by a BOM-adding editor or by
+// PowerShell `Set-Content -Encoding utf8`) so it never reads as INVALID.
+const stripBom = (s) => s.replace(/^\uFEFF/, '');
+const readJson = (p) => JSON.parse(stripBom(fs.readFileSync(p, 'utf8')));
 
 // ── git / workspace plumbing ─────────────────────────────────────────────────
 function requireGit() {
@@ -163,7 +167,7 @@ function validateProfile(root, profile, snapshot, { fromAgent } = {}) {
 
 function readSnapshot(p) {
   if (!fs.existsSync(p)) die(`snapshot not found: ${p}. Run repo-snapshot.mjs write first.`, 2);
-  try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch (e) { die(`snapshot is not valid JSON: ${e.message}`); }
+  try { return readJson(p); } catch (e) { die(`snapshot is not valid JSON: ${e.message}`); }
 }
 
 // ── Markdown render (deterministic, bounded ≤150 lines) ──────────────────────
@@ -205,7 +209,7 @@ function loadAndValidateFromAgent(root, p, rawPath, snapPath) {
   if (!rawPath) die('a <raw-output-path> is required');
   if (!fs.existsSync(rawPath)) die(`raw agent output not found: ${rawPath}`, 2);
   const snapshot = readSnapshot(snapPath || p.snapshot);
-  const raw = fs.readFileSync(rawPath, 'utf8');
+  const raw = stripBom(fs.readFileSync(rawPath, 'utf8'));
   let env;
   try { env = extractEnvelope(raw); } catch (e) { die(`envelope: ${e.message}`, 3); }
   const profile = env.json;
@@ -244,7 +248,7 @@ function cmdValidate(root, p, argv) {
   if (!fs.existsSync(pos[0])) die(`candidate not found: ${pos[0]}`, 2);
   const snapshot = readSnapshot(flags.snapshot || p.snapshot);
   let profile;
-  try { profile = JSON.parse(fs.readFileSync(pos[0], 'utf8')); } catch (e) { process.stderr.write(`INVALID\n  - not valid JSON: ${e.message}\n`); process.exit(3); }
+  try { profile = readJson(pos[0]); } catch (e) { process.stderr.write(`INVALID\n  - not valid JSON: ${e.message}\n`); process.exit(3); }
   const errors = validateProfile(root, profile, snapshot, { fromAgent: false });
   if (errors.length) { process.stderr.write('INVALID\n' + errors.map((e) => '  - ' + e).join('\n') + '\n'); process.exit(3); }
   process.stdout.write(`VALID (status=${profile.status})\n`);
@@ -254,7 +258,7 @@ function cmdStatus(root, p, argv) {
   const { flags } = parseFlags(argv);
   if (!fs.existsSync(p.profile)) { process.stdout.write('MISSING\n'); process.exit(3); }
   let profile;
-  try { profile = JSON.parse(fs.readFileSync(p.profile, 'utf8')); } catch { process.stdout.write('INVALID\n'); process.exit(4); }
+  try { profile = readJson(p.profile); } catch { process.stdout.write('INVALID\n'); process.exit(4); }
   const snapPath = flags.snapshot || p.snapshot;
   if (!fs.existsSync(snapPath)) { process.stdout.write('MISSING\n  - no snapshot to compare\n'); process.exit(3); }
   const snapshot = readSnapshot(snapPath);
@@ -267,7 +271,7 @@ function cmdStatus(root, p, argv) {
 function cmdRender(root, p) {
   if (!fs.existsSync(p.profile)) die('no repo-profile.json to render', 2);
   let profile;
-  try { profile = JSON.parse(fs.readFileSync(p.profile, 'utf8')); } catch (e) { die(`repo-profile.json is not valid JSON: ${e.message}`); }
+  try { profile = readJson(p.profile); } catch (e) { die(`repo-profile.json is not valid JSON: ${e.message}`); }
   atomicWrite(p.dir, p.md, renderMarkdown(profile));
   process.stdout.write(`rendered ${p.md}\n`);
 }

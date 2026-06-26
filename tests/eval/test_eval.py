@@ -437,5 +437,60 @@ class DiscoveryFixtureContractTests(unittest.TestCase):
             self.assertEqual(agent(fid), "cost-oriented-agentic-workflow:cow-repo-investigator")
 
 
+DISCOVERY_HARDENING = HERE / "discovery-hardening"
+DH_IDS = {
+    "warm-valid-no-intake", "warm-valid-task-discovery", "warm-dirty-no-intake",
+    "stale-profile-reintake", "controller-map-budget", "no-controller-reinvestigation",
+}
+DH_PROFILE_STATES = {"VALID", "VALID-dirty", "STALE"}
+DH_PURPOSES = {"NONE", "PROFILE_DRAFT", "TASK_DISCOVERY"}
+DH_ROUTES = {"controller-map", "investigator", "none"}
+
+
+class DiscoveryHardeningFixtureTests(unittest.TestCase):
+    """Shape + coherence for the Phase 3A.1 warm-profile-boundary fixtures.
+
+    The load-bearing invariant: a VALID profile (even dirty) never triggers a
+    PROFILE_DRAFT dispatch; only STALE does. Schema validity is not behavioral
+    proof — the analyzer on live streams provides the numeric evidence.
+    """
+
+    def test_fixture_set_and_readme(self) -> None:
+        self.assertTrue(DISCOVERY_HARDENING.is_dir())
+        self.assertEqual({p.name for p in DISCOVERY_HARDENING.iterdir() if p.is_dir()}, DH_IDS)
+        self.assertGreater((DISCOVERY_HARDENING / "README.md").stat().st_size, 200)
+
+    def test_each_fixture_is_well_formed(self) -> None:
+        for fid in sorted(DH_IDS):
+            d = DISCOVERY_HARDENING / fid
+            with self.subTest(fixture=fid):
+                self.assertEqual({p.name for p in d.iterdir()}, {"prompt.md", "expected.json"})
+                self.assertGreater((d / "prompt.md").stat().st_size, 50)
+                e = json.loads((d / "expected.json").read_text(encoding="utf-8"))
+                self.assertEqual(e["id"], fid)
+                self.assertEqual(e["fixture_version"], 1)
+                self.assertIn(e["repositoryProfileState"], DH_PROFILE_STATES)
+                self.assertIn(e["repoInvestigatorPurpose"], DH_PURPOSES)
+                self.assertIn(e["discoveryRoute"], DH_ROUTES)
+                b = e["controllerReadBudget"]
+                self.assertEqual(b, {"targetReadsBefore": 3, "broadQueriesBefore": 1, "targetReadsAfter": 1, "broadQueriesAfter": 0})
+                for field in ("expectations", "forbidden"):
+                    self.assertIsInstance(e[field], list)
+                    self.assertGreaterEqual(len(e[field]), 1)
+                    self.assertTrue(all(isinstance(x, str) and x for x in e[field]))
+
+    def test_warm_profile_boundary_coherence(self) -> None:
+        for fid in sorted(DH_IDS):
+            e = json.loads((DISCOVERY_HARDENING / fid / "expected.json").read_text(encoding="utf-8"))
+            with self.subTest(fixture=fid):
+                if e["repositoryProfileState"].startswith("VALID"):
+                    self.assertNotEqual(e["repoInvestigatorPurpose"], "PROFILE_DRAFT",
+                                        "a VALID/dirty profile must never trigger PROFILE_DRAFT")
+                if e["repositoryProfileState"] == "STALE":
+                    self.assertEqual(e["repoInvestigatorPurpose"], "PROFILE_DRAFT")
+        dirty = json.loads((DISCOVERY_HARDENING / "warm-dirty-no-intake" / "expected.json").read_text(encoding="utf-8"))
+        self.assertTrue(any("PROFILE_DRAFT" in x for x in dirty["forbidden"]))
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -1,0 +1,13 @@
+{
+  "id": "stale-profile-reintake",
+  "fixture_version": 1,
+  "repositoryProfileState": "STALE",
+  "repoInvestigatorPurpose": "PROFILE_DRAFT",
+  "discoveryRoute": "investigator",
+  "controllerReadBudget": { "targetReadsBefore": 3, "broadQueriesBefore": 1, "targetReadsAfter": 1, "broadQueriesAfter": 0 },
+  "expectations": [
+    "exactly one cow-repo-investigator with OUTPUT_FORMAT=PROFILE_DRAFT",
+    "the accepted profile carries the new fingerprint"
+  ],
+  "forbidden": ["silent reuse of the stale profile", "more than one PROFILE_DRAFT dispatch"]
+}

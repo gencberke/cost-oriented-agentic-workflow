@@ -71,6 +71,8 @@ const CI_EXACT = new Set(['.gitlab-ci.yml', '.circleci/config.yml', 'azure-pipel
 // ── Plumbing ────────────────────────────────────────────────────────────────
 const die = (msg, code = 1) => { process.stderr.write(`repo-snapshot: ERROR: ${msg}\n`); process.exit(code); };
 const sha256 = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
+// Tolerate a leading UTF-8 BOM so a BOM-prefixed manifest or profile still parses.
+const stripBom = (s) => s.replace(/^\uFEFF/, '');
 
 function requireGit() {
   try { execFileSync('git', ['--version'], { stdio: 'ignore' }); }
@@ -175,7 +177,7 @@ function buildSnapshot(root) {
   for (const m of manifestsCapped) {
     if (m.type === 'npm') {
       try {
-        const pkg = JSON.parse(fs.readFileSync(path.join(root, m.path), 'utf8'));
+        const pkg = JSON.parse(stripBom(fs.readFileSync(path.join(root, m.path), 'utf8')));
         const scripts = pkg.scripts || {};
         if (scripts.build) buildCommands.add('npm run build');
         if (scripts.test) testCommands.add('npm test');
@@ -317,7 +319,7 @@ function cmdCheckProfile(root, argv) {
   const abs = path.resolve(process.cwd(), file);
   if (!fs.existsSync(abs)) { process.stdout.write('MISSING\n'); process.exit(3); }
   let profile;
-  try { profile = JSON.parse(fs.readFileSync(abs, 'utf8')); }
+  try { profile = JSON.parse(stripBom(fs.readFileSync(abs, 'utf8'))); }
   catch { process.stdout.write('INVALID\n'); process.exit(4); }
   if (!profile || typeof profile !== 'object' || typeof profile.fingerprint !== 'string' || typeof profile.schemaVersion !== 'number') {
     process.stdout.write('INVALID\n'); process.exit(4);

@@ -70,3 +70,23 @@ and reuse the profile.
   signature produces `STALE` → run intake again.
 - Dirty source edits **alone** never auto-invalidate the profile; the snapshot
   records dirty paths and proceeds read-only (no reset/stash/clean).
+
+### Profile validity vs. task discovery — two separate decisions
+
+**Profile validity controls repository intake. Task uncertainty controls
+task-specific discovery. They are separate decisions** — never conflate them:
+
+- **profile `VALID` → no `PROFILE_DRAFT` dispatch.** A valid profile is warm; do not
+  regenerate it. `PROFILE_DRAFT` (intake) is for `MISSING`/`STALE`/`INVALID` only.
+- **profile `VALID` + the task needs semantic discovery → `TASK_DISCOVERY` may be
+  dispatched** (`cow-repo-investigator` with `OUTPUT_FORMAT=TASK_DISCOVERY`) to map
+  one subsystem — this does **not** rebuild the profile and leaves its fingerprint
+  unchanged.
+- **dirty source paths alone do not change profile validity and do not authorize
+  `PROFILE_DRAFT`.** A dirty tree may affect allowed paths, ownership, risk, or
+  implementation sequencing — but it must **not**, by itself, trigger repository-
+  profile regeneration. Only a fingerprint change (manifest / instruction /
+  structure) makes a profile `STALE`.
+
+So: a warm, dirty repository is still warm. If a dirty-tree task needs deeper
+mapping, that is `TASK_DISCOVERY`, never `PROFILE_DRAFT`.

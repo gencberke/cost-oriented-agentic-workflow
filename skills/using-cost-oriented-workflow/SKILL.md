@@ -35,7 +35,7 @@ Route: lane=light-inline; repository=warm; discovery=controller-map; implementat
 
 Say nothing more about routing while it stays unchanged. If evidence changes it, show exactly one `Re-route: reason=<code>; discovery=<new-route>; implementation=pending` line before the next tracked edit.
 
-**Repository readiness precedes broad exploration.** On activation: state → snapshot → profile → intake-if-not-warm → discovery route, *before* reading source. `VALID` profile = warm path; else dispatch the exact `cost-oriented-agentic-workflow:cow-repo-investigator` (never auto-select) and accept its draft via `repo-profile.mjs`. Discovery route is separate from the implementation route, which stays **`pending`** here. Detail: references/repository-readiness.md, references/discovery-routing.md.
+**Repository readiness precedes broad exploration.** On activation: state → snapshot → profile → intake-if-not-warm → discovery route, *before* reading source. `VALID` profile = warm path; else dispatch the exact `cost-oriented-agentic-workflow:cow-repo-investigator` (never auto-select) and accept its draft via `repo-profile.mjs`. Discovery route is separate from the implementation route, which stays **`pending`** here. A dirty tree alone never authorizes intake (`PROFILE_DRAFT`) — a warm repo stays warm; deeper mapping of a dirty repo is `TASK_DISCOVERY`, never profile regeneration. Detail: references/repository-readiness.md, references/discovery-routing.md.
 
 ```dot
 digraph flow {
@@ -51,18 +51,7 @@ digraph flow {
 }
 ```
 
-**Positive route cues — priors, not automatic decisions:**
-
-| Evidence | Likely route |
-|---|---|
-| One evidenced root cause, one small low-risk diff, existing test path | `light-inline` |
-| Two+ independent outcomes (even in one file) | separate units or one delegated batch |
-| Unknown repo with evidenced disjoint problem domains | cheap controller map, then read-only investigators |
-| New dependency, test harness, schema, migration, or config | planned elevated unit |
-| Self-contained multi-file or ~80–100+ line implementation | `delegate` |
-| Shared files/state or tight coupling | one batch or sequential execution |
-
-For a light path, the receipt is the agreed approach: no plan file or decomposition. For ambiguous new behavior use brainstorming; for clear multi-step work go directly to writing-plans. Size controls cost, while risk can still veto light-inline. **Two independent user-visible outcomes are never one light-inline change** — even when both edits land in the same file, route them as separate sequential units or one delegated batch with separate acceptance and regression per outcome (writing-plans). "Same file, each fix small" does not license light-inline.
+**Positive route cues** (priors, not automatic decisions) live in references/routing-cues.md. For a light path the receipt is the agreed approach (no plan file). For ambiguous new behavior use brainstorming; for clear multi-step work go to writing-plans. Size controls cost, while risk can still veto light-inline. **Two independent user-visible outcomes are never one light-inline change** — even when both edits land in the same file, route them as separate sequential units or one delegated batch with separate acceptance and regression per outcome (writing-plans). "Same file, each fix small" does not license light-inline.
 
 ### Light-path escape hatch
 
@@ -111,28 +100,24 @@ These are binary and catastrophic if skipped. They are the spine.
 
 ## Judgment calls (calibrate — do not ritualize)
 
-These are continuous cost-benefit trade-offs. There is no fixed answer; weigh the task.
+Continuous cost-benefit trade-offs; weigh the task — no fixed answer.
 
-- **Process weight (the triage)** — select the applicable process skill first, then size implementation work. A trivial, tightly-coupled change takes the light path; only real multi-step or ambiguous work earns a plan.
-- **Delegate vs inline** — the contract-cost rule (execution-routing). Writing the subagent contract should cost less than writing the code yourself, or do it inline.
-- **Contract thickness** — pin the seams, free the interior (execution-routing). Thin in standard, thicker in production.
-- **Review depth** — *how deep* scales with risk and diff size; *whether* follows the mode/risk matrix above.
-- **Tests** — in standard, only what genuinely protects the change; in production, thorough.
-- **Brainstorming intensity** — scales with how ambiguous or messy the request is. A clear request gets a short gate; a vague one gets real exploration.
-- **Exploration breadth** — none for a repo you already hold in context; otherwise establish repository readiness, then route discovery from the cheap map (references/repository-readiness.md, references/discovery-routing.md), independent of eventual fix size.
+- **Process weight** — select the process skill first, then size the work; a trivial tightly-coupled change takes the light path, only multi-step or ambiguous work earns a plan.
+- **Delegate vs inline** — contract-cost rule (execution-routing): contract costs more than the code → write it inline.
+- **Contract thickness** — pin the seams, free the interior (execution-routing); thin in standard, thicker in production.
+- **Review depth** — *how deep* scales with risk/diff size; *whether* follows the matrix above.
+- **Tests** — standard: only what genuinely protects the change; production: thorough.
+- **Brainstorming intensity** — scales with ambiguity: a clear request gets a short gate; a vague one gets real exploration.
+- **Exploration breadth** — none for a repo you already hold; otherwise establish repository readiness, then route discovery (references/repository-readiness.md, references/discovery-routing.md), independent of fix size.
 
 ## Anti-drift is structure, not stern wording
 
-Long sessions drift when there is no cheap artifact to re-anchor against. That artifact is the **persistent task list + the anchor header** at the top of the plan/task file. Re-read the header each loop. Do not rely on forceful language to hold the line — rely on re-reading the small, durable record.
-
-**Anchor header** — writing-plans creates and owns the canonical block at the top of the plan/task file; keep it current and re-read it each loop. It pins, in a few lines: `MODE`, `COMMIT_POLICY`, the `ROUTING` chain, a one-line `CADENCE`/STOP list, and the `ON RESUME/COMPACTION` rule (if `COW_ENTRY_INJECTED` is absent invoke the entry skill exactly once, else do not reload it).
-
-After compaction/resume, plan + progress ledger + `git log` are ground truth regardless of how the entry skill was loaded.
+Long sessions drift without a cheap artifact to re-anchor against: the **persistent task list + the anchor header** at the top of the plan/task file. Re-read it each loop — rely on the small, durable record, not forceful language. writing-plans creates and owns the anchor (`MODE`, `COMMIT_POLICY`, the `ROUTING` chain, a `CADENCE`/STOP line, and the `ON RESUME/COMPACTION` rule). After compaction/resume, plan + progress ledger + `git log` are ground truth.
 
 ## Token-economy posture
 
-- Specify the model explicitly on every subagent dispatch — an omitted model silently inherits your expensive controller model.
-- Move bulk artifacts (diffs, briefs, reports) as **files**, not pasted text; don't re-explore a repo you already hold in context.
+- Specify the model on every subagent dispatch — an omitted model inherits your expensive controller model.
+- Move bulk artifacts (diffs, briefs, reports) as **files**, not pasted text; don't re-explore a repo you already hold.
 
 ## Instruction priority
 
@@ -144,7 +129,7 @@ If the human says skip a step, skip it. Instructions say WHAT; they do not by th
 
 ## Where to go next
 
-Invoke these by their full id `cost-oriented-agentic-workflow:<name>` — these names also exist in other skill libraries, so qualify them or the wrong one may load.
+Invoke by full id `cost-oriented-agentic-workflow:<name>` — names collide across libraries, so qualify or the wrong one loads.
 
 - A new non-bug task → start with implementation triage (light path vs brainstorm vs plan).
 - Designing something new (ambiguous/messy) → **brainstorming**
