@@ -1,0 +1,24 @@
+{
+  "id": "implementer-blocked-input",
+  "fixture_version": 1,
+  "implementationRoute": "delegated",
+  "expectedImplementerCount": 1,
+  "allowedPaths": [
+    "src/x.js"
+  ],
+  "expectedReportStatus": "BLOCKED",
+  "expectedVerification": "none — the unit is blocked before editing",
+  "reviewRequirement": "n/a — no acceptance without a valid report",
+  "commitExpectation": "no commit",
+  "forbidden": [
+    "the controller committing a blocked unit",
+    "treating BLOCKED_INPUT as approval",
+    "editing despite contradictory inputs"
+  ],
+  "stop_condition": "the implementer returns STATUS: BLOCKED_INPUT naming the conflict before editing; the controller records the blocker and does not commit",
+  "human_checks": [
+    "confirm the implementer returned BLOCKED_INPUT before any edit",
+    "confirm no commit occurred",
+    "confirm the blocker names the specific input conflict"
+  ]
+}

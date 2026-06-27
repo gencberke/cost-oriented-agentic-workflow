@@ -1,0 +1,25 @@
+{
+  "id": "single-delegated-unit",
+  "fixture_version": 1,
+  "implementationRoute": "delegated",
+  "expectedImplementerCount": 1,
+  "allowedPaths": [
+    "src/auth/session.js",
+    "test/session.test.js"
+  ],
+  "expectedReportStatus": "DONE",
+  "expectedVerification": "npm test exercises the new session-expiry behavior",
+  "reviewRequirement": "standard/low: self-review + final whole-work; production: required per-task review",
+  "commitExpectation": "one controller commit after report validation, compare-worktree, review, and fresh verification",
+  "forbidden": [
+    "the implementer committing",
+    "the implementer updating cow-state",
+    "accepting the report without compare-worktree",
+    "relying on automatic agent selection"
+  ],
+  "stop_condition": "exactly one cost-oriented-agentic-workflow:cow-implementer (Sonnet) writes a validated JSON report; the controller validates it against the real diff, verifies, and commits",
+  "human_checks": [
+    "confirm the spawned agent_type is cost-oriented-agentic-workflow:cow-implementer on sonnet",
+    "confirm task-1-report.json was validated and compared before the commit"
+  ]
+}

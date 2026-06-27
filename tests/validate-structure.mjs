@@ -477,8 +477,8 @@ check(/(validate-agent-output|accept-agent-output)/.test(readinessRef)
   'routing: profile acceptance is mandatory before the profile is trusted');
 check(/stays `pending` here/.test(entrySkillText) && /implementation=pending/.test(entrySkillText),
   'routing: entry skill keeps discovery separate from a pending implementation route');
-check(/stays `pending` in Phase 3A/.test(discoveryRef) && /legacy 0\.4\.x execution path is unchanged/i.test(discoveryRef),
-  'routing: implementation stays pending; the legacy execution path is unchanged');
+check(/stays `pending` through discovery/.test(discoveryRef) && /execution-routing[^)]{0,8}\(live since Phase 3B\.1\)/i.test(discoveryRef),
+  'routing: implementation stays pending through discovery; execution-routing (live since 3B.1) selects it');
 check(/at most three targeted source\/config reads/i.test(discoveryRef) && /at most one bounded Grep or Glob/i.test(discoveryRef),
   'routing: controller-map has a concrete read budget');
 check(/Maximum 2\./.test(discoveryRef) && /at most two .{0,3}cow-debug-investigator/i.test(discoveryRef),
@@ -507,6 +507,82 @@ check(/Hard exclusions/i.test(entrySkillText) && /Risk classification/i.test(ent
   'safety: the reclaim kept risk classification + hard exclusions in the entry skill');
 check(/NO FIX WITHOUT ROOT CAUSE FIRST/.test(sysDebugText),
   'safety: systematic-debugging keeps the root-cause Iron Law after the reclaim');
+
+// ── Phase 3B.1: implementation control-plane structure + reference budgets ───
+// Detailed routing tables, the dispatch/validation sequence, and the report
+// schema live in on-demand references (measured separately); the primary skill
+// keeps the route gate, the dispatch contract, and the validation tripwires.
+const IMPL_ROUTING = 'skills/execution-routing/references/implementation-routing.md';
+const DELEGATED_EXEC = 'skills/execution-routing/references/delegated-execution.md';
+const IMPL_REPORT_REF = 'skills/execution-routing/references/implementation-report.md';
+for (const [relRef, ceil] of [[IMPL_ROUTING, 4500], [DELEGATED_EXEC, 4500], [IMPL_REPORT_REF, 4000]]) {
+  const b = Buffer.byteLength(readRef(relRef), 'utf8');
+  check(b > 0 && b <= ceil, `${relRef} within its on-demand reference ceiling (${b}/${ceil})`);
+}
+const implRoutingRef = norm(readRef(IMPL_ROUTING));
+const delegatedExecRef = norm(readRef(DELEGATED_EXEC));
+const implReportRef = norm(readRef(IMPL_REPORT_REF));
+const execNorm = norm(executionText);
+
+// exact scoped implementer + never automatic selection
+check(readRef(DELEGATED_EXEC).includes('cost-oriented-agentic-workflow:cow-implementer')
+  && readRef(IMPL_ROUTING).includes('cost-oriented-agentic-workflow:cow-implementer')
+  && executionText.includes('cost-oriented-agentic-workflow:cow-implementer'),
+  '3B.1: the exact scoped cow-implementer identifier is named in the skill and references');
+check(/never automatic selection/i.test(execNorm) && /never rely on automatic agent selection/i.test(implRoutingRef),
+  '3B.1: dispatch is explicit — never automatic agent selection');
+
+// the four routes; inline keeps no implementer; delegated dispatches it
+check(/inline \| delegated \| planned-sequential \| delegated-batch/.test(execNorm),
+  '3B.1: the skill names the four implementation routes');
+check(/never dispatch cow-implementer on a true inline route/i.test(execNorm)
+  && /never dispatch cow-implementer on a true inline route/i.test(implRoutingRef),
+  '3B.1: a true inline route dispatches no implementer');
+check(/dispatch the exact .{0,3}cost-oriented-agentic-workflow:cow-implementer/i.test(execNorm),
+  '3B.1: delegated work dispatches the exact scoped implementer');
+
+// report is validated against the ACTUAL diff before acceptance
+check(/implementation-report\.mjs validate/.test(executionText) && /compare-worktree/.test(executionText),
+  '3B.1: the skill validates the report and compares the worktree before acceptance');
+check(/the report is evidence, not truth/i.test(execNorm),
+  '3B.1: the implementer report is evidence, not the source of truth');
+check(/the actual git diff is authoritative over .{0,3}filesChanged/i.test(execNorm)
+  && /the actual git diff is authoritative/i.test(delegatedExecRef),
+  '3B.1: the actual git diff is authoritative over the report');
+
+// fresh verification + commit belong to the controller; the review gate is kept
+check(/fresh controller verification/i.test(execNorm),
+  '3B.1: fresh verification belongs to the controller');
+check(/the controller commits after review/i.test(execNorm),
+  '3B.1: the controller owns the commit, after review');
+check(/Mode\/risk matrix requires independent task review\?/i.test(executionText),
+  '3B.1: the existing review gate remains in the loop order');
+
+// planned units are sequential; same-file outcomes do not collapse; batches keep per-outcome
+check(/one unit at a time; never run overlapping write units in parallel/i.test(implRoutingRef),
+  '3B.1: planned-sequential executes one unit at a time, never overlapping writes');
+check(/do not collapse units merely because they edit one file/i.test(implRoutingRef),
+  '3B.1: same-file independent outcomes do not collapse automatically');
+check(/same-file overlap alone is not enough/i.test(implRoutingRef)
+  && /the batch brief preserves each outcome separately/i.test(implRoutingRef),
+  '3B.1: a delegated batch preserves per-outcome acceptance');
+
+// attempts vs remediation are separate; the report schema is bounded + safe
+check(/separate from the review path.s two remediation waves; never merge the counters/i.test(delegatedExecRef),
+  '3B.1: implementation attempts are separate from remediation waves');
+check(/schemaVersion/.test(implReportRef) && /8 KB/.test(readRef(IMPL_REPORT_REF))
+  && /never store chain-of-thought/i.test(implReportRef),
+  '3B.1: the report schema is bounded (8 KB) and stores no chain-of-thought');
+
+// cow-reviewer is NOT integrated; no active hooks; the helper exists
+const dispatchSurfaces = walk(skillsDir).concat(isDir(cmdDir) ? walk(cmdDir) : [])
+  .filter((f) => f.endsWith('.md')).map((f) => read(f)).join('\n');
+check(!/cost-oriented-agentic-workflow:cow-reviewer/.test(dispatchSurfaces),
+  '3B.1: cow-reviewer is not dispatched from any skill or command (not integrated)');
+check(!fs.existsSync(path.join(root, 'hooks/hooks.json')),
+  '3B.1: no active hooks/hooks.json (only the .example template)');
+check(fs.existsSync(path.join(root, 'skills/execution-routing/scripts/implementation-report.mjs')),
+  '3B.1: the implementation-report helper exists');
 
 // ── Summary ─────────────────────────────────────────────────────────────────
 console.log(`\n${passes} checks passed, ${failures} failed.`);

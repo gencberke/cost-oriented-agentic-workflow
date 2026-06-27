@@ -492,5 +492,80 @@ class DiscoveryHardeningFixtureTests(unittest.TestCase):
         self.assertTrue(any("PROFILE_DRAFT" in x for x in dirty["forbidden"]))
 
 
+IMPLEMENTATION = HERE / "implementation"
+IMPL_IDS = {
+    "trivial-inline", "single-delegated-unit", "same-file-independent-sequential",
+    "coherent-delegated-batch", "implementer-blocked-input", "invalid-implementation-report",
+    "allowed-path-violation", "failed-verification-retry", "dirty-tree-delegated-unit",
+}
+IMPL_ROUTES = {"inline", "delegated", "planned-sequential", "delegated-batch"}
+IMPL_REPORT_STATUS = {"DONE", "PARTIAL", "BLOCKED", "NONE"}
+
+
+class ImplementationFixtureContractTests(unittest.TestCase):
+    """Schema + coherence for the Phase 3B.1 implementation control-plane fixtures.
+
+    Validates fixture *shape* and route/count coherence only. A passing schema is
+    not behavioral proof — the analyzer on live streams plus the human checks are
+    the behavioral layer. The load-bearing coherence: inline dispatches no
+    implementer; delegated/batch dispatch exactly one; planned-sequential is two
+    sequential units; and the negative cases never commit.
+    """
+
+    def _e(self, fid):
+        return json.loads((IMPLEMENTATION / fid / "expected.json").read_text(encoding="utf-8"))
+
+    def test_fixture_set_and_readme(self):
+        self.assertTrue(IMPLEMENTATION.is_dir(), "tests/eval/implementation/ must exist")
+        self.assertEqual({p.name for p in IMPLEMENTATION.iterdir() if p.is_dir()}, IMPL_IDS)
+        self.assertGreater((IMPLEMENTATION / "README.md").stat().st_size, 200)
+
+    def test_each_fixture_is_well_formed(self):
+        for fid in sorted(IMPL_IDS):
+            d = IMPLEMENTATION / fid
+            with self.subTest(fixture=fid):
+                self.assertEqual({p.name for p in d.iterdir()}, {"prompt.md", "expected.json"})
+                self.assertGreater((d / "prompt.md").stat().st_size, 50)
+                e = self._e(fid)
+                self.assertEqual(e["id"], fid)
+                self.assertEqual(e["fixture_version"], 1)
+                self.assertIn(e["implementationRoute"], IMPL_ROUTES)
+                self.assertIsInstance(e["expectedImplementerCount"], int)
+                self.assertGreaterEqual(e["expectedImplementerCount"], 0)
+                self.assertIsInstance(e["allowedPaths"], list)
+                self.assertIn(e["expectedReportStatus"], IMPL_REPORT_STATUS)
+                for field in ("expectedVerification", "reviewRequirement", "commitExpectation", "stop_condition"):
+                    self.assertIsInstance(e[field], str)
+                    self.assertGreater(len(e[field]), 5)
+                for field in ("forbidden", "human_checks"):
+                    self.assertIsInstance(e[field], list)
+                    self.assertGreaterEqual(len(e[field]), 1)
+                    self.assertTrue(all(isinstance(x, str) and x for x in e[field]))
+
+    def test_route_and_count_coherence(self):
+        self.assertEqual(self._e("trivial-inline")["implementationRoute"], "inline")
+        self.assertEqual(self._e("trivial-inline")["expectedImplementerCount"], 0)
+        self.assertTrue(any("cow-implementer" in x for x in self._e("trivial-inline")["forbidden"]),
+                        "the inline fixture must forbid dispatching cow-implementer")
+        self.assertEqual(self._e("single-delegated-unit")["expectedImplementerCount"], 1)
+        self.assertEqual(self._e("coherent-delegated-batch")["implementationRoute"], "delegated-batch")
+        self.assertEqual(self._e("coherent-delegated-batch")["expectedImplementerCount"], 1)
+        self.assertEqual(self._e("same-file-independent-sequential")["implementationRoute"], "planned-sequential")
+        self.assertGreaterEqual(self._e("same-file-independent-sequential")["expectedImplementerCount"], 2)
+        # negative / guard fixtures must never commit
+        for fid in ("invalid-implementation-report", "allowed-path-violation", "implementer-blocked-input"):
+            self.assertIn("no commit", self._e(fid)["commitExpectation"].lower())
+        self.assertIn(self._e("implementer-blocked-input")["expectedReportStatus"], {"BLOCKED", "NONE"})
+        retry = self._e("failed-verification-retry")
+        self.assertLessEqual(retry["expectedImplementerCount"], 3)
+        self.assertTrue(any("attempt" in x.lower() or "retry" in x.lower() for x in retry["forbidden"]),
+                        "the retry fixture must bound the attempt ceiling")
+        dirty = self._e("dirty-tree-delegated-unit")
+        joined = " ".join(dirty["forbidden"] + dirty["human_checks"]).lower()
+        self.assertIn("user", joined)
+        self.assertTrue("preserve" in joined or "discard" in joined or "reset" in joined,
+                        "the dirty-tree fixture must protect user-owned changes")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

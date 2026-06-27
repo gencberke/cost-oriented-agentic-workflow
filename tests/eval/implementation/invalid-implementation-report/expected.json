@@ -1,0 +1,24 @@
+{
+  "id": "invalid-implementation-report",
+  "fixture_version": 1,
+  "implementationRoute": "delegated",
+  "expectedImplementerCount": 1,
+  "allowedPaths": [
+    "src/x.js"
+  ],
+  "expectedReportStatus": "DONE",
+  "expectedVerification": "controller validation rejects the report (schema / unit-id / outcome failure)",
+  "reviewRequirement": "n/a — acceptance blocked at validation",
+  "commitExpectation": "no commit; the report is preserved as evidence and the unit is recorded blocked/failed",
+  "forbidden": [
+    "accepting a report that fails implementation-report.mjs validate",
+    "committing on an invalid report",
+    "silently editing the report to pass"
+  ],
+  "stop_condition": "implementation-report.mjs validate exits non-zero; the controller does not commit, preserves the report, and records a blocked/failed attempt",
+  "human_checks": [
+    "confirm validate exited non-zero",
+    "confirm no commit occurred",
+    "confirm the report file was preserved unchanged"
+  ]
+}

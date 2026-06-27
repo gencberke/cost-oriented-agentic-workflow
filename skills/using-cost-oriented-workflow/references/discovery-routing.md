@@ -1,9 +1,10 @@
 # Discovery routing (the first half of dual routing)
 
 Loaded on demand. Discovery routing decides **how we learn** (mapping / diagnosis);
-implementation routing decides **how we change code** and stays **`pending`** in
-Phase 3A (the legacy 0.4.x execution path is unchanged). Run repository readiness
-(`repository-readiness.md`) first.
+implementation routing decides **how we change code** and stays **`pending`**
+through discovery — it is selected later by `execution-routing` (live since Phase
+3B.1), so a discovery receipt always shows `implementation=pending`. Run repository
+readiness (`repository-readiness.md`) first.
 
 Discovery-route values: `controller-map | investigator | parallel-investigators`.
 
