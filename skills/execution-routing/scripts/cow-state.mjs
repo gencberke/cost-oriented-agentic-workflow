@@ -133,7 +133,7 @@ function defaultState(now) {
     risk: 'low',
     rootCause: { status: 'none', reportPath: null },
     plan: { status: 'none', path: null },
-    currentUnit: { id: null, allowedPaths: [], base: null, briefPath: null, reportPath: null, commitSha: null },
+    currentUnit: { id: null, allowedPaths: [], base: null, briefPath: null, reportPath: null, commitSha: null, baselinePath: null, currentAttempt: null, acceptedAttempt: null },
     verification: { status: 'none', command: null },
     review: { status: 'none' },
     attempts: { implementer: 0, max: 2 },
@@ -173,8 +173,15 @@ function validateState(s) {
   if (!s.review || !inEnum(s.review.status, REVIEW_STATUS)) e.push('review.status invalid');
   if (!inEnum(s.commitPolicy, COMMIT_POLICIES)) e.push(`commitPolicy invalid: ${JSON.stringify(s.commitPolicy)}`);
   if (!s.currentUnit || !Array.isArray(s.currentUnit.allowedPaths)) e.push('currentUnit.allowedPaths must be an array');
-  else for (const k of ['briefPath', 'reportPath', 'commitSha']) {
-    if (s.currentUnit[k] != null && typeof s.currentUnit[k] !== 'string') e.push(`currentUnit.${k} must be a string or null`);
+  else {
+    for (const k of ['briefPath', 'reportPath', 'commitSha', 'baselinePath']) {
+      if (s.currentUnit[k] != null && typeof s.currentUnit[k] !== 'string') e.push(`currentUnit.${k} must be a string or null`);
+    }
+    const ca = s.currentUnit.currentAttempt; const aa = s.currentUnit.acceptedAttempt;
+    if (ca != null && (!isInt(ca) || ca < 1 || ca > 3)) e.push('currentUnit.currentAttempt must be an integer in 1..3 or null');
+    if (aa != null && (!isInt(aa) || aa < 1 || aa > 3)) e.push('currentUnit.acceptedAttempt must be an integer in 1..3 or null');
+    if (aa != null && ca != null && aa > ca) e.push('currentUnit.acceptedAttempt cannot exceed currentAttempt');
+    if (aa != null && ca == null) e.push('currentUnit.acceptedAttempt requires a currentAttempt');
   }
   if (!s.attempts || !isInt(s.attempts.implementer) || !isInt(s.attempts.max) || s.attempts.implementer < 0 || s.attempts.max < 0) {
     e.push('attempts counters must be non-negative integers');
@@ -492,7 +499,7 @@ function cmdPlan(root, p, argv) {
 }
 
 function cmdUnit(root, p, argv) {
-  const flags = parseFlags(argv, { bool: ['json', 'oneline'], value: ['id', 'paths', 'base', 'brief', 'report', 'commit'] });
+  const flags = parseFlags(argv, { bool: ['json', 'oneline'], value: ['id', 'paths', 'base', 'brief', 'report', 'commit', 'baseline', 'attempt', 'accepted-attempt'] });
   const fmt = detectFmt(flags);
   if (flags.id === undefined) die('unit requires --id N');
   return mutate(root, p, (s) => {
@@ -502,10 +509,22 @@ function cmdUnit(root, p, argv) {
       s.currentUnit.allowedPaths = list.map((x) => safeRepoPath(root, x, 'paths'));
     }
     if (flags.base !== undefined) s.currentUnit.base = flags.base;
-    // Brief/report are repo-relative artifact paths (the run workspace); the
-    // commit SHA is recorded only after the controller commits the unit.
+    // Brief/report/baseline are repo-relative artifact paths (the run workspace);
+    // the commit SHA is recorded only after the controller commits the unit.
     if (flags.brief !== undefined) s.currentUnit.briefPath = safeRepoPath(root, flags.brief, 'brief');
     if (flags.report !== undefined) s.currentUnit.reportPath = safeRepoPath(root, flags.report, 'report');
+    if (flags.baseline !== undefined) s.currentUnit.baselinePath = safeRepoPath(root, flags.baseline, 'baseline');
+    if (flags.attempt !== undefined) {
+      const n = Number(flags.attempt);
+      if (!Number.isInteger(n) || n < 1 || n > 3) die('--attempt must be an integer in 1..3');
+      s.currentUnit.currentAttempt = n;
+    }
+    if (flags['accepted-attempt'] !== undefined) {
+      const n = Number(flags['accepted-attempt']);
+      if (!Number.isInteger(n) || n < 1 || n > 3) die('--accepted-attempt must be an integer in 1..3');
+      if (s.currentUnit.currentAttempt != null && n > s.currentUnit.currentAttempt) die('--accepted-attempt cannot exceed currentAttempt');
+      s.currentUnit.acceptedAttempt = n;
+    }
     if (flags.commit !== undefined) {
       if (flags.commit.trim() === '') die('--commit requires a non-empty SHA');
       s.currentUnit.commitSha = flags.commit.trim();
@@ -602,6 +621,7 @@ Usage: node cow-state.mjs <command> [flags]   ([--json|--oneline] on every comma
   root-cause --status V [--report PATH]   record diagnosis status
   plan --start|--approve|--done [--path PATH]
   unit --id N [--paths a,b] [--base SHA] [--brief P] [--report P] [--commit SHA]
+       [--baseline P] [--attempt 1..3] [--accepted-attempt 1..3]
                                           open/advance a unit + its artifacts
   verify --pending|--passed|--failed [--cmd C]
   review --start|--clean|--findings|--wave

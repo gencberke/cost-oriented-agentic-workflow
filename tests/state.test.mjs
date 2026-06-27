@@ -347,6 +347,33 @@ function cow(cwd, ...args) {
   check(fs.readFileSync(stateFile(root), 'utf8') === before, 'unit-artifacts: a rejected artifact path leaves state unmutated');
 }
 
+// ── unit baseline + attempt fields (Phase 3B.1.1) ────────────────────────────
+{
+  const { dir, root } = freshRepo();
+  cow(dir, 'init');
+  const r = cow(dir, 'unit', '--id', '1',
+    '--baseline', '.cost-oriented-agentic-workflow/run/task-1-baseline.json',
+    '--attempt', '1');
+  check(r.status === 0, 'unit-baseline: baseline path + attempt accepted');
+  let s = readState(root);
+  check(s.currentUnit.baselinePath === '.cost-oriented-agentic-workflow/run/task-1-baseline.json' && s.currentUnit.currentAttempt === 1, 'unit-baseline: baselinePath + currentAttempt recorded');
+  check(s.currentUnit.acceptedAttempt === null, 'unit-baseline: acceptedAttempt is null until acceptance');
+  check(cow(dir, 'unit', '--id', '1', '--attempt', '2').status === 0 && readState(root).currentUnit.currentAttempt === 2, 'unit-baseline: currentAttempt advances on retry');
+  check(cow(dir, 'unit', '--id', '1', '--accepted-attempt', '2').status === 0 && readState(root).currentUnit.acceptedAttempt === 2, 'unit-baseline: acceptedAttempt recorded on acceptance');
+  // bounds + ordering
+  const before = fs.readFileSync(stateFile(root), 'utf8');
+  check(cow(dir, 'unit', '--id', '1', '--attempt', '4').status !== 0, 'unit-baseline: currentAttempt > 3 rejected');
+  check(cow(dir, 'unit', '--id', '1', '--accepted-attempt', '3').status !== 0, 'unit-baseline: acceptedAttempt > currentAttempt rejected');
+  check(cow(dir, 'unit', '--id', '1', '--baseline', '../escape.json').status !== 0, 'unit-baseline: unsafe baseline path rejected');
+  check(fs.readFileSync(stateFile(root), 'utf8') === before, 'unit-baseline: rejected inputs leave state unmutated');
+}
+{
+  const { dir, root } = freshRepo();
+  cow(dir, 'init');
+  check(cow(dir, 'unit', '--id', '2', '--accepted-attempt', '1').status !== 0, 'unit-baseline: acceptedAttempt without currentAttempt rejected');
+  check(readState(root).currentUnit.acceptedAttempt === null, 'unit-baseline: rejected acceptance leaves acceptedAttempt null');
+}
+
 // ── cleanup + summary ────────────────────────────────────────────────────────
 for (const d of tmps) { try { fs.rmSync(d, { recursive: true, force: true }); } catch { /* ignore */ } }
 console.log(`\nstate: ${passes} checks passed, ${fails} failed.`);

@@ -32,9 +32,11 @@ responsibility/seam; low risk; a small, mechanically obvious change; no
 dependency/config/schema/auth/security/data-contract trigger; the verification
 path is known; the controller's cost to write it is lower than preparing and
 adjudicating a delegation; and no independent outcome is being merged just because
-files overlap. Inline still requires dirty-tree preservation, an allowed-path
-declaration, fresh verification, the existing review gate, and a controller
-commit. **Never dispatch cow-implementer on a true inline route.**
+files overlap. Inline is **not** exempt from ownership safety: capture a unit
+baseline and run `check-overlap` before the controller edits (a dirty allowed path
+blocks), then baseline-compare, fresh verification, the existing review gate, and a
+controller commit that stages only the unit-owned paths (`verify-stage`). **Never
+dispatch cow-implementer on a true inline route.**
 
 ## delegated (§6.3) — one bounded unit
 
@@ -51,10 +53,11 @@ Use when there are two or more **independent** outcomes with separate
 acceptance/verification seams, overlapping writes, or where one failure must not
 invalidate unrelated completed units. One brief per unit; one unit at a time;
 never run overlapping write units in parallel; a fresh implementer per delegated
-unit; review/verify/commit per unit per the existing policy. Do not collapse units
-merely because they edit one file (writing-plans owns the unit boundary). Each
-plan unit states `UNIT_EXECUTION: inline | delegated`; the top-level route stays
-`planned-sequential`.
+unit; review/verify/commit per unit per the existing policy. Each unit captures a
+**fresh baseline** from the new committed HEAD (preserving unrelated dirty user
+paths) — never reuse a baseline across units. Do not collapse units merely because
+they edit one file (writing-plans owns the unit boundary). Each plan unit states
+`UNIT_EXECUTION: inline | delegated`; the top-level route stays `planned-sequential`.
 
 ## delegated-batch (§6.5) — one coherent seam
 

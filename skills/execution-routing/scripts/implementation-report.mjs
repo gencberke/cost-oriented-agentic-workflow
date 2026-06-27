@@ -22,6 +22,7 @@
 import fs from 'fs';
 import path from 'path';
 import { execFileSync } from 'child_process';
+import { computeOwnership, loadBaseline } from './unit-worktree.mjs';
 
 // ── Schema bounds (§7) ───────────────────────────────────────────────────────
 const SCHEMA_VERSION = 1;
@@ -34,6 +35,8 @@ const SELF_REVIEW_STATUS = ['PASS', 'CONCERNS'];
 const TOP_KEYS = new Set([
   'schemaVersion', 'status', 'unitId', 'filesChanged', 'outcomes',
   'verification', 'selfReview', 'remainingRisks', 'attemptsUsed',
+  // Phase 3B.1.1: attempt-qualified evidence + the unit baseline it was judged against.
+  'attemptNumber', 'baselinePath',
 ]);
 const OUTCOME_KEYS = new Set(['id', 'status', 'behaviorImplemented', 'acceptanceEvidence']);
 const VERIFICATION_KEYS = new Set(['command', 'exitCode', 'testCount', 'summary']);
@@ -75,6 +78,8 @@ function safeRepoPath(root, value, label) {
   return rel;
 }
 const normPath = (p) => String(p).replace(/\\/g, '/').replace(/^\.\//, '');
+// Equal, or one is the worktree-relative suffix of the other (abs vs rel tolerant).
+const matchPath = (a, b) => { if (a == null || b == null) return false; const x = normPath(a), y = normPath(b); return x === y || x.endsWith('/' + y) || y.endsWith('/' + x); };
 // Outcome identity is compared loosely so a brief `OUTCOME_1` matches a report
 // `outcome-1`: lower-case, drop a leading `outcome` separator, trim non-alnum.
 const normOutcome = (s) => String(s).trim().toLowerCase().replace(/^outcome[-_\s]?/, '').replace(/[^a-z0-9]+$/, '');
@@ -142,6 +147,12 @@ function validateSchema(report, rawBytes, root) {
   if (!boundedStrArray(report.remainingRisks)) e.push('remainingRisks must be a bounded string array');
   if (!isInt(report.attemptsUsed) || report.attemptsUsed < 1 || report.attemptsUsed > MAX_ATTEMPTS) {
     e.push(`attemptsUsed must be an integer in 1..${MAX_ATTEMPTS} (got ${JSON.stringify(report.attemptsUsed)})`);
+  }
+  if ('attemptNumber' in report && (!isInt(report.attemptNumber) || report.attemptNumber < 1 || report.attemptNumber > MAX_ATTEMPTS)) {
+    e.push(`attemptNumber must be an integer in 1..${MAX_ATTEMPTS} (got ${JSON.stringify(report.attemptNumber)})`);
+  }
+  if ('baselinePath' in report) {
+    try { safeRepoPath(root, report.baselinePath, 'baselinePath'); } catch (err) { e.push(err.message); }
   }
   return e;
 }
@@ -244,13 +255,15 @@ function parseArgs(argv, spec) {
 const USAGE = `implementation-report — validate a delegated unit report (Node + git, zero deps)
 
 Usage:
-  implementation-report.mjs validate <report> [--brief <brief>]
+  implementation-report.mjs validate <report> [--brief <brief>] [--attempt <n>] [--baseline <path>]
   implementation-report.mjs inspect <report>
   implementation-report.mjs render <report>
-  implementation-report.mjs compare-worktree <report> --base <sha> [--allowed-path <p> ...]
+  implementation-report.mjs compare-worktree <report> --baseline <path> | --base <sha> [--allowed-path <p> ...]
 
-The actual git diff is authoritative over the report's filesChanged. The helper
-never modifies source files; a failed report is preserved as evidence.`;
+The unit baseline (preferred) separates pre-existing dirty USER paths from
+unit-owned changes; the actual git diff is authoritative over the report's
+filesChanged. The helper never modifies source files; a failed report is
+preserved as evidence.`;
 
 function main() {
   const [, , command, ...rest] = process.argv;
@@ -258,7 +271,7 @@ function main() {
   const root = worktreeRoot();
 
   if (command === 'validate') {
-    const { flags, positional } = parseArgs(rest, { value: ['brief'] });
+    const { flags, positional } = parseArgs(rest, { value: ['brief', 'attempt', 'baseline'] });
     const file = positional[0]; if (!file) die('validate requires <report>', 2);
     const { rawBytes, parsed, parseError } = readReport(file);
     if (parseError) die(`report is not valid JSON: ${parseError}`);
@@ -266,6 +279,16 @@ function main() {
     if (flags.brief) {
       let bt; try { bt = fs.readFileSync(flags.brief, 'utf8'); } catch (err) { die(`cannot read brief ${flags.brief}: ${err.message}`, 2); }
       errs.push(...validateAgainstBrief(parsed, bt));
+    }
+    // Phase 3B.1.1: attempt + baseline agreement, and attempt-qualified naming.
+    if (flags.attempt !== undefined) {
+      const n = Number(flags.attempt);
+      if (parsed && parsed.attemptNumber !== n) errs.push(`report attemptNumber ${JSON.stringify(parsed.attemptNumber)} does not match dispatch attempt ${n}`);
+      if (!new RegExp(`attempt-${n}-report\\.json$`).test(normPath(file))) errs.push(`report path is not attempt-qualified for attempt ${n} (expected task-<id>-attempt-${n}-report.json)`);
+    }
+    if (flags.baseline !== undefined) {
+      const want = normPath(flags.baseline); const got = parsed && parsed.baselinePath != null ? normPath(parsed.baselinePath) : null;
+      if (!matchPath(got, want)) errs.push(`report baselinePath ${JSON.stringify(parsed && parsed.baselinePath)} does not match the unit baseline ${flags.baseline}`);
     }
     if (errs.length) { for (const m of errs) process.stderr.write(`  - ${m}\n`); die(`report failed validation (${errs.length} problem(s)); preserved as evidence.`); }
     process.stdout.write(`OK: ${file} valid (unit ${parsed.unitId}, status ${parsed.status}, ${parsed.outcomes.length} outcome(s)).\n`);
@@ -300,13 +323,33 @@ function main() {
   }
 
   if (command === 'compare-worktree') {
-    const { flags, positional } = parseArgs(rest, { value: ['base'], repeat: ['allowed-path'] });
+    const { flags, positional } = parseArgs(rest, { value: ['base', 'baseline'], repeat: ['allowed-path'] });
     const file = positional[0]; if (!file) die('compare-worktree requires <report>', 2);
-    if (!flags.base) die('compare-worktree requires --base <sha>', 2);
+    if (!flags.base && !flags.baseline) die('compare-worktree requires --baseline <path> (preferred) or --base <sha>', 2);
     const { rawBytes, parsed, parseError } = readReport(file);
     if (parseError) die(`report is not valid JSON: ${parseError}`);
     const errs = validateSchema(parsed, rawBytes, root);
     if (errs.length) { for (const m of errs) process.stderr.write(`  - ${m}\n`); die('report is invalid; comparison not attempted (preserved as evidence).'); }
+    // Phase 3B.1.1: the unit baseline is the authoritative ownership source —
+    // it separates pre-existing dirty USER paths from unit-owned changes.
+    if (flags.baseline) {
+      const baseline = loadBaseline(path.isAbsolute(flags.baseline) ? flags.baseline : path.join(root, normPath(flags.baseline)));
+      const own = computeOwnership(root, baseline);
+      const reported = [...new Set((parsed.filesChanged || []).map(normPath))].sort();
+      // Normalize the helper's per-path violations into grouped {code, paths},
+      // matching the legacy --base output shape.
+      const grouped = {};
+      for (const v of own.violations) (grouped[v.code] ||= []).push(v.path);
+      const violations = Object.entries(grouped).map(([code, paths]) => ({ code, paths: paths.sort() }));
+      const omitted = own.unitOwned.filter((p) => !reported.includes(p));
+      const falsely = reported.filter((p) => !own.unitOwned.includes(p));
+      if (omitted.length) violations.push({ code: 'OMITTED_CHANGED_FILE', paths: omitted });
+      if (falsely.length) violations.push({ code: 'REPORTED_UNCHANGED_FILE', paths: falsely });
+      const out = { baseline: normPath(flags.baseline), unitOwned: own.unitOwned, preserved: own.preserved, reportedChanged: reported, violations };
+      process.stdout.write(JSON.stringify(out, null, 2) + '\n');
+      if (violations.length) process.exit(1);
+      return;
+    }
     let allowed = [];
     try { allowed = (flags['allowed-path'] || []).map((p) => safeRepoPath(root, p, 'allowed-path')); }
     catch (err) { die(err.message, 2); }

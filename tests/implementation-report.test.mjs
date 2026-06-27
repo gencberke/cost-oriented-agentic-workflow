@@ -12,6 +12,7 @@ import { fileURLToPath } from 'url';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const SCRIPT = path.resolve(here, '../skills/execution-routing/scripts/implementation-report.mjs');
+const UW = path.resolve(here, '../skills/execution-routing/scripts/unit-worktree.mjs');
 
 let fails = 0, passes = 0;
 const check = (cond, msg) => { if (cond) { passes += 1; } else { fails += 1; console.error('FAIL: ' + msg); } };
@@ -35,6 +36,10 @@ function freshRepo() {
 function impl(cwd, ...args) {
   const r = spawnSync('node', [SCRIPT, ...args], { cwd, encoding: 'utf8' });
   return { status: r.status, stdout: r.stdout || '', stderr: r.stderr || '' };
+}
+function uw(cwd, ...args) {
+  const r = spawnSync('node', [UW, ...args], { cwd, encoding: 'utf8' });
+  return { status: r.status, stdout: r.stdout || '', json: (() => { try { return JSON.parse(r.stdout); } catch { return null; } })() };
 }
 // Reports/briefs live in the self-ignored workflow workspace, exactly as in a
 // real run — so they never count as a unit's source change in compare-worktree.
@@ -229,6 +234,50 @@ const validReport = () => ({
   check(impl(dir, 'compare-worktree', rp, '--base', 'HEAD', '--allowed-path', '../x').status !== 0,
     'compare: an unsafe --allowed-path is rejected');
   check(impl(dir, 'compare-worktree', rp).status !== 0, 'compare: missing --base is rejected');
+}
+
+// ── Phase 3B.1.1: attempt + baseline fields, attempt-qualified validation ────
+{
+  const { dir } = freshRepo();
+  const r = validReport(); r.attemptNumber = 1; r.baselinePath = '.cost-oriented-agentic-workflow/run/task-1-baseline.json';
+  const rp = path.join(ws(dir), 'task-1-attempt-1-report.json'); writeJson(rp, r);
+  check(impl(dir, 'validate', rp).status === 0, 'attempt: attemptNumber + baselinePath fields validate');
+  check(impl(dir, 'validate', rp, '--attempt', '1').status === 0, 'attempt: --attempt 1 agrees with attemptNumber + attempt-qualified name');
+  check(impl(dir, 'validate', rp, '--attempt', '2').status !== 0, 'attempt: --attempt 2 disagreeing with attemptNumber is rejected');
+  check(impl(dir, 'validate', rp, '--baseline', '.cost-oriented-agentic-workflow/run/task-1-baseline.json').status === 0, 'attempt: --baseline agreeing with baselinePath passes');
+  check(impl(dir, 'validate', rp, '--baseline', '.cost-oriented-agentic-workflow/run/other-baseline.json').status !== 0, 'attempt: --baseline disagreeing with baselinePath is rejected');
+  // a report whose filename is not attempt-qualified fails --attempt
+  const rp2 = path.join(ws(dir), 'report.json'); writeJson(rp2, r);
+  check(impl(dir, 'validate', rp2, '--attempt', '1').status !== 0, 'attempt: a non-attempt-qualified report path fails --attempt');
+  // invalid attemptNumber range
+  const bad = validReport(); bad.attemptNumber = 4; const rp3 = path.join(ws(dir), 'task-1-attempt-4-report.json'); writeJson(rp3, bad);
+  check(impl(dir, 'validate', rp3).status !== 0, 'attempt: attemptNumber out of 1..3 is rejected');
+}
+
+// ── compare-worktree --baseline uses the unit ownership delta ─────────────────
+{
+  const { dir } = freshRepo();
+  // user pre-dirties an out-of-scope file BEFORE the unit baseline is captured
+  fs.writeFileSync(path.join(dir, 'src', 'keep.js'), 'export const keep = 9;\n');
+  const blRel = '.cost-oriented-agentic-workflow/run/task-1-baseline.json';
+  uw(dir, 'capture', '--unit', 'task-1', '--output', blRel, '--allowed-path', 'src/a.js');
+  fs.writeFileSync(path.join(dir, 'src', 'a.js'), 'export const a = 2;\n'); // unit work
+  const rp = path.join(ws(dir), 'task-1-attempt-1-report.json'); writeJson(rp, validReport());
+  const c = impl(dir, 'compare-worktree', rp, '--baseline', blRel);
+  let parsed = null; try { parsed = JSON.parse(c.stdout); } catch { /* null */ }
+  check(c.status === 0 && parsed && parsed.violations.length === 0, 'baseline-compare: pre-existing out-of-scope dirt does not contaminate the unit delta');
+  check(parsed && parsed.unitOwned.join() === 'src/a.js' && parsed.preserved.includes('src/keep.js'), 'baseline-compare: only the unit file is owned; the user file is preserved');
+}
+{
+  const { dir } = freshRepo();
+  const blRel = '.cost-oriented-agentic-workflow/run/task-1-baseline.json';
+  uw(dir, 'capture', '--unit', 'task-1', '--output', blRel, '--allowed-path', 'src/a.js');
+  fs.writeFileSync(path.join(dir, 'src', 'a.js'), 'export const a = 2;\n');
+  fs.writeFileSync(path.join(dir, 'src', 'keep.js'), 'leak\n'); // unit touched an out-of-scope path
+  const rp = path.join(ws(dir), 'task-1-attempt-1-report.json'); const r = validReport(); r.filesChanged = ['src/a.js', 'src/keep.js']; writeJson(rp, r);
+  const c = impl(dir, 'compare-worktree', rp, '--baseline', blRel);
+  let parsed = null; try { parsed = JSON.parse(c.stdout); } catch { /* null */ }
+  check(c.status !== 0 && parsed && parsed.violations.some((v) => v.code === 'OUTSIDE_ALLOWED_PATH' && v.paths.includes('src/keep.js')), 'baseline-compare: an out-of-scope unit change is flagged');
 }
 
 // ── cleanup + summary ────────────────────────────────────────────────────────

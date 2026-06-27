@@ -55,9 +55,11 @@ The contract pins only **between-unit** facts — file names, signatures, data s
 
 ## Delegated dispatch and validation
 
-Dispatch the exact `cost-oriented-agentic-workflow:cow-implementer` (never automatic selection) with every input named — `TASK_BRIEF_PATH, REPORT_PATH, ALLOWED_PATHS, VERIFICATION_COMMANDS, COMMIT_POLICY=controller, WORKTREE_ROOT, UNIT_ID`. It writes `task-<N>-report.json`, returns ≤8 lines, and never commits, updates state, or spawns an agent.
+**Capture a unit baseline first** (`unit-worktree.mjs capture`) and run `check-overlap` before any edit or dispatch: a pre-existing dirty path inside `ALLOWED_PATHS` **blocks** (`BLOCKED_DIRTY_OVERLAP`).
 
-The report is **evidence, not truth.** Before accepting a delegated unit: `implementation-report.mjs validate <report> --brief <brief>`, then `implementation-report.mjs compare-worktree <report> --base UNIT_BASE --allowed-path <p>...`. **The actual git diff is authoritative over `filesChanged`** — reject any unreported or out-of-scope change, and never accept agent verification in place of fresh controller verification or budget exhaustion as approval. Full sequence + the must-not-accept list: **[references/delegated-execution.md](references/delegated-execution.md)**; report schema + commands: **[references/implementation-report.md](references/implementation-report.md)**.
+Dispatch the exact `cost-oriented-agentic-workflow:cow-implementer` (never automatic selection) with every input named — `TASK_BRIEF_PATH, REPORT_PATH, ALLOWED_PATHS, VERIFICATION_COMMANDS, COMMIT_POLICY=controller, WORKTREE_ROOT, UNIT_ID, ATTEMPT_NUMBER, BASELINE_PATH`. It writes `task-<N>-attempt-<K>-report.json` and returns ≤8 lines; it never commits, stages, updates state, or spawns an agent.
+
+The report is **evidence, not truth.** Before accepting: `implementation-report.mjs validate <report> --brief <brief> --attempt K --baseline <baseline>`, then `compare-worktree <report> --baseline <baseline>`. The actual git diff is authoritative over `filesChanged`, and the **unit baseline** separates pre-existing dirty user paths from unit-owned changes — reject any out-of-scope or pre-existing-path change. Run fresh controller verification; then stage **only** the unit-owned paths, run `verify-stage`, and commit — never `git add .`/`-A`/`commit -a`. Never accept agent verification in place of yours, or budget exhaustion as approval. Detail: **[references/delegated-execution.md](references/delegated-execution.md)**, **[references/implementation-report.md](references/implementation-report.md)**.
 
 ## Execute and review each unit
 
