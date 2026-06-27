@@ -567,5 +567,77 @@ class ImplementationFixtureContractTests(unittest.TestCase):
                         "the dirty-tree fixture must protect user-owned changes")
 
 
+UNIT_OWNERSHIP = HERE / "unit-ownership"
+UO_IDS = {
+    "dirty-outside-scope-preserved", "dirty-inside-scope-blocked", "untracked-user-file-preserved",
+    "staged-user-change-preserved", "retry-attempt-artifacts", "planned-sequential-with-unrelated-dirty",
+    "broad-stage-rejected", "preexisting-dirty-modified",
+}
+
+
+class UnitOwnershipFixtureContractTests(unittest.TestCase):
+    """Schema + coherence for the Phase 3B.1.1 dirty-worktree ownership fixtures.
+
+    Validates fixture shape + coherence only. The load-bearing coherence: a dirty
+    allowed path blocks (zero implementers, no commit); unrelated dirty paths are
+    preserved; the negative cases never commit; and a retry keeps distinct attempt
+    artifacts. Schema validity is not behavioral proof.
+    """
+
+    def _e(self, fid):
+        return json.loads((UNIT_OWNERSHIP / fid / "expected.json").read_text(encoding="utf-8"))
+
+    def test_fixture_set_and_readme(self):
+        self.assertTrue(UNIT_OWNERSHIP.is_dir(), "tests/eval/unit-ownership/ must exist")
+        self.assertEqual({p.name for p in UNIT_OWNERSHIP.iterdir() if p.is_dir()}, UO_IDS)
+        self.assertGreater((UNIT_OWNERSHIP / "README.md").stat().st_size, 200)
+
+    def test_each_fixture_is_well_formed(self):
+        for fid in sorted(UO_IDS):
+            d = UNIT_OWNERSHIP / fid
+            with self.subTest(fixture=fid):
+                self.assertEqual({p.name for p in d.iterdir()}, {"prompt.md", "expected.json"})
+                self.assertGreater((d / "prompt.md").stat().st_size, 50)
+                e = self._e(fid)
+                self.assertEqual(e["id"], fid)
+                self.assertEqual(e["fixture_version"], 1)
+                self.assertIsInstance(e["baselineDirtyState"], str)
+                self.assertGreater(len(e["baselineDirtyState"]), 4)
+                self.assertIsInstance(e["expectedImplementerCount"], int)
+                self.assertGreaterEqual(e["expectedImplementerCount"], 0)
+                for field in ("allowedPaths", "expectedUnitOwnedPaths", "expectedPreservedPaths",
+                              "attemptArtifacts", "forbiddenCommands", "forbidden", "human_checks"):
+                    self.assertIsInstance(e[field], list, f"{field} must be a list")
+                    self.assertTrue(all(isinstance(x, str) for x in e[field]))
+                self.assertGreaterEqual(len(e["allowedPaths"]), 1)
+                self.assertGreaterEqual(len(e["forbidden"]), 1)
+                self.assertGreaterEqual(len(e["human_checks"]), 1)
+                self.assertIsInstance(e["commitExpectation"], str)
+                self.assertIsInstance(e["stop_condition"], str)
+                self.assertGreater(len(e["stop_condition"]), 10)
+
+    def test_ownership_coherence(self):
+        # a dirty allowed path blocks: zero implementers, no commit
+        blocked = self._e("dirty-inside-scope-blocked")
+        self.assertEqual(blocked["expectedImplementerCount"], 0)
+        self.assertIn("no commit", blocked["commitExpectation"].lower())
+        # negative / guard cases never produce a clean commit
+        for fid in ("dirty-inside-scope-blocked", "broad-stage-rejected", "preexisting-dirty-modified"):
+            self.assertIn("no commit", self._e(fid)["commitExpectation"].lower())
+        # preservation cases keep an unrelated path
+        for fid in ("dirty-outside-scope-preserved", "untracked-user-file-preserved", "staged-user-change-preserved"):
+            self.assertGreaterEqual(len(self._e(fid)["expectedPreservedPaths"]), 1)
+        # broad-stage forbids a broad command
+        broad = " ".join(self._e("broad-stage-rejected")["forbiddenCommands"]).lower()
+        self.assertTrue("git add" in broad or "commit -a" in broad)
+        # retry keeps >= 2 distinct attempt artifacts
+        retry = self._e("retry-attempt-artifacts")
+        self.assertGreaterEqual(retry["expectedImplementerCount"], 2)
+        self.assertEqual(len(retry["attemptArtifacts"]), len(set(retry["attemptArtifacts"])))
+        self.assertGreaterEqual(len(retry["attemptArtifacts"]), 2)
+        # planned-sequential has >= 2 units
+        self.assertGreaterEqual(self._e("planned-sequential-with-unrelated-dirty")["expectedImplementerCount"], 2)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -584,6 +584,39 @@ check(!fs.existsSync(path.join(root, 'hooks/hooks.json')),
 check(fs.existsSync(path.join(root, 'skills/execution-routing/scripts/implementation-report.mjs')),
   '3B.1: the implementation-report helper exists');
 
+// ── Phase 3B.1.1: unit-ownership baselines + attempt evidence ────────────────
+const rawImplRouting = readRef(IMPL_ROUTING);
+const rawDelegated = readRef(DELEGATED_EXEC);
+check(fs.existsSync(path.join(root, 'skills/execution-routing/scripts/unit-worktree.mjs')),
+  '3B.1.1: the unit-worktree baseline helper exists');
+// both routes capture a baseline + check overlap before edit/dispatch
+check(executionText.includes('Capture a unit baseline first') && executionText.includes('before any edit or dispatch')
+  && executionText.includes('BLOCKED_DIRTY_OVERLAP'),
+  '3B.1.1: the skill captures a baseline and checks overlap before edit/dispatch');
+check(implRoutingRef.includes('not exempt from ownership safety') && implRoutingRef.includes('capture a unit baseline'),
+  '3B.1.1: the inline route also captures a unit baseline');
+// exact-path staging mandatory; broad staging forbidden
+check(executionText.includes('stage **only** the unit-owned paths') && executionText.includes('verify-stage'),
+  '3B.1.1: exact-path staging + verify-stage are mandatory before commit');
+check(executionText.includes('never `git add .`/`-A`/`commit -a`'),
+  '3B.1.1: broad staging commands are forbidden in the skill');
+// the unit baseline is the ownership authority + attempt-qualified artifacts
+check(executionText.includes('separates pre-existing dirty user paths from unit-owned changes'),
+  '3B.1.1: the unit baseline is the ownership authority');
+check(executionText.includes('ATTEMPT_NUMBER, BASELINE_PATH') && executionText.includes('task-<N>-attempt-<K>-report.json'),
+  '3B.1.1: the dispatch contract names ATTEMPT_NUMBER + BASELINE_PATH and attempt-qualified reports');
+check(rawDelegated.includes('attempt-<n>-report.json') && rawDelegated.includes('never overwrite a prior attempt'),
+  '3B.1.1: retry artifacts are attempt-qualified and immutable');
+check(delegatedExecRef.includes('same baseline') && delegatedExecRef.includes('final compare is always relative to the original unit baseline'),
+  '3B.1.1: a retry keeps the same baseline; the compare is baseline-relative');
+check(rawImplRouting.includes('fresh baseline'),
+  '3B.1.1: planned-sequential captures a fresh baseline per unit');
+// the existing review gate + non-integration still hold
+check(/Mode\/risk matrix requires independent task review\?/i.test(executionText),
+  '3B.1.1: the existing review gate remains in the loop order');
+check(!/cost-oriented-agentic-workflow:cow-reviewer/.test(dispatchSurfaces),
+  '3B.1.1: cow-reviewer is still not dispatched from any skill or command');
+
 // ── Summary ─────────────────────────────────────────────────────────────────
 console.log(`\n${passes} checks passed, ${failures} failed.`);
 if (failures > 0) process.exit(1);

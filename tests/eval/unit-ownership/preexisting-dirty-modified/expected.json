@@ -1,0 +1,25 @@
+{
+  "id": "preexisting-dirty-modified",
+  "fixture_version": 1,
+  "baselineDirtyState": "a pre-existing user dirty path (src/keep.js) that is then modified after baseline",
+  "allowedPaths": [
+    "src/x.js"
+  ],
+  "expectedImplementerCount": 1,
+  "expectedUnitOwnedPaths": [],
+  "expectedPreservedPaths": [],
+  "attemptArtifacts": [
+    "task-1-attempt-1-report.json"
+  ],
+  "commitExpectation": "no commit (PRE_EXISTING_PATH_MODIFIED)",
+  "forbiddenCommands": [],
+  "forbidden": [
+    "committing after a pre-existing path was modified",
+    "treating the modification as unit-owned"
+  ],
+  "stop_condition": "compare reports PRE_EXISTING_PATH_MODIFIED; the unit fails; no commit",
+  "human_checks": [
+    "confirm PRE_EXISTING_PATH_MODIFIED is reported",
+    "confirm no commit"
+  ]
+}

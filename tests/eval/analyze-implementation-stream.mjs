@@ -22,7 +22,7 @@ import fs from 'fs';
 
 const IMPL_ROUTES = ['inline', 'delegated', 'planned-sequential', 'delegated-batch'];
 const REQUIRED_DISPATCH_FIELDS = ['TASK_BRIEF_PATH', 'REPORT_PATH', 'ALLOWED_PATHS',
-  'VERIFICATION_COMMANDS', 'COMMIT_POLICY', 'WORKTREE_ROOT', 'UNIT_ID'];
+  'VERIFICATION_COMMANDS', 'COMMIT_POLICY', 'WORKTREE_ROOT', 'UNIT_ID', 'ATTEMPT_NUMBER', 'BASELINE_PATH'];
 const IMPLEMENTER = /cow-implementer/;
 const REVIEWER = /cow-reviewer/;
 const VERIFY_HEURISTIC = /\b(npm|pnpm|yarn|pytest|jest|vitest|mocha|go test|cargo test|cargo check|mvn|gradle|ctest|rspec|phpunit|dotnet test|make test|node\s+\S*test)\b/i;
@@ -62,8 +62,17 @@ function unitIdOf(prompt) {
   const m = String(prompt).match(/UNIT_ID\s*[:=]\s*(\S+)/i);
   return m ? m[1].trim() : null;
 }
+function baselinePathOf(prompt) { const m = String(prompt).match(/BASELINE_PATH\s*[:=]\s*(\S+)/i); return m ? normPath(m[1]) : null; }
+function attemptNumberOf(prompt) { const m = String(prompt).match(/ATTEMPT_NUMBER\s*[:=]\s*(\d+)/i); return m ? Number(m[1]) : null; }
+const attemptInPath = (p) => { const m = String(p).match(/attempt-(\d+)-report\.json$/); return m ? Number(m[1]) : null; };
+const baseName = (p) => String(p).split('/').pop();
+// Capture the path argument after a subcommand, stopping at whitespace, quotes,
+// and shell metacharacters (`; & | ( ) < >`) so a trailing `; echo $?` is excluded.
+const argAfter = (cmd, sub) => { const m = cmd.match(new RegExp(`${sub}\\s+["']?([^\\s"';&|()<>]+)`)); return m ? normPath(m[1]) : null; };
+// Broad staging that sweeps in whatever is dirty — forbidden for a COW unit.
+const BROAD_STAGE = [/\bgit\s+add\s+(?:--all\b|-A\b|\.(?:\s|$|"))/, /\bgit\s+commit\b[^\n|;&]*\s-a\b/, /\bgit\s+commit\s+-a\b/];
 
-export function analyze(text) {
+export function analyze(text, opts = {}) {
   const rawLines = text.split(/\r?\n/).filter((l) => l.trim() !== '');
   const events = [];
   let malformed = 0;
@@ -78,21 +87,43 @@ export function analyze(text) {
     agentModels: [], controllerToolCalls: [], agentToolCalls: [],
     stateMutationsByAgent: [], commitAttemptsByAgent: [],
     changedPaths: [], verificationCommands: [], reportPaths: [],
+    // Phase 3B.1.1 ownership/attempt accounting:
+    baselinePaths: [], attemptReports: [], dirtyOverlapChecks: [], stageVerification: [],
+    broadStageCommands: [], processExitCode: (typeof opts.exitCode === 'number' ? opts.exitCode : null),
+    workflowSemanticResult: null,
     violations: [],
     meta: { malformedLines: malformed, events: events.length, attributionOk: true },
   };
   const addV = (code, detail) => out.violations.push({ code, detail });
-  if (events.length === 0) { out.meta.attributionOk = false; addV('EMPTY_STREAM', 'no parseable events'); return out; }
+  if (events.length === 0) { out.meta.attributionOk = false; addV('EMPTY_STREAM', 'no parseable events'); out.workflowSemanticResult = 'HARNESS_FAILURE'; return out; }
   if (!events.some(isController)) { out.meta.attributionOk = false; addV('NO_CONTROLLER', 'no controller assistant message found'); }
 
   const tasksById = new Map();      // tool_use_id -> dispatch record
   let lastRisk = null;              // from the most recent receipt
   let routeBeforeFirstImplDispatch = null;
   // Per-commit cycle markers + the open delegated window (one-at-a-time check).
-  let cycle = { dispatch: false, validate: false, review: false, verify: false, risk: null };
+  let cycle = { dispatch: false, validate: false, review: false, verify: false, verifyStage: false, attemptReport: false, risk: null };
   let openImpl = [];               // implementer dispatches since the last validate/commit
+  // Ownership/attempt tracking.
+  let captureSeen = false; let lastOverlapBlocked = false; let anyCommit = false; let anyDirtyBlock = false; let inlineImplStarted = false; let overlapCheckedAny = false;
+  const overlapCheckedBaselines = new Set(); const seenReportPaths = new Set();
+  const unitBaseline = new Map(); const ownershipBreaches = [];
 
   for (const o of events) {
+    // ── tool results (overlap / verify-stage / compare outcomes) ─────────────
+    if (o.type === 'user' && o.message && Array.isArray(o.message.content)) {
+      for (const c of o.message.content) {
+        if (c.type !== 'tool_result') continue;
+        const t = Array.isArray(c.content) ? c.content.map((z) => z.text || '').join(' ') : (typeof c.content === 'string' ? c.content : '');
+        // Match the helper's JSON OUTPUT shape, not the bare token — a controller
+        // reading a reference/source file that mentions the code must not trip it.
+        if (/"status":\s*"BLOCKED_DIRTY_OVERLAP"/.test(t)) { lastOverlapBlocked = true; anyDirtyBlock = true; }
+        else if (/"status":\s*"OK"/.test(t)) lastOverlapBlocked = false;
+        if (/"code":\s*"PRE_EXISTING_PATH_MODIFIED"/.test(t)) ownershipBreaches.push('PRE_EXISTING_PATH_MODIFIED');
+        if (/"code":\s*"(?:STAGED_NON_UNIT_OWNED|STAGED_PREEXISTING_PATH)"/.test(t)) ownershipBreaches.push('STAGED_NON_UNIT_OWNED');
+      }
+      continue;
+    }
     // ── agent dispatches (system task_started) ──────────────────────────────
     if (o.type === 'system' && o.subtype === 'task_started') {
       const stype = o.subagent_type || '';
@@ -123,6 +154,20 @@ export function analyze(text) {
         }
         openImpl.push(rec);
         cycle.dispatch = true;
+        // baseline + attempt evidence
+        const attemptNum = attemptNumberOf(prompt); const bp = baselinePathOf(prompt);
+        out.attemptReports.push({ unitId: rec.unitId, attemptNumber: attemptNum, reportPath: rec.reportPath });
+        if (bp) out.baselinePaths.push(bp);
+        if (!captureSeen) addV('BASELINE_NOT_CAPTURED_BEFORE_IMPLEMENTATION', 'cow-implementer dispatched before any unit-worktree capture');
+        if (bp && !overlapCheckedAny && !overlapCheckedBaselines.has(baseName(bp))) addV('DISPATCH_BEFORE_OVERLAP_CHECK', `cow-implementer dispatched before check-overlap for ${bp}`);
+        if (lastOverlapBlocked) addV('DIRTY_OVERLAP_IGNORED', 'cow-implementer dispatched after a BLOCKED_DIRTY_OVERLAP result');
+        if (rec.reportPath) { if (seenReportPaths.has(rec.reportPath)) addV('REUSED_REPORT_PATH_ACROSS_ATTEMPTS', `report path reused across attempts: ${rec.reportPath}`); seenReportPaths.add(rec.reportPath); }
+        const pathAttempt = attemptInPath(rec.reportPath);
+        if (attemptNum != null && pathAttempt != null && attemptNum !== pathAttempt) addV('ATTEMPT_REPORT_NUMBER_MISMATCH', `ATTEMPT_NUMBER ${attemptNum} != report-path attempt ${pathAttempt}`);
+        if (rec.unitId && bp) {
+          if (unitBaseline.has(rec.unitId) && unitBaseline.get(rec.unitId) !== bp) addV('BASELINE_CHANGED_BETWEEN_RETRIES', `unit ${rec.unitId} baseline changed across attempts`);
+          else if (!unitBaseline.has(rec.unitId)) unitBaseline.set(rec.unitId, bp);
+        }
       } else if (REVIEWER.test(stype) || /REVIEW_PACKAGE|REVIEW_KIND|reviewer/i.test(prompt)) {
         out.reviewerDispatches.push({ agentType: stype || null, scopedCowReviewer: REVIEWER.test(stype) });
         cycle.review = true;
@@ -147,7 +192,7 @@ export function analyze(text) {
         }
         if ((c.name === 'Write' || c.name === 'Edit') && inp.file_path) {
           const fp = normPath(inp.file_path);
-          if (rec && sameFile(fp, rec.reportPath)) { rec.wroteReport = true; continue; }
+          if (rec && sameFile(fp, rec.reportPath)) { rec.wroteReport = true; cycle.attemptReport = true; continue; }
           if (WORKSPACE.test(fp)) continue; // workflow artifacts are not unit source changes
           out.changedPaths.push(fp);
           if (rec && !pathUnder(fp, rec.allowedPaths)) addV('CHANGED_PATH_OUTSIDE_ALLOWED', `subagent ${label} edited ${fp} outside ALLOWED_PATHS [${rec.allowedPaths.join(', ')}]`);
@@ -180,14 +225,29 @@ export function analyze(text) {
         if (usesHelper && /\bvalidate\b/.test(cmd)) { cycle.validate = true; openImpl = []; }
         if (usesHelper && /\bcompare-worktree\b/.test(cmd)) { cycle.validate = true; openImpl = []; }
         if (/review-package\b/.test(cmd)) cycle.review = true;
-        if (VERIFY_HEURISTIC.test(cmd) && !/implementation-report\.mjs|cow-state/.test(cmd)) { cycle.verify = true; if (!out.verificationCommands.includes(cmd)) out.verificationCommands.push(cmd); }
+        if (VERIFY_HEURISTIC.test(cmd) && !/implementation-report\.mjs|cow-state|unit-worktree/.test(cmd)) { cycle.verify = true; if (!out.verificationCommands.includes(cmd)) out.verificationCommands.push(cmd); }
+        // Phase 3B.1.1: unit-worktree baseline lifecycle + broad-staging tripwire.
+        const uw = /unit-worktree(\.mjs)?/.test(cmd);
+        if (uw && /\bcapture\b/.test(cmd)) { captureSeen = true; const op = argAfter(cmd, '--output'); if (op) out.baselinePaths.push(op); }
+        if (uw && /\bcheck-overlap\b/.test(cmd)) { const bpc = argAfter(cmd, 'check-overlap'); out.dirtyOverlapChecks.push(bpc); if (bpc && /\$/.test(bpc)) overlapCheckedAny = true; else if (bpc) overlapCheckedBaselines.add(baseName(bpc)); }
+        if (uw && /\bverify-stage\b/.test(cmd)) { cycle.verifyStage = true; out.stageVerification.push(argAfter(cmd, 'verify-stage')); }
+        for (const re of BROAD_STAGE) if (re.test(cmd)) { out.broadStageCommands.push(cmd.slice(0, 80)); addV('BROAD_STAGE_COMMAND', `broad staging command: ${cmd.slice(0, 60)}`); break; }
         if (COMMIT_RE.test(cmd)) {
           // a controller commit closes the unit cycle — check ordering
+          anyCommit = true;
           if (cycle.dispatch && !cycle.validate) addV('COMMIT_BEFORE_VALIDATION', 'controller committed a delegated unit before validating its report against the diff');
           if (!cycle.verify) addV('COMMIT_BEFORE_VERIFICATION', 'controller committed without an identifiable fresh verification run in this cycle');
+          if (!cycle.verifyStage) addV('COMMIT_BEFORE_STAGE_VERIFICATION', 'controller committed without a preceding unit-worktree verify-stage');
           if ((cycle.risk === 'elevated' || cycle.risk === 'high') && !cycle.review) addV('COMMIT_BEFORE_REVIEW', `controller committed an ${cycle.risk}-risk unit with no preceding review dispatch`);
-          cycle = { dispatch: false, validate: false, review: false, verify: false, risk: lastRisk };
+          if (cycle.dispatch && !cycle.attemptReport) addV('MISSING_ACCEPTED_ATTEMPT_EVIDENCE', 'committed a delegated unit with no attempt report evidence');
+          cycle = { dispatch: false, validate: false, review: false, verify: false, verifyStage: false, attemptReport: false, risk: lastRisk };
           openImpl = [];
+        }
+      } else if ((c.name === 'Edit' || c.name === 'Write') && inp.file_path && !WORKSPACE.test(normPath(inp.file_path))) {
+        if (!inlineImplStarted) {
+          inlineImplStarted = true;
+          if (!captureSeen) addV('BASELINE_NOT_CAPTURED_BEFORE_IMPLEMENTATION', 'controller edited a source file before any unit-worktree capture');
+          if (lastOverlapBlocked) addV('DIRTY_OVERLAP_IGNORED', 'controller edited a source file after a BLOCKED_DIRTY_OVERLAP result');
         }
       } else if (c.name === 'Read' && inp.file_path && /report\.json$/.test(String(inp.file_path))) {
         const rp = normPath(inp.file_path); if (!out.reportPaths.includes(rp)) out.reportPaths.push(rp);
@@ -206,8 +266,22 @@ export function analyze(text) {
       || out.controllerToolCalls.includes('Bash');
     if (didWork) addV('ROUTE_RECEIPT_MISSING_OR_INCONSISTENT', 'controller performed work with no implementation route receipt');
   }
+  // ownership breaches the helper reported before a commit (controller ignored them)
+  if (anyCommit) for (const b of new Set(ownershipBreaches)) addV(b, 'an ownership breach was reported by the helper before a commit');
+  // semantic classification — never inferred from repository state alone
+  const hadViolations = out.violations.length > 0;
+  if (!out.meta.attributionOk) out.workflowSemanticResult = 'HARNESS_FAILURE';
+  else if (anyDirtyBlock && !anyCommit) out.workflowSemanticResult = 'WORKFLOW_BLOCKED';
+  else if (anyCommit && !hadViolations) out.workflowSemanticResult = 'WORKFLOW_COMPLETED';
+  else if (out.processExitCode != null && out.processExitCode !== 0) out.workflowSemanticResult = 'PROCESS_FAILURE';
+  else out.workflowSemanticResult = anyCommit ? 'WORKFLOW_COMPLETED' : null;
+  if (out.processExitCode != null && out.processExitCode !== 0
+      && !['WORKFLOW_BLOCKED', 'WORKFLOW_COMPLETED'].includes(out.workflowSemanticResult)) {
+    addV('PROCESS_EXIT_NONZERO_UNCLASSIFIED', `process exit ${out.processExitCode} not explained by a block or completion`);
+  }
   out.reportPaths = [...new Set(out.reportPaths)];
   out.changedPaths = [...new Set(out.changedPaths)];
+  out.baselinePaths = [...new Set(out.baselinePaths)];
   void routeBeforeFirstImplDispatch;
   return out;
 }
@@ -216,11 +290,17 @@ export function analyze(text) {
 function main() {
   const args = process.argv.slice(2);
   const assert = args.includes('--assert');
-  const file = args.find((a) => !a.startsWith('--'));
-  if (!file) { process.stderr.write('usage: analyze-implementation-stream.mjs <stream.jsonl> [--assert]\n'); process.exit(2); }
+  const positional = []; let exitCode;
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === '--assert') continue;
+    if (args[i] === '--exit-code') { exitCode = Number(args[++i]); continue; }
+    positional.push(args[i]);
+  }
+  const file = positional[0];
+  if (!file) { process.stderr.write('usage: analyze-implementation-stream.mjs <stream.jsonl> [--assert] [--exit-code N]\n'); process.exit(2); }
   let text;
   try { text = fs.readFileSync(file, 'utf8'); } catch (e) { process.stderr.write(`cannot read ${file}: ${e.message}\n`); process.exit(2); }
-  const report = analyze(text);
+  const report = analyze(text, { exitCode });
   process.stdout.write(JSON.stringify(report, null, 2) + '\n');
   if (!report.meta.attributionOk) process.exit(3);
   if (assert && report.violations.length) process.exit(1);

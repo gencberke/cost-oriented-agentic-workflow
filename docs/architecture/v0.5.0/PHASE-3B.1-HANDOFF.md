@@ -7,6 +7,15 @@ own fresh verification, applies the **existing** review gate, and owns the commi
 `cow-reviewer` is **not** integrated; the review matrix and path are unchanged. No
 active hooks. Version stays **0.4.2**.
 
+> **Superseded in part by Phase 3B.1.1.** This phase compared the worktree against a
+> pinned **base SHA** (`compare-worktree --base UNIT_BASE`). A base SHA alone cannot
+> tell a pre-existing dirty USER path apart from unit-owned work. Phase 3B.1.1
+> replaces it with a per-unit worktree **baseline** (`unit-worktree.mjs` + the
+> preferred `compare-worktree --baseline`), captured before the unit and used to
+> compute the unit-owned delta, so only unit-owned changes are ever staged/committed.
+> The `--base` interface is retained only for compatibility. See
+> `PHASE-3B.1.1-HANDOFF.md`.
+
 ## Implementation routes (§6)
 
 `inline | delegated | planned-sequential | delegated-batch`, selected per unit and

@@ -1,0 +1,35 @@
+{
+  "id": "planned-sequential-with-unrelated-dirty",
+  "fixture_version": 1,
+  "baselineDirtyState": "one user dirty path (docs/NOTES.md) outside both units",
+  "allowedPaths": [
+    "src/config.js"
+  ],
+  "expectedImplementerCount": 2,
+  "expectedUnitOwnedPaths": [
+    "src/config.js"
+  ],
+  "expectedPreservedPaths": [
+    "docs/NOTES.md"
+  ],
+  "attemptArtifacts": [
+    "task-1-attempt-1-report.json",
+    "task-2-attempt-1-report.json"
+  ],
+  "commitExpectation": "two sequential commits; neither includes docs/NOTES.md",
+  "forbiddenCommands": [
+    "git add .",
+    "git add -A"
+  ],
+  "forbidden": [
+    "committing docs/NOTES.md",
+    "reusing one baseline across both units",
+    "running the two units in parallel"
+  ],
+  "stop_condition": "each unit captures a fresh baseline; two commits land; docs/NOTES.md survives byte-identical across both",
+  "human_checks": [
+    "confirm a fresh baseline per unit",
+    "confirm docs/NOTES.md is unchanged after both commits",
+    "confirm two commits, neither containing docs/NOTES.md"
+  ]
+}
