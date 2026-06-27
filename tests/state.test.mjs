@@ -302,6 +302,51 @@ function cow(cwd, ...args) {
   check(cow(dir, 'transition').status !== 0, 'usage: transition without --phase exits non-zero');
 }
 
+// ── implementation routes (the second routing axis) ─────────────────────────
+{
+  const { dir, root } = freshRepo();
+  cow(dir, 'init');
+  check(cow(dir, 'route', '--implementation', 'inline').status === 0, 'impl-route: pending -> inline');
+  check(readState(root).implementationRoute === 'inline', 'impl-route: inline recorded');
+  check(cow(dir, 'route', '--implementation', 'delegated').status === 0, 'impl-route: -> delegated');
+  check(cow(dir, 'route', '--implementation', 'delegated-batch').status === 0, 'impl-route: -> delegated-batch');
+  check(cow(dir, 'route', '--implementation', 'bogus').status !== 0, 'impl-route: an invalid route value is rejected');
+  check(readState(root).implementationRoute === 'delegated-batch', 'impl-route: rejected value leaves the prior route intact');
+}
+
+// ── the discovery route is preserved when only implementation changes ────────
+{
+  const { dir, root } = freshRepo();
+  cow(dir, 'init');
+  cow(dir, 'route', '--discovery', 'investigator');
+  cow(dir, 'route', '--implementation', 'delegated');
+  const s = readState(root);
+  check(s.discoveryRoute === 'investigator' && s.implementationRoute === 'delegated',
+    'route: changing the implementation route does not discard the discovery route');
+}
+
+// ── unit artifact fields: brief / report / commit ────────────────────────────
+{
+  const { dir, root } = freshRepo();
+  cow(dir, 'init');
+  const r = cow(dir, 'unit', '--id', '1', '--paths', 'src/a.ts', '--base', 'abc123',
+    '--brief', '.cost-oriented-agentic-workflow/run/task-1-brief.md',
+    '--report', '.cost-oriented-agentic-workflow/run/task-1-report.json');
+  check(r.status === 0, 'unit-artifacts: brief + report paths accepted');
+  let s = readState(root);
+  check(s.currentUnit.briefPath === '.cost-oriented-agentic-workflow/run/task-1-brief.md'
+    && s.currentUnit.reportPath === '.cost-oriented-agentic-workflow/run/task-1-report.json'
+    && s.currentUnit.base === 'abc123', 'unit-artifacts: brief/report/base recorded');
+  check(s.currentUnit.commitSha === null, 'unit-artifacts: commit SHA is null before the controller commits');
+  check(cow(dir, 'unit', '--id', '1', '--commit', 'deadbee').status === 0, 'unit-artifacts: commit SHA recorded after commit');
+  check(readState(root).currentUnit.commitSha === 'deadbee', 'unit-artifacts: commit SHA persisted');
+  // path safety applies to brief/report just like allowed paths
+  const before = fs.readFileSync(stateFile(root), 'utf8');
+  check(cow(dir, 'unit', '--id', '1', '--report', '../escape.json').status !== 0, 'unit-artifacts: unsafe report path rejected');
+  check(cow(dir, 'unit', '--id', '1', '--commit', '').status !== 0, 'unit-artifacts: an empty commit SHA is rejected');
+  check(fs.readFileSync(stateFile(root), 'utf8') === before, 'unit-artifacts: a rejected artifact path leaves state unmutated');
+}
+
 // ── cleanup + summary ────────────────────────────────────────────────────────
 for (const d of tmps) { try { fs.rmSync(d, { recursive: true, force: true }); } catch { /* ignore */ } }
 console.log(`\nstate: ${passes} checks passed, ${fails} failed.`);

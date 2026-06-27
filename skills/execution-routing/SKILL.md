@@ -1,13 +1,11 @@
 ---
 name: execution-routing
-description: Use when implementing a planned change under the cost-oriented workflow — decides per unit whether to write it inline or delegate to a Sonnet subagent, and runs the delegate/review/verify loop while keeping the controller lean.
+description: Use when implementing a planned change under the cost-oriented workflow — selects the implementation route (inline vs the scoped cow-implementer), validates the report against the real diff, and runs the review/verify/commit loop while keeping the controller lean.
 ---
 
 # Execution Routing
 
-Turn a plan into working code while spending the controller's expensive tokens only where they change the outcome. For each unit of work you make one decision first — **write it yourself (inline) or delegate it to a Sonnet subagent** — then run the loop for whichever you chose.
-
-**Core economy:** You (Opus) route and review. A Sonnet subagent (high effort) does the token-heavy reasoning and writing. Bulk artifacts move as files; the controller reads summaries and verification, never pasted code bodies.
+Turn a plan into working code while spending the controller's expensive tokens only where they change the outcome. Per unit you decide once — **write it inline or delegate it to the scoped Sonnet `cow-implementer`** — then run the loop. **Core economy:** you (Opus) route, validate, and review; the implementer does the token-heavy writing; bulk artifacts move as files, so the controller reads summaries, a validated report, and verification — never pasted code bodies.
 
 ## Plan pre-flight
 
@@ -35,35 +33,13 @@ MERGE_BASE_SHA:
 
 For a new run, set the plan path, mode, and active commit policy (default `controller-per-unit`). Resolve the base from an explicit decision or one credible repo-default/`main`/`master`/`develop` candidate; never mistake the feature branch's upstream for its base. If ambiguous, ask before Task 1. Record `MERGE_BASE_SHA = git merge-base HEAD "$BASE_BRANCH"` once. Never recompute either value mid-run; resume reads the ledger.
 
-## The routing gate: contract cost (decide per unit)
+## Dual routing: discovery is decided; now choose the implementation route
 
-Delegating is not free — you pay to write the contract, dispatch, and review the return. Delegation only wins when the code you'd save outweighs that overhead.
+Discovery routing already decided *how you learned*. Implementation routing decides *how you change code*, **independent** of discovery: a broad investigator discovery can still resolve to a tiny inline fix; a cheap controller-map can feed a non-trivial delegated unit. Select exactly one per unit: `inline | delegated | planned-sequential | delegated-batch`. Definitions, selection criteria, the receipt format, and the per-unit `UNIT_EXECUTION` tag live in **[references/implementation-routing.md](references/implementation-routing.md)**.
 
-Start from the plan's non-binding `Route hint`, then compare it with actual scope; runtime evidence still governs. If scope, coupling, or risk changes the route, emit one `Re-route: <route> — <observable trigger>.` line before editing. Record only the actual `route=` in the ledger.
+Emit one receipt after triage (only when a field changed); if only the implementation route changes on stable code, emit `Re-route: reason=stable-code; implementation=<new-route>`. Record it with `cow-state.mjs route --implementation <value>` — never overwrite the recorded discovery route.
 
-**Compare:** the cost of writing a self-contained contract (scope + interfaces + acceptance criteria + verification command) against the cost of just writing the code yourself.
-
-```dot
-digraph route {
-    "Unit of work" [shape=box];
-    "Single small edit, <~40-60 lines, tightly coupled to context you already hold?" [shape=diamond];
-    "INLINE: you write it" [shape=box];
-    ">=2 files OR >=~80-100 lines, self-specifiable?" [shape=diamond];
-    "DELEGATE: Sonnet subagent" [shape=box];
-    "Many small related files?" [shape=diamond];
-    "BATCH then delegate" [shape=box];
-
-    "Unit of work" -> "Single small edit, <~40-60 lines, tightly coupled to context you already hold?";
-    "Single small edit, <~40-60 lines, tightly coupled to context you already hold?" -> "INLINE: you write it" [label="yes"];
-    "Single small edit, <~40-60 lines, tightly coupled to context you already hold?" -> ">=2 files OR >=~80-100 lines, self-specifiable?" [label="no"];
-    ">=2 files OR >=~80-100 lines, self-specifiable?" -> "DELEGATE: Sonnet subagent" [label="yes"];
-    ">=2 files OR >=~80-100 lines, self-specifiable?" -> "Many small related files?" [label="borderline"];
-    "Many small related files?" -> "BATCH then delegate" [label="yes"];
-    "Many small related files?" -> "INLINE: you write it" [label="no"];
-}
-```
-
-The thresholds are guides, not law — the real test is "does the contract cost less than the code." When the contract would be nearly as much work as the code (the change is tightly coupled to context only you hold), write it inline.
+**The routing gate is contract cost.** Delegating is not free — you pay to write the contract, dispatch, and validate the return; it wins only when the code you'd save outweighs that overhead. Start from the plan's non-binding `Route hint`, then compare it with actual scope; runtime evidence still governs. If scope, coupling, or risk changes the route, emit one `Re-route: <route> — <observable trigger>.` line before editing. Record only the actual `route=` in the ledger. Small, tightly-coupled, low-risk, single-outcome edits go inline; the rest delegate. **Never dispatch cow-implementer on a true inline route.**
 
 ## Risk gate (overrides the size gate)
 
@@ -71,62 +47,37 @@ Contract cost never overrides safety. Classify with using-cost-oriented-workflow
 
 ## Model selection (pin it explicitly)
 
-**Always specify the model on every dispatch.** An omitted model inherits your expensive controller model and silently defeats the economy.
-
-- **Writer (implementer):** Sonnet, high effort. A focused contract is enough for it to reason and write well.
-- **Reviewer:** Sonnet, a *different instance* from the writer (independence). Scale effort to diff risk.
-- **Controller:** you (Opus) — routing, contracts, seam-level review.
-- **production only:** for a very large or genuinely complex generation, dispatch an Opus subagent as the writer; reviewer still independent.
+**Always specify the model on every dispatch** — an omitted model inherits your expensive controller model and defeats the economy. Writer = the scoped `cow-implementer` (Sonnet, already cost-pinned); reviewer = a *different* Sonnet instance; controller = you (Opus). **production only:** dispatch an Opus subagent as the writer for a very large or genuinely complex generation; the reviewer stays independent.
 
 ## Pin the seams, free the interior
 
-The contract pins only **between-unit** facts: file names, function/type signatures, data shapes, how it integrates with existing code, acceptance criteria, and the exact verification command. It leaves the **within-unit** implementation to the subagent — "the interior is yours."
+The contract pins only **between-unit** facts — file names, signatures, data shapes, integration points, acceptance criteria, the exact verification command — and leaves the **within-unit** interior to the implementer, so drift lands in the cheap interior while the expensive seams stay locked. Mode sets thickness: **standard** pins the interface only; **production** also pins key behaviors and required tests.
 
-Drift then lands in the cheap, easy-to-catch interior, while the expensive between-unit seams stay locked. Mode sets thickness: **standard** pins the interface only (accept interior variance); **production** also pins key behaviors and required tests.
+## Delegated dispatch and validation
+
+Dispatch the exact `cost-oriented-agentic-workflow:cow-implementer` (never automatic selection) with every input named — `TASK_BRIEF_PATH, REPORT_PATH, ALLOWED_PATHS, VERIFICATION_COMMANDS, COMMIT_POLICY=controller, WORKTREE_ROOT, UNIT_ID`. It writes `task-<N>-report.json`, returns ≤8 lines, and never commits, updates state, or spawns an agent.
+
+The report is **evidence, not truth.** Before accepting a delegated unit: `implementation-report.mjs validate <report> --brief <brief>`, then `implementation-report.mjs compare-worktree <report> --base UNIT_BASE --allowed-path <p>...`. **The actual git diff is authoritative over `filesChanged`** — reject any unreported or out-of-scope change, and never accept agent verification in place of fresh controller verification or budget exhaustion as approval. Full sequence + the must-not-accept list: **[references/delegated-execution.md](references/delegated-execution.md)**; report schema + commands: **[references/implementation-report.md](references/implementation-report.md)**.
 
 ## Execute and review each unit
 
-Prepare and dispatch delegated work as below. When an inline or delegated unit reaches `DONE`, branch on the central mode/risk matrix:
+When an inline or delegated unit reaches `DONE` and (for delegated) its report has been validated against the real diff, branch on the central mode/risk matrix: **Mode/risk matrix requires independent task review?** — no → verify; yes → independent Sonnet review → bounded remediation gate → verify. Then the controller commits (default policy) and writes the ledger. Standard/low uses self-review + final whole-work review; production sends every planned task to an independent Sonnet; high risk is always independently reviewed.
 
-```dot
-digraph loop {
-    "DONE" [shape=box];
-    "Mode/risk matrix requires independent task review?" [shape=diamond];
-    "Independent Sonnet review" [shape=box];
-    "Bounded remediation gate" [shape=box];
-    "Verify" [shape=box];
-    "Controller commit (default policy)" [shape=box];
-    "Ledger" [shape=doublecircle];
+## Return protocol: hand work over as files, not pasted text
 
-    "DONE" -> "Mode/risk matrix requires independent task review?";
-    "Mode/risk matrix requires independent task review?" -> "Verify" [label="no"];
-    "Mode/risk matrix requires independent task review?" -> "Independent Sonnet review" [label="yes"];
-    "Independent Sonnet review" -> "Bounded remediation gate";
-    "Bounded remediation gate" -> "Verify";
-    "Verify" -> "Controller commit (default policy)";
-    "Controller commit (default policy)" -> "Ledger";
-}
-```
-
-This branch applies equally to inline and delegated work: standard/low uses self-review + final whole-work review; production sends every planned task to an independent Sonnet; high risk is always independently reviewed.
-
-## Return protocol (keep the controller lean)
-
-The implementer writes its full report to a **report file** and returns only: **Status**, files changed, a one-line test summary, concerns, and the report path — it does **not** commit (see Commit policy). The reviewer reads the diff from a **package file** and returns a verdict + findings. Code bodies and full diffs stay in files — they never re-enter your context.
-
-Hand work over as files, not pasted text:
-- **Workspace:** `"$SKILL_DIR/scripts/cow-workspace"` resolves the self-ignored, per-worktree artifact directory at `<repo-root>/.cost-oriented-agentic-workflow/run/`.
-- **Brief:** `"$SKILL_DIR/scripts/task-brief" PLAN_FILE N` extracts the task into `task-N-brief.md` there; the dispatch points to it as the source of requirements.
-- **Report:** place `task-N-report.md` beside the brief; the implementer writes there.
-- **Task diff:** pass the task's exact plan `Files` paths: `"$SKILL_DIR/scripts/review-package" UNIT_BASE HEAD -- PATH...`. This includes committed, staged, unstaged, and untracked content only for that scope. Use the base recorded before dispatching — never `HEAD~1`.
-- **Whole-work diff:** omit paths: `"$SKILL_DIR/scripts/review-package" MERGE_BASE HEAD`. Branch mode includes committed work only and exits `4` with dirty filenames when current HEAD is dirty.
+Code bodies, full diffs, and full reports stay in files; the controller reads only summaries, the validated report, and verification.
+- **Workspace:** `"$SKILL_DIR/scripts/cow-workspace"` resolves the self-ignored artifact dir at `<repo-root>/.cost-oriented-agentic-workflow/run/`.
+- **Brief:** `"$SKILL_DIR/scripts/task-brief" PLAN_FILE N` extracts the task into `task-N-brief.md`; the dispatch points to it.
+- **Report:** the implementer writes `task-N-report.json` beside the brief; validate + render it with `implementation-report.mjs`.
+- **Task diff:** `"$SKILL_DIR/scripts/review-package" UNIT_BASE HEAD -- PATH...` (the task's exact `Files`). Use the base recorded before dispatch — never `HEAD~1`.
+- **Whole-work diff:** omit paths: `"$SKILL_DIR/scripts/review-package" MERGE_BASE HEAD`. Branch mode includes committed work only and exits `4` with dirty filenames when HEAD is dirty.
 
 ## Commit policy
 
-Default: **controller-per-unit.** Writers leave changes uncommitted; **the controller commits after review**. Persist `UNIT_BASE = HEAD` before edits; review from it, then record `commit=UNIT_BASE..new_HEAD` — never substitute `MERGE_BASE_SHA`. Confirm a clean tree before the next unit; each commit is a recovery boundary.
+Default: **controller-per-unit.** Writers leave changes uncommitted; **the controller commits after review.** Persist `UNIT_BASE = HEAD` before edits; review from it, then record `commit=UNIT_BASE..new_HEAD` — never substitute `MERGE_BASE_SHA`. Confirm a clean tree before the next unit; each commit is a recovery boundary.
 
-Override only by repo or user preference, and note it in the anchor when non-default:
-- `implementer` — the delegated worker commits its own unit (then the dispatch and return protocol ask for commit SHAs instead of "files changed").
+Override only by repo or user preference, noting it in the anchor when non-default:
+- `implementer` — the delegated worker commits its own unit (then the dispatch and return protocol ask for commit SHAs).
 - `user-owned` — leave units uncommitted for the human to commit.
 - `none` — throwaway/experimental; no commits.
 
@@ -134,26 +85,24 @@ A trivial light-path edit does not force a commit under any policy.
 
 ## Handling implementer status
 
-- **DONE** — generate the review package and go to review.
-- **DONE_WITH_CONCERNS** — read the concerns first; if they touch correctness or scope, resolve before review.
+- **DONE** — validate the report + compare the worktree, then go to review.
+- **DONE_WITH_CONCERNS** — resolve correctness/scope concerns before review.
 - **NEEDS_CONTEXT** — provide what was missing, re-dispatch.
-- **BLOCKED** — assess: more context? more capable model? task too large to split? a bug to root-cause (systematic-debugging)? plan wrong (escalate to human)?
+- **BLOCKED / BLOCKED_INPUT** — assess: more context? a more capable model? split the task? root-cause a bug (systematic-debugging)? plan wrong (escalate)?
 
-**Retry budget (D8):** a subagent gets at most **2 extra attempts**, and only with something changed (more context, a more capable model, or a smaller scope). If it still fails, stop and bring it back to yourself — never loop the same model on the same prompt.
-
-**When the failure is a bug or a failing test** (not missing context or a too-large task), find the root cause first — **systematic-debugging** — and dispatch the fix *with* that cause stated, not "make the test pass." A retry spent on a guess is the exact loop this workflow exists to avoid; root-cause-first is cheaper than thrashing.
+**Retry budget (D8):** an implementer gets the initial attempt + at most **2 extra**, each with something changed (more context, a more capable model, a smaller scope, or a corrected brief) and a **fresh** invocation — never the same prompt re-sent. **When the failure is a bug or a failing test**, find the root cause first (**systematic-debugging**) and dispatch the fix *with* that cause stated, not "make the test pass."
 
 ## Bounded remediation gate
 
 - Allow at most **2 remediation waves** per task or final whole-work review. One wave = one fixer addressing all accepted *introduced/worsened* Critical/Important findings, covering tests, then a fresh targeted independent reviewer.
 - False-positive adjudication uses no wave. A pre-existing Critical/Important uses no original-unit wave: get risk acceptance, or make the human-approved scope a new unit. A plan conflict also uses no wave; ask the human which governs.
 - If the same finding survives wave 1, do not apply a second blind fix: use systematic-debugging/root cause or controller adjudication first.
-- After wave 2, any open Critical/Important stops autonomous execution and is surfaced with evidence. **Budget exhausted ≠ approved.** The implementer's 2-extra-attempt budget above is separate.
+- After wave 2, any open Critical/Important stops autonomous execution and is surfaced with evidence. **Budget exhausted ≠ approved.** The implementer's 2-extra-attempt budget above is separate; never merge the counters.
 
 ## Batching and parallelism
 
-- **Batch** a coherent cluster — interdependent files or one subsystem — into a single delegated package so the contract overhead is amortized once.
-- **Parallel:** independent chunks can run as separate subagents at the same time — see **dispatching-parallel-agents**. Enforce **strict non-overlapping file ownership** (each subagent owns a disjoint file set). **Chunks that would touch the same file are not parallelizable — sequence them.** A worktree isolates checkouts; it does not make two concurrent edits to one file merge cleanly. Use a worktree only for production isolation, never as permission to parallelize overlapping work.
+- **Batch** a coherent cluster — interdependent files or one subsystem under one verification seam — into a single `delegated-batch` package so the contract overhead is amortized once; the controller still verifies each outcome separately.
+- **Parallel:** independent chunks can run as separate subagents at once (**dispatching-parallel-agents**) under **strict non-overlapping file ownership.** **Chunks touching the same file are not parallelizable — sequence them.** A worktree isolates checkouts; it does not make two concurrent edits to one file merge cleanly.
 
 ## Durable progress (anti-drift)
 
@@ -176,16 +125,15 @@ The per-unit loop gates each task in isolation; it does not catch problems that 
 
 ## Red flags
 
-- Dispatching a subagent without specifying its model (inherits Opus — expensive).
-- Pasting a task's full text, a diff, or a subagent's code back into your own context.
-- Delegating a three-line change (contract costs more than the code) — write it inline.
-- Letting the writer's self-review replace an independent review on a risky change.
-- Re-dispatching a unit the ledger already marks complete.
-- Moving on with open Critical/Important findings.
+- cow-implementer on a true inline route; automatic agent selection; any subagent without a model (inherits Opus).
+- Trusting the report without validating it against the actual diff; pasting full text, diffs, or subagent code back into context.
+- Self-review replacing independent review on a risky change; committing with open Critical/Important findings.
 
-## Templates
+## Templates and references
 
-- [implementer-prompt.md](implementer-prompt.md) — dispatch the writer
-- [task-reviewer-prompt.md](task-reviewer-prompt.md) — dispatch the independent reviewer
+- [references/implementation-routing.md](references/implementation-routing.md) — the four routes, selection rules, receipt
+- [references/delegated-execution.md](references/delegated-execution.md) — dispatch + validation sequence, attempts
+- [references/implementation-report.md](references/implementation-report.md) — report schema + helper commands
+- [implementer-prompt.md](implementer-prompt.md) — legacy general-purpose writer template · [task-reviewer-prompt.md](task-reviewer-prompt.md) — independent reviewer
 
 **Related:** preparing-subagent-prompts (contract packaging) · requesting-review (review depth by mode) · receiving-code-review (adjudicate findings before fixing) · verification-before-completion (evidence) · systematic-debugging (root-cause a failed/blocked unit before re-dispatching) · dispatching-parallel-agents (parallel + file ownership) · finishing-a-development-branch (integrate when all units are done).

@@ -49,11 +49,12 @@ const SPEC = {
   },
   'cow-implementer': {
     effort: 'high', maxTurns: 30, tools: ['Read', 'Glob', 'Grep', 'Bash', 'Write', 'Edit'], skills: [], bodyMax: 6500,
-    inputs: ['TASK_BRIEF_PATH', 'REPORT_PATH', 'ALLOWED_PATHS', 'VERIFICATION_COMMANDS', 'COMMIT_POLICY', 'WORKTREE_ROOT'],
-    outputs: ['STATUS', 'FILES_CHANGED', 'BEHAVIOR_IMPLEMENTED', 'VERIFICATION_COMMANDS', 'VERIFICATION_RESULTS',
-      'TEST_COUNT', 'SELF_REVIEW', 'REMAINING_RISKS'], lineCap: 8, shell: true, writes: true,
+    inputs: ['TASK_BRIEF_PATH', 'REPORT_PATH', 'ALLOWED_PATHS', 'VERIFICATION_COMMANDS', 'COMMIT_POLICY', 'WORKTREE_ROOT', 'UNIT_ID'],
+    outputs: ['STATUS', 'UNIT_ID', 'REPORT_PATH', 'FILES_CHANGED_COUNT', 'VERIFICATION', 'BLOCKER'],
+    lineCap: 8, shell: true, writes: true,
     extra: (b) => /not\W*commit/i.test(b) && /(state\.json|cow-state)/.test(b) && /ledger/i.test(b)
-      && /mark the unit complete/i.test(b) && /allowed.?paths?/i.test(b),
+      && /mark the unit complete/i.test(b) && /allowed.?paths?/i.test(b)
+      && /schemaVersion/.test(b) && /filesChanged/.test(b),
   },
   'cow-reviewer': {
     effort: 'medium', maxTurns: 12, tools: ['Read', 'Glob', 'Grep'], skills: [], bodyMax: 5500,

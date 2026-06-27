@@ -133,7 +133,7 @@ function defaultState(now) {
     risk: 'low',
     rootCause: { status: 'none', reportPath: null },
     plan: { status: 'none', path: null },
-    currentUnit: { id: null, allowedPaths: [], base: null },
+    currentUnit: { id: null, allowedPaths: [], base: null, briefPath: null, reportPath: null, commitSha: null },
     verification: { status: 'none', command: null },
     review: { status: 'none' },
     attempts: { implementer: 0, max: 2 },
@@ -173,6 +173,9 @@ function validateState(s) {
   if (!s.review || !inEnum(s.review.status, REVIEW_STATUS)) e.push('review.status invalid');
   if (!inEnum(s.commitPolicy, COMMIT_POLICIES)) e.push(`commitPolicy invalid: ${JSON.stringify(s.commitPolicy)}`);
   if (!s.currentUnit || !Array.isArray(s.currentUnit.allowedPaths)) e.push('currentUnit.allowedPaths must be an array');
+  else for (const k of ['briefPath', 'reportPath', 'commitSha']) {
+    if (s.currentUnit[k] != null && typeof s.currentUnit[k] !== 'string') e.push(`currentUnit.${k} must be a string or null`);
+  }
   if (!s.attempts || !isInt(s.attempts.implementer) || !isInt(s.attempts.max) || s.attempts.implementer < 0 || s.attempts.max < 0) {
     e.push('attempts counters must be non-negative integers');
   } else if (s.attempts.implementer > s.attempts.max) e.push('attempts.implementer exceeds attempts.max');
@@ -489,7 +492,7 @@ function cmdPlan(root, p, argv) {
 }
 
 function cmdUnit(root, p, argv) {
-  const flags = parseFlags(argv, { bool: ['json', 'oneline'], value: ['id', 'paths', 'base'] });
+  const flags = parseFlags(argv, { bool: ['json', 'oneline'], value: ['id', 'paths', 'base', 'brief', 'report', 'commit'] });
   const fmt = detectFmt(flags);
   if (flags.id === undefined) die('unit requires --id N');
   return mutate(root, p, (s) => {
@@ -499,6 +502,14 @@ function cmdUnit(root, p, argv) {
       s.currentUnit.allowedPaths = list.map((x) => safeRepoPath(root, x, 'paths'));
     }
     if (flags.base !== undefined) s.currentUnit.base = flags.base;
+    // Brief/report are repo-relative artifact paths (the run workspace); the
+    // commit SHA is recorded only after the controller commits the unit.
+    if (flags.brief !== undefined) s.currentUnit.briefPath = safeRepoPath(root, flags.brief, 'brief');
+    if (flags.report !== undefined) s.currentUnit.reportPath = safeRepoPath(root, flags.report, 'report');
+    if (flags.commit !== undefined) {
+      if (flags.commit.trim() === '') die('--commit requires a non-empty SHA');
+      s.currentUnit.commitSha = flags.commit.trim();
+    }
     if (s.plan.status === 'approved') s.plan.status = 'executing';
   }, fmt);
 }
@@ -590,7 +601,8 @@ Usage: node cow-state.mjs <command> [flags]   ([--json|--oneline] on every comma
   profile --status V [--snapshot P] [--profile P] [--fingerprint F]  record repo-profile result
   root-cause --status V [--report PATH]   record diagnosis status
   plan --start|--approve|--done [--path PATH]
-  unit --id N [--paths a,b] [--base SHA]  open a unit + allowed paths
+  unit --id N [--paths a,b] [--base SHA] [--brief P] [--report P] [--commit SHA]
+                                          open/advance a unit + its artifacts
   verify --pending|--passed|--failed [--cmd C]
   review --start|--clean|--findings|--wave
   attempt --inc|--reset                   implementer retry counter (max 2)
