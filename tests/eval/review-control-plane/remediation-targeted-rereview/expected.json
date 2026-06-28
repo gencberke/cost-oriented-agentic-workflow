@@ -1,0 +1,17 @@
+{
+  "id": "remediation-targeted-rereview",
+  "fixture_version": 1,
+  "mode": "standard",
+  "risk": "high",
+  "matrixDecision": "required:fresh-targeted",
+  "primaryReviewScope": "TARGETED_REREVIEW",
+  "expectedReviewerCount": 1,
+  "expectedRemediationWaves": 1,
+  "expectedTargetedRereviews": 1,
+  "expectedWholeWorkReview": true,
+  "expectedAdjudication": "accepted finding must be RESOLVED or NOT_RESOLVED",
+  "commitExpectation": "remediation commit by controller after ownership and verify-stage",
+  "requiredArtifacts": ["prior review report", "accepted finding ids", "remediation report", "targeted re-review report"],
+  "forbidden": ["omit accepted finding id", "repeat full unrelated unit review", "exceed two remediation waves"],
+  "human_checks": ["confirm TARGETED_REREVIEW scope", "confirm prior accepted finding id is present"]
+}

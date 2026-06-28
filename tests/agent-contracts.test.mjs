@@ -59,10 +59,12 @@ const SPEC = {
   },
   'cow-reviewer': {
     effort: 'medium', maxTurns: 12, tools: ['Read', 'Glob', 'Grep'], skills: [], bodyMax: 5500,
-    inputs: ['REVIEW_KIND', 'BRIEF_PATH', 'REVIEW_PACKAGE_PATH', 'MODE', 'RISK', 'BASE_REFERENCE', 'HEAD_REFERENCE'],
-    outputs: ['SPEC_VERDICT', 'QUALITY_VERDICT', 'FINDINGS', 'MINOR_FINDINGS', 'FINAL_VERDICT'], lineCap: 80,
+    inputs: ['REVIEW_SCOPE', 'REVIEW_TARGET_ID', 'MODE', 'RISK', 'REVIEW_PACKAGE_PATH', 'REVIEW_REPORT_PATH', 'WORKTREE_ROOT'],
+    outputs: ['specVerdict', 'qualityVerdict', 'overallVerdict', 'findings', 'causality', 'blocking'], lineCap: 60,
     shell: false, writes: false,
-    extra: (b) => ['INTRODUCED', 'WORSENED', 'PRE_EXISTING', 'UNCERTAIN'].every((c) => b.includes(c)),
+    extra: (b) => ['INTRODUCED', 'WORSENED', 'PRE_EXISTING', 'UNCERTAIN'].every((c) => b.includes(c))
+      && ['UNIT_REVIEW', 'TARGETED_REREVIEW', 'WHOLE_WORK_REVIEW'].every((s) => b.includes(s))
+      && /schema\s*v?(ersion)?\s*\**\s*1\b|schemaVersion/i.test(b) && /BLOCKED_INPUT/.test(b),
   },
 };
 const FORBIDDEN_KEYS = ['memory', 'isolation', 'hooks', 'mcpServers', 'permissionMode'];

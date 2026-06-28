@@ -37,6 +37,11 @@ const ROOTCAUSE_STATUS = ['none', 'investigating', 'evidenced', 'failed'];
 const PLAN_STATUS = ['none', 'drafting', 'approved', 'executing', 'done'];
 const VERIFY_STATUS = ['none', 'pending', 'passed', 'failed'];
 const REVIEW_STATUS = ['none', 'required', 'in-progress', 'clean', 'findings-open'];
+// Phase 3B.2: the review scope and the per-scope sub-statuses (whole-work +
+// targeted re-review tracked separately from the current unit review.status).
+const REVIEW_SCOPE_STATE = ['none', 'UNIT_REVIEW', 'TARGETED_REREVIEW', 'WHOLE_WORK_REVIEW'];
+const SUB_REVIEW_STATUS = ['none', 'in-progress', 'clean', 'findings-open'];
+const FINDING_ID_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,31}$/;
 const COMMIT_POLICIES = ['controller-per-unit', 'implementer', 'user-owned', 'none'];
 const BLOCK_CODES = ['retry-exhausted', 'remediation-exhausted', 'plan-conflict',
   'ambiguous', 'needs-credential', 'baseline-failed', 'human-checkpoint'];
@@ -135,7 +140,12 @@ function defaultState(now) {
     plan: { status: 'none', path: null },
     currentUnit: { id: null, allowedPaths: [], base: null, briefPath: null, reportPath: null, commitSha: null, baselinePath: null, currentAttempt: null, acceptedAttempt: null },
     verification: { status: 'none', command: null },
-    review: { status: 'none' },
+    review: {
+      status: 'none', required: false, scope: 'none',
+      packagePath: null, reportPath: null,
+      acceptedFindingIds: [], pendingBlockingFindingIds: [],
+      targetedRereviewStatus: 'none', wholeWorkReviewStatus: 'none',
+    },
     attempts: { implementer: 0, max: 2 },
     remediationWaves: { count: 0, max: 2 },
     baseBranch: null,
@@ -171,6 +181,19 @@ function validateState(s) {
   if (!s.plan || !inEnum(s.plan.status, PLAN_STATUS)) e.push('plan.status invalid');
   if (!s.verification || !inEnum(s.verification.status, VERIFY_STATUS)) e.push('verification.status invalid');
   if (!s.review || !inEnum(s.review.status, REVIEW_STATUS)) e.push('review.status invalid');
+  else {
+    if (typeof s.review.required !== 'boolean') e.push('review.required must be boolean');
+    if (!inEnum(s.review.scope, REVIEW_SCOPE_STATE)) e.push(`review.scope invalid: ${JSON.stringify(s.review.scope)}`);
+    if (!inEnum(s.review.targetedRereviewStatus, SUB_REVIEW_STATUS)) e.push('review.targetedRereviewStatus invalid');
+    if (!inEnum(s.review.wholeWorkReviewStatus, SUB_REVIEW_STATUS)) e.push('review.wholeWorkReviewStatus invalid');
+    for (const k of ['packagePath', 'reportPath']) {
+      if (s.review[k] != null && typeof s.review[k] !== 'string') e.push(`review.${k} must be a string or null`);
+    }
+    for (const k of ['acceptedFindingIds', 'pendingBlockingFindingIds']) {
+      if (!Array.isArray(s.review[k])) e.push(`review.${k} must be an array`);
+      else if (!s.review[k].every((id) => typeof id === 'string' && FINDING_ID_RE.test(id))) e.push(`review.${k} entries must be finding ids`);
+    }
+  }
   if (!inEnum(s.commitPolicy, COMMIT_POLICIES)) e.push(`commitPolicy invalid: ${JSON.stringify(s.commitPolicy)}`);
   if (!s.currentUnit || !Array.isArray(s.currentUnit.allowedPaths)) e.push('currentUnit.allowedPaths must be an array');
   else {
@@ -328,7 +351,8 @@ function oneline(c) {
   return `cow-state: active mode=${s.mode} phase=${s.phase} lane=${s.processLane} `
     + `discovery=${s.discoveryRoute} impl=${s.implementationRoute} risk=${s.risk} `
     + `unit=${u} attempts=${s.attempts.implementer}/${s.attempts.max} `
-    + `waves=${s.remediationWaves.count}/${s.remediationWaves.max}`;
+    + `waves=${s.remediationWaves.count}/${s.remediationWaves.max} `
+    + `review=${s.review.status}/${s.review.scope} whole-work=${s.review.wholeWorkReviewStatus}`;
 }
 
 function emit(c, fmt, ok = true) {
@@ -545,10 +569,23 @@ function cmdVerify(root, p, argv) {
 }
 
 function cmdReview(root, p, argv) {
-  const flags = parseFlags(argv, { bool: ['start', 'clean', 'findings', 'wave', 'json', 'oneline'], value: [] });
+  const flags = parseFlags(argv, {
+    bool: ['start', 'clean', 'findings', 'wave', 'required', 'not-required', 'json', 'oneline'],
+    value: ['scope', 'package', 'report', 'accepted-finding-ids', 'pending-blocking', 'targeted', 'whole-work'],
+  });
   const fmt = detectFmt(flags);
   const acts = ['start', 'clean', 'findings', 'wave'].filter((a) => flags[a]);
-  if (acts.length !== 1) die('review requires exactly one of --start | --clean | --findings | --wave');
+  const setterKeys = ['required', 'not-required', 'scope', 'package', 'report',
+    'accepted-finding-ids', 'pending-blocking', 'targeted', 'whole-work'];
+  const setters = setterKeys.filter((k) => flags[k] !== undefined);
+  if (acts.length > 1) die('review accepts at most one of --start | --clean | --findings | --wave');
+  if (acts.length === 0 && setters.length === 0) die('review requires an action (--start|--clean|--findings|--wave) or a field setter');
+  if (flags.required && flags['not-required']) die('review: --required and --not-required conflict');
+  const idList = (v) => {
+    const ids = String(v).split(',').map((x) => x.trim()).filter(Boolean);
+    for (const id of ids) if (!FINDING_ID_RE.test(id)) die(`invalid finding id: ${id}`);
+    return ids;
+  };
   return mutate(root, p, (s) => {
     if (flags.start) { s.review.status = 'in-progress'; s.remediationWaves.count = 0; }
     else if (flags.clean) s.review.status = 'clean';
@@ -559,6 +596,15 @@ function cmdReview(root, p, argv) {
       }
       s.remediationWaves.count += 1;
     }
+    if (flags.required) s.review.required = true;
+    if (flags['not-required']) s.review.required = false;
+    if (flags.scope !== undefined) { if (!inEnum(flags.scope, REVIEW_SCOPE_STATE)) die(`invalid --scope: ${flags.scope}`); s.review.scope = flags.scope; }
+    if (flags.package !== undefined) s.review.packagePath = safeRepoPath(root, flags.package, 'package');
+    if (flags.report !== undefined) s.review.reportPath = safeRepoPath(root, flags.report, 'report');
+    if (flags['accepted-finding-ids'] !== undefined) s.review.acceptedFindingIds = idList(flags['accepted-finding-ids']);
+    if (flags['pending-blocking'] !== undefined) s.review.pendingBlockingFindingIds = idList(flags['pending-blocking']);
+    if (flags.targeted !== undefined) { if (!inEnum(flags.targeted, SUB_REVIEW_STATUS)) die(`invalid --targeted: ${flags.targeted}`); s.review.targetedRereviewStatus = flags.targeted; }
+    if (flags['whole-work'] !== undefined) { if (!inEnum(flags['whole-work'], SUB_REVIEW_STATUS)) die(`invalid --whole-work: ${flags['whole-work']}`); s.review.wholeWorkReviewStatus = flags['whole-work']; }
   }, fmt);
 }
 
@@ -624,7 +670,10 @@ Usage: node cow-state.mjs <command> [flags]   ([--json|--oneline] on every comma
        [--baseline P] [--attempt 1..3] [--accepted-attempt 1..3]
                                           open/advance a unit + its artifacts
   verify --pending|--passed|--failed [--cmd C]
-  review --start|--clean|--findings|--wave
+  review --start|--clean|--findings|--wave   (+ field setters below)
+         [--required|--not-required] [--scope S] [--package P] [--report P]
+         [--accepted-finding-ids a,b] [--pending-blocking a,b]
+         [--targeted V] [--whole-work V]      record review-control-plane state
   attempt --inc|--reset                   implementer retry counter (max 2)
   block --reason <code> [--artifact PATH]
   complete                                end the workflow cleanly

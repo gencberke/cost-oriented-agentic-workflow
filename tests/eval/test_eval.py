@@ -639,5 +639,91 @@ class UnitOwnershipFixtureContractTests(unittest.TestCase):
         self.assertGreaterEqual(self._e("planned-sequential-with-unrelated-dirty")["expectedImplementerCount"], 2)
 
 
+REVIEW_CONTROL = HERE / "review-control-plane"
+REVIEW_IDS = {
+    "review-not-required", "unit-review-approve", "unit-review-changes-required",
+    "preexisting-finding-deferred", "remediation-targeted-rereview",
+    "whole-work-standard", "whole-work-production", "review-wave-exhausted",
+}
+REVIEW_SCOPES = {"NONE", "UNIT_REVIEW", "TARGETED_REREVIEW", "WHOLE_WORK_REVIEW"}
+REVIEW_DECISIONS = {"none", "required", "required-if-non-obvious", "required:fresh-targeted"}
+
+
+class ReviewControlPlaneFixtureContractTests(unittest.TestCase):
+    """Schema + coherence for Phase 3B.2 review control-plane fixtures.
+
+    These are static behavioral contracts, not live-smoke proof. They keep the
+    matrix and review/remediation semantics explicit so live smokes are graded
+    against a stable contract.
+    """
+
+    def _e(self, fid):
+        return json.loads((REVIEW_CONTROL / fid / "expected.json").read_text(encoding="utf-8"))
+
+    def test_fixture_set_and_readme(self):
+        self.assertTrue(REVIEW_CONTROL.is_dir(), "tests/eval/review-control-plane/ must exist")
+        self.assertEqual({p.name for p in REVIEW_CONTROL.iterdir() if p.is_dir()}, REVIEW_IDS)
+        self.assertGreater((REVIEW_CONTROL / "README.md").stat().st_size, 200)
+
+    def test_each_fixture_is_well_formed(self):
+        for fid in sorted(REVIEW_IDS):
+            d = REVIEW_CONTROL / fid
+            with self.subTest(fixture=fid):
+                self.assertEqual({p.name for p in d.iterdir()}, {"prompt.md", "expected.json"})
+                self.assertGreater((d / "prompt.md").stat().st_size, 50)
+                e = self._e(fid)
+                self.assertEqual(e["id"], fid)
+                self.assertEqual(e["fixture_version"], 1)
+                self.assertIn(e["mode"], {"standard", "production"})
+                self.assertIn(e["risk"], {"low", "elevated", "high"})
+                self.assertIn(e["matrixDecision"], REVIEW_DECISIONS)
+                self.assertIn(e["primaryReviewScope"], REVIEW_SCOPES)
+                self.assertIsInstance(e["expectedReviewerCount"], int)
+                self.assertGreaterEqual(e["expectedReviewerCount"], 0)
+                self.assertIsInstance(e["expectedRemediationWaves"], int)
+                self.assertGreaterEqual(e["expectedRemediationWaves"], 0)
+                self.assertLessEqual(e["expectedRemediationWaves"], 2)
+                self.assertIsInstance(e["expectedTargetedRereviews"], int)
+                self.assertGreaterEqual(e["expectedTargetedRereviews"], 0)
+                self.assertIsInstance(e["expectedWholeWorkReview"], bool)
+                self.assertIsInstance(e["expectedAdjudication"], str)
+                self.assertGreater(len(e["expectedAdjudication"]), 5)
+                for field in ("requiredArtifacts", "forbidden", "human_checks"):
+                    self.assertIsInstance(e[field], list)
+                    self.assertGreaterEqual(len(e[field]), 1)
+                    self.assertTrue(all(isinstance(x, str) and x for x in e[field]))
+
+    def test_review_flow_coherence(self):
+        self.assertEqual(self._e("review-not-required")["matrixDecision"], "none")
+        self.assertEqual(self._e("review-not-required")["expectedReviewerCount"], 0)
+        self.assertEqual(self._e("review-not-required")["primaryReviewScope"], "NONE")
+
+        approve = self._e("unit-review-approve")
+        self.assertEqual(approve["primaryReviewScope"], "UNIT_REVIEW")
+        self.assertEqual(approve["expectedRemediationWaves"], 0)
+        self.assertIn("review-report", " ".join(approve["requiredArtifacts"]))
+
+        changes = self._e("unit-review-changes-required")
+        self.assertEqual(changes["expectedRemediationWaves"], 1)
+        self.assertGreaterEqual(changes["expectedTargetedRereviews"], 1)
+
+        pre = self._e("preexisting-finding-deferred")
+        self.assertEqual(pre["expectedRemediationWaves"], 0)
+        self.assertIn("DEFER_PRE_EXISTING", pre["expectedAdjudication"])
+
+        rem = self._e("remediation-targeted-rereview")
+        self.assertEqual(rem["expectedTargetedRereviews"], 1)
+        self.assertEqual(rem["primaryReviewScope"], "TARGETED_REREVIEW")
+
+        self.assertTrue(self._e("whole-work-standard")["expectedWholeWorkReview"])
+        prod = self._e("whole-work-production")
+        self.assertEqual(prod["mode"], "production")
+        self.assertTrue(any("model: opus" in x.lower() or "opus" in x.lower() for x in prod["human_checks"]))
+
+        exhausted = self._e("review-wave-exhausted")
+        self.assertEqual(exhausted["expectedRemediationWaves"], 2)
+        self.assertIn("blocked", exhausted["commitExpectation"].lower())
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -1,0 +1,17 @@
+{
+  "id": "unit-review-changes-required",
+  "fixture_version": 1,
+  "mode": "standard",
+  "risk": "high",
+  "matrixDecision": "required",
+  "primaryReviewScope": "UNIT_REVIEW",
+  "expectedReviewerCount": 2,
+  "expectedRemediationWaves": 1,
+  "expectedTargetedRereviews": 1,
+  "expectedWholeWorkReview": true,
+  "expectedAdjudication": "ACCEPT introduced Important finding; remediationRequired=true",
+  "commitExpectation": "original unit does not complete until remediation and targeted re-review pass",
+  "requiredArtifacts": ["unit review package", "review-report.json", "adjudication artifact", "remediation brief", "targeted re-review report"],
+  "forbidden": ["apply finding before adjudication", "reuse original implementer prompt unchanged", "full unrelated re-review"],
+  "human_checks": ["confirm accepted finding id appears in TARGETED_REREVIEW", "confirm remediation wave count is 1"]
+}

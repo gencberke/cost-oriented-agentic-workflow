@@ -1,0 +1,17 @@
+{
+  "id": "whole-work-standard",
+  "fixture_version": 1,
+  "mode": "standard",
+  "risk": "elevated",
+  "matrixDecision": "required",
+  "primaryReviewScope": "WHOLE_WORK_REVIEW",
+  "expectedReviewerCount": 1,
+  "expectedRemediationWaves": 0,
+  "expectedTargetedRereviews": 0,
+  "expectedWholeWorkReview": true,
+  "expectedAdjudication": "controller adjudicates whole-work report before completion",
+  "commitExpectation": "completion only after whole-work report validation and adjudication",
+  "requiredArtifacts": ["whole-work package", "ledger", "unit review reports", "verification summary"],
+  "forbidden": ["controller self-review as final review", "complete before whole-work review"],
+  "human_checks": ["confirm reviewer scope WHOLE_WORK_REVIEW", "confirm reviewer model sonnet"]
+}

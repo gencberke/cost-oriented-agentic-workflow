@@ -574,11 +574,12 @@ check(/schemaVersion/.test(implReportRef) && /8 KB/.test(readRef(IMPL_REPORT_REF
   && /never store chain-of-thought/i.test(implReportRef),
   '3B.1: the report schema is bounded (8 KB) and stores no chain-of-thought');
 
-// cow-reviewer is NOT integrated; no active hooks; the helper exists
+// cow-reviewer IS integrated as of Phase 3B.2 (see the 3B.2 section below); no
+// active hooks; the implementation-report helper exists.
 const dispatchSurfaces = walk(skillsDir).concat(isDir(cmdDir) ? walk(cmdDir) : [])
   .filter((f) => f.endsWith('.md')).map((f) => read(f)).join('\n');
-check(!/cost-oriented-agentic-workflow:cow-reviewer/.test(dispatchSurfaces),
-  '3B.1: cow-reviewer is not dispatched from any skill or command (not integrated)');
+check(/cost-oriented-agentic-workflow:cow-reviewer/.test(dispatchSurfaces),
+  '3B.2: cow-reviewer is dispatched from the review skills/commands (integrated)');
 check(!fs.existsSync(path.join(root, 'hooks/hooks.json')),
   '3B.1: no active hooks/hooks.json (only the .example template)');
 check(fs.existsSync(path.join(root, 'skills/execution-routing/scripts/implementation-report.mjs')),
@@ -614,8 +615,88 @@ check(rawImplRouting.includes('fresh baseline'),
 // the existing review gate + non-integration still hold
 check(/Mode\/risk matrix requires independent task review\?/i.test(executionText),
   '3B.1.1: the existing review gate remains in the loop order');
-check(!/cost-oriented-agentic-workflow:cow-reviewer/.test(dispatchSurfaces),
-  '3B.1.1: cow-reviewer is still not dispatched from any skill or command');
+check(/cost-oriented-agentic-workflow:cow-implementer/.test(dispatchSurfaces)
+  && /cost-oriented-agentic-workflow:cow-reviewer/.test(dispatchSurfaces),
+  '3B.1.1/3B.2: the implementer and reviewer roles are both integrated and remain distinct');
+
+// ── Phase 3B.2: review control plane (scoped cow-reviewer integration) ────────
+// Detailed review routing, the package/report contract, adjudication, and
+// remediation/re-review live in on-demand references (measured separately); the
+// primary skills keep the scoped reviewer identifier, the validate-before-
+// adjudicate tripwire, and the matrix pointer. The mode/risk matrix above is
+// PRESERVED, not redesigned (still asserted by the routing-fixture checks).
+const REVIEW_ROUTING = 'skills/execution-routing/references/review-routing.md';
+const REVIEW_PACKAGE = 'skills/execution-routing/references/review-package.md';
+const REVIEW_ADJUDICATION = 'skills/execution-routing/references/review-adjudication.md';
+const REMEDIATION_REREVIEW = 'skills/execution-routing/references/remediation-and-rereview.md';
+for (const [relRef, ceil] of [[REVIEW_ROUTING, 3000], [REVIEW_PACKAGE, 4000], [REVIEW_ADJUDICATION, 3000], [REMEDIATION_REREVIEW, 3000]]) {
+  const b = Buffer.byteLength(readRef(relRef), 'utf8');
+  check(b > 0 && b <= ceil, `${relRef} within its on-demand reference ceiling (${b}/${ceil})`);
+}
+const reviewRoutingRef = norm(readRef(REVIEW_ROUTING));
+const reviewPackageRef = norm(readRef(REVIEW_PACKAGE));
+const reviewAdjRef = norm(readRef(REVIEW_ADJUDICATION));
+const remediationRef = norm(readRef(REMEDIATION_REREVIEW));
+const requestingText = read(path.join(skillsDir, 'requesting-review', 'SKILL.md'));
+
+// the helpers exist (zero-dep, Node + git)
+check(fs.existsSync(path.join(root, 'skills/requesting-review/scripts/review-report.mjs')),
+  '3B.2: the review-report validation helper exists');
+check(fs.existsSync(path.join(root, 'skills/requesting-review/scripts/review-package.mjs')),
+  '3B.2: the review-package descriptor helper exists');
+
+// the exact scoped reviewer is named where review is dispatched; never automatic
+check(executionText.includes('cost-oriented-agentic-workflow:cow-reviewer')
+  && requestingText.includes('cost-oriented-agentic-workflow:cow-reviewer'),
+  '3B.2: the exact scoped cow-reviewer is named in execution-routing and requesting-review');
+check(/never rely on automatic agent selection/i.test(requestingText) || /never automatic selection/i.test(norm(executionText)),
+  '3B.2: review dispatch is explicit — never automatic agent selection');
+
+// validate the report before adjudicating; adjudicate before any fix.
+// The primary skill keeps the terse tripwire; the full rule lives in the refs.
+check(/review-report\.mjs/.test(executionText) && /adjudicate every finding before any fix is dispatched/i.test(norm(executionText)),
+  '3B.2: execution-routing keeps the validate + adjudicate-before-fix tripwire');
+check(/review-report\.mjs validate.{0,40}before/is.test(reviewPackageRef),
+  '3B.2: the report is validated before adjudication (review-package reference)');
+check(/adjudicates each actionable finding before any fix is dispatched/i.test(reviewAdjRef),
+  '3B.2: findings are adjudicated before any fix is dispatched (adjudication reference)');
+check(/the validated reviewer report is evidence, not a self-executing decision/i.test(reviewAdjRef),
+  '3B.2: the reviewer report is evidence, not a self-executing decision');
+
+// the three review scopes are defined in the reference
+check(['UNIT_REVIEW', 'TARGETED_REREVIEW', 'WHOLE_WORK_REVIEW'].every((s) => reviewRoutingRef.includes(s)),
+  '3B.2: review-routing names the three review scopes');
+// the matrix is preserved (the reference mirrors it without redefining policy)
+check(/mode\/risk matrix in using-cost-oriented-workflow is authoritative/i.test(reviewRoutingRef)
+  && /a `?none`? cell means.{0,40}do not dispatch/i.test(reviewRoutingRef),
+  '3B.2: review-routing preserves the matrix and the none-cell (no review) rule');
+// production whole-work uses an Opus override of the same reviewer, not a fifth agent
+check(/production.{0,40}model: ?opus.{0,40}override/is.test(reviewRoutingRef)
+  && /not a fifth agent/i.test(reviewRoutingRef),
+  '3B.2: production whole-work review uses a per-invocation Opus override, not a fifth agent');
+
+// causality + blocking model preserved in the package/report + adjudication refs
+check(['INTRODUCED', 'WORSENED', 'PRE_EXISTING', 'UNCERTAIN'].every((c) => reviewAdjRef.includes(c))
+  && /only.{0,30}INTRODUCED.{0,20}WORSENED.{0,40}block/is.test(reviewAdjRef),
+  '3B.2: adjudication preserves causality and the introduced/worsened-only blocking rule');
+check(/ACCEPT.{0,30}REJECT.{0,30}DEFER_PRE_EXISTING.{0,30}REQUEST_CLARIFICATION/is.test(reviewAdjRef),
+  '3B.2: adjudication defines the four controller decisions');
+// the report contract names schema v1 + the 12 KB ceiling
+check(/schema.{0,12}v?1/i.test(reviewPackageRef) && /12 ?KB/.test(readRef(REVIEW_PACKAGE)),
+  '3B.2: the review report contract is bounded (schema v1, 12 KB)');
+
+// remediation ceiling unchanged (2 waves), separate from retry attempts
+check(/at most 2 remediation waves/i.test(remediationRef)
+  && /separate.{0,40}retry budget|retry budget.{0,40}separate|never merge/i.test(remediationRef),
+  '3B.2: remediation stays at two waves, separate from the retry budget');
+check(/TARGETED_REREVIEW/.test(remediationRef) && /fresh `?cow-reviewer`?/i.test(remediationRef),
+  '3B.2: targeted re-review uses a fresh cow-reviewer');
+
+// exactly four agents; the version is untouched by this phase
+const agentCount = isDir(agentsDir) ? fs.readdirSync(agentsDir).filter((f) => f.endsWith('.md')).length : 0;
+check(agentCount === 4, `3B.2: exactly four agents remain (no fifth reviewer) (${agentCount})`);
+check(plugin && plugin.version === '0.4.2' && packageMeta && packageMeta.version === '0.4.2',
+  '3B.2: the package version remains 0.4.2 (no bump this phase)');
 
 // ── Summary ─────────────────────────────────────────────────────────────────
 console.log(`\n${passes} checks passed, ${failures} failed.`);

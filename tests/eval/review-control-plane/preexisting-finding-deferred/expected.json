@@ -1,0 +1,17 @@
+{
+  "id": "preexisting-finding-deferred",
+  "fixture_version": 1,
+  "mode": "standard",
+  "risk": "high",
+  "matrixDecision": "required",
+  "primaryReviewScope": "UNIT_REVIEW",
+  "expectedReviewerCount": 1,
+  "expectedRemediationWaves": 0,
+  "expectedTargetedRereviews": 0,
+  "expectedWholeWorkReview": true,
+  "expectedAdjudication": "DEFER_PRE_EXISTING with reasonCode=PRE_EXISTING",
+  "commitExpectation": "current unit may proceed only with recorded risk decision or new approved scope",
+  "requiredArtifacts": ["review-report.json", "adjudication artifact", "pre-existing evidence path"],
+  "forbidden": ["mark PRE_EXISTING finding as current-unit blocker", "spend remediation wave on original unit"],
+  "human_checks": ["confirm causality PRE_EXISTING is preserved", "confirm user decision is requested if fixing now"]
+}

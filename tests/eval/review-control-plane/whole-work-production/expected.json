@@ -1,0 +1,17 @@
+{
+  "id": "whole-work-production",
+  "fixture_version": 1,
+  "mode": "production",
+  "risk": "high",
+  "matrixDecision": "required",
+  "primaryReviewScope": "WHOLE_WORK_REVIEW",
+  "expectedReviewerCount": 1,
+  "expectedRemediationWaves": 0,
+  "expectedTargetedRereviews": 0,
+  "expectedWholeWorkReview": true,
+  "expectedAdjudication": "controller records actual model and adjudicates production whole-work report",
+  "commitExpectation": "no completion before production whole-work review",
+  "requiredArtifacts": ["whole-work package", "review-report.json", "model evidence", "adjudication artifact"],
+  "forbidden": ["create fifth reviewer agent", "pretend Opus override occurred without evidence"],
+  "human_checks": ["confirm cow-reviewer with model: opus override or documented limitation", "confirm production never skips whole-work review"]
+}

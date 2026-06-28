@@ -221,6 +221,33 @@ function cow(cwd, ...args) {
   check(readState(root).remediationWaves.count === 2, 'waves: counter capped at 2');
 }
 
+// ── Phase 3B.2: review control-plane observability fields ────────────────────
+{
+  const { dir, root } = freshRepo();
+  cow(dir, 'init');
+  check(readState(root).review.scope === 'none' && readState(root).review.required === false
+    && Array.isArray(readState(root).review.acceptedFindingIds), 'review: new fields default cleanly');
+  const set = cow(dir, 'review', '--required', '--scope', 'UNIT_REVIEW',
+    '--package', '.cost-oriented-agentic-workflow/run/task-1-review-package.json',
+    '--report', '.cost-oriented-agentic-workflow/run/task-1-review-report.json');
+  check(set.status === 0, 'review: scope/package/report setters exit 0');
+  let s = readState(root);
+  check(s.review.required === true && s.review.scope === 'UNIT_REVIEW', 'review: required + scope recorded');
+  check(s.review.packagePath.endsWith('task-1-review-package.json') && s.review.reportPath.endsWith('task-1-review-report.json'), 'review: package + report paths recorded');
+  check(cow(dir, 'review', '--findings', '--accepted-finding-ids', 'F-001,F-002', '--pending-blocking', 'F-001').status === 0, 'review: findings + accepted/pending ids set');
+  s = readState(root);
+  check(s.review.status === 'findings-open' && s.review.acceptedFindingIds.length === 2 && s.review.pendingBlockingFindingIds.length === 1, 'review: findings ids recorded');
+  check(cow(dir, 'review', '--targeted', 'clean', '--whole-work', 'in-progress').status === 0, 'review: targeted + whole-work sub-status set');
+  s = readState(root);
+  check(s.review.targetedRereviewStatus === 'clean' && s.review.wholeWorkReviewStatus === 'in-progress', 'review: sub-statuses recorded');
+  // rejections
+  check(cow(dir, 'review', '--scope', 'NOPE').status !== 0, 'review: invalid scope rejected');
+  check(cow(dir, 'review', '--accepted-finding-ids', 'bad id!').status !== 0, 'review: invalid finding id rejected');
+  check(cow(dir, 'review', '--package', '../escape.json').status !== 0, 'review: unsafe package path rejected');
+  check(cow(dir, 'review').status !== 0, 'review: no action and no setter is rejected');
+  check(cow(dir, 'review', '--required', '--not-required').status !== 0, 'review: conflicting required flags rejected');
+}
+
 // ── blocked state + cannot silently complete ─────────────────────────────────
 {
   const { dir, root } = freshRepo();
