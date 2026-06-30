@@ -3,6 +3,38 @@
 All notable changes to the cost-oriented-agentic-workflow plugin are documented
 here. This project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.5.0] - Pending
+
+Release-candidate preparation for the v0.5.0 control-plane series. Repository
+versions intentionally remain `0.4.2` during Phase 7A; the final version bump is
+prepared but not performed.
+
+### Added
+
+- Runtime package surface for the v0.5.0 candidate: `.claude-plugin/`,
+  `commands/`, `skills/`, all four `agents/`, inactive hook examples,
+  `README.md`, and `LICENSE`.
+- Candidate/final release gates. Candidate validation may pass with live gates
+  pending; final validation refuses release with
+  `LIVE_EVIDENCE_REQUIRED_BEFORE_RELEASE`.
+- Deterministic runtime package inspection, final-version dry-run, and Node
+  release artifact tests covering allowlists, SHA-256 checksums, reproducible
+  manifests, inactive hook status, and package safety.
+
+### Changed
+
+- Bash-backed test scripts are routed through a Node wrapper that prefers Git
+  Bash on Windows, avoiding accidental WSL launcher failures.
+- Runtime documentation now distinguishes source-repository commands from
+  installed runtime usage and avoids personal absolute paths.
+
+### Deferred
+
+- Phase 3B.2 live review lifecycle evidence.
+- Phase 4 live resume/compact evidence.
+- Phase 5 live ASK/DENY evidence.
+- Sufficient Phase 6 behavioral, token, and cost evidence.
+
 ## [0.4.2] - 2026-06-24
 
 A cleanup and packaging release. It separates the development repository from a

@@ -72,12 +72,13 @@ The system spends where correctness changes, not by ritual.
 - Behavioral dogfood policy: [`../../DOGFOOD.md`](../../DOGFOOD.md).
 - Current phase ledger: [`PHASES.md`](PHASES.md).
 
-## Runtime Packaging Gap
+## Runtime Packaging Status
 
-The source tree has v0.5.0 control-plane substrate, but the generated `0.4.2`
-runtime package is still intentionally narrower. It does not yet ship top-level
-`agents/**` or active `hooks/hooks.json`. Those are release-path changes after
-Phase 5/Phase 7 gates. Source dogfood with `claude --plugin-dir <repo>` must be
+The Phase 7A runtime package surface includes the v0.5.0 control-plane substrate:
+plugin metadata, commands, skills, all four `agents/**` definitions, inactive
+hook examples, README, and license. It still intentionally excludes active
+`hooks/hooks.json`, tests, docs, scripts, raw evidence, phase prompts, and local
+worktrees. Source dogfood with `claude --plugin-dir <repo>` must still be
 reported separately from installed-runtime evidence.
 
 ## Remaining Roadmap
@@ -86,8 +87,8 @@ reported separately from installed-runtime evidence.
   F2/F3/F5 when budget allows), collect token/cost/latency evidence, accept or
   reject live enforcement behavior, and record conservative thresholds only
   from measured evidence.
-- Phase 7: bump versions to `0.5.0`, update changelog/release docs, package the
-  full runtime control plane, and run the full release gate.
+- Phase 7B: accept live evidence, bump versions to `0.5.0`, rebuild/inspect the
+  runtime package, and run the final release gate.
 
 ## Incoming-Agent Procedure
 
@@ -97,6 +98,4 @@ reported separately from installed-runtime evidence.
 4. Use deterministic checks first.
 5. Do not run live smokes unless the phase requires evidence that static tests
    cannot provide.
-6. Do not activate hooks, bump versions, or change runtime package allowlists
-   outside their scheduled phase.
-
+6. Do not activate hooks or bump versions before the final live-evidence gate.

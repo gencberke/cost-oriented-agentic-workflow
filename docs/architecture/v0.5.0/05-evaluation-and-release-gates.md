@@ -36,7 +36,10 @@ rg "<stale architecture reference pattern>" README.md docs tests skills commands
 - stream analyzer tests for discovery, implementation, and review.
 
 On Windows, Bash suites should be run through Git Bash when plain `bash`
-resolves to WSL.
+resolves to WSL. The package scripts route Bash suites through
+`scripts/run-bash.mjs`, which prefers Git Bash on Windows. Eval suites still
+require Python 3; if it is not on `PATH`, set `PYTHON` in the local environment
+for verification.
 
 ## Fixture Layers
 
@@ -67,13 +70,25 @@ the semantic result; analyzers classify the saved stream.
 
 ## Release Gate
 
-Phase 7 is the only phase that bumps versions and changes final runtime package
-shape. Before release:
+Phase 7A prepares the release-candidate runtime package shape but does not bump
+versions. Candidate validation and final publishable validation are separate:
+
+- `npm run release:check:candidate`: may pass while live evidence is explicitly
+  pending.
+- `npm run release:check:final`: must fail with
+  `LIVE_EVIDENCE_REQUIRED_BEFORE_RELEASE` until live gates are accepted.
+- `npm run release:version:dry`: proves every final `0.5.0` version location is
+  known without mutating files.
+- `npm run runtime:build` / `npm run runtime:inspect`: build and inspect the
+  minimal runtime package.
+
+Before final release:
 
 - all deterministic suites pass;
-- live behavior gates for the completed phases are accepted;
-- token/cost conclusions are recorded;
-- runtime package contains exactly the intended allowlist, including agents and
-  active hooks only when their phases have shipped;
+- Phase 3B.2, Phase 4, Phase 5, and sufficient Phase 6 live behavior gates are
+  accepted;
+- token/cost conclusions are recorded from measured evidence;
+- runtime package contains exactly the intended allowlist, including all four
+  agents and no active `hooks/hooks.json` until activation is proven;
 - plugin manifests and `package.json` agree on version `0.5.0`;
 - release artifact verification passes.

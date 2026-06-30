@@ -1,98 +1,65 @@
 # Current Handoff
 
 This is the concise operational snapshot for `cost-oriented-agentic-workflow`.
-For first-read agent guidance, see [`../AGENTS.md`](../AGENTS.md). For compact
-design detail, see [`architecture/v0.5.0/`](architecture/v0.5.0/). For deep
-context recovery, see
-[`architecture/v0.5.0/COW-MASTER-HANDOFF.md`](architecture/v0.5.0/COW-MASTER-HANDOFF.md).
+For first-read guidance, see [`../AGENTS.md`](../AGENTS.md). For release
+candidate status, see [`RELEASE_0.5.0.md`](RELEASE_0.5.0.md).
 
 ## Verified State
 
-- Source root: `C:\Users\gencberke\Desktop\cost-oriented-agentic-workflow`.
-- Branch: `feat/v0.5.0-phase-4-shadow-hooks`.
-- HEAD at this handoff update: `1352587` (Phase 5A committed); Phase 6 harness
-  work is present as uncommitted changes on top.
-- Package version: `0.4.2`.
+- Source root for this worktree:
+  `C:\Users\gencberke\Desktop\cost-oriented-agentic-workflow-phase7a`.
+- Branch: `codex/phase-7a-release-candidate`.
+- Baseline: `308be7c` contains the committed Phase 6 deterministic harness.
+- Package version: `0.4.2`; the final `0.5.0` bump is prepared only as a dry-run.
 - Runtime dependencies: zero.
-- Last targeted verification before this handoff update:
-  - `npm.cmd run check`: 413 checks passed, 0 failed.
-  - `npm.cmd run test:hooks`: 39 checks passed, 0 failed (shadow preserved).
-  - `npm.cmd run test:enforcement`: 130 checks passed, 0 failed.
-  - `npm.cmd run test:phase6`: 109 checks passed, 0 failed.
-  - `claude plugin validate . --strict`: passed.
-- Working tree: dirty with Phase 6 harness work (intentionally uncommitted; the
-  phase mandates no commit). There is an unrelated untracked
-  `analyze-apply-project-rules/` folder and the `phase_6.md` task spec under the
-  source root; neither is canonical project content.
-- Active hook file: none. `hooks/hooks.json` must not exist before the Phase 6
-  live-activation gate. `hooks/hooks.enforcement.json.example` is an inactive
-  example only.
-- Runtime package capability: the generated `0.4.2` runtime package is not yet
-  the complete v0.5.0 control-plane distribution. Top-level `agents/**` and
-  active hooks are release-path work. `test:release` requires a clean committed
-  tree and is therefore skipped during Phase 6 by the no-commit policy, not by a
-  code defect.
+- Agent count: exactly four COW agents.
+- Active hook file: none. `hooks/hooks.json` must remain absent.
+- Runtime package: release-candidate surface includes plugin metadata, commands,
+  skills, all four agents, inactive hook examples, README, and license.
 
 ## Implemented Control Plane
 
-- State and workspace: per-checkout ignored run directory, `cow-state.mjs`,
-  schema validation, corruption refusal, reconstruction support, and conservative
-  resume from plan, ledger, and Git.
-- Repository intake: deterministic snapshot/profile helpers and discovery
-  readiness rules.
-- Agents: four scoped plugin agents for repository investigation, debug
-  investigation, implementation, and review. Dispatch uses exact scoped
-  identifiers. Agents never commit or update state.
-- Discovery routing: controller map, investigator, and parallel-investigator
-  routes with bounded controller reads and profile warm/stale handling.
-- Implementation routing: inline, delegated, planned sequential, and delegated
-  batch routes with per-unit ownership, immutable attempt reports, and review
-  package support.
-- Review control: scoped reviewer integration, causality-aware findings,
-  targeted re-review after Critical/Important fixes, and the two-wave remediation
-  ceiling. Live behavior evidence remains separate from static structure.
-- Phase 4 hooks: SessionStart lean resume pointer, PreToolUse observation, and
-  PreCompact observation. Hooks fail open and do not block in this phase.
-- Phase 5A enforcement: explicit `--decision-mode=enforce` PreToolUse mode that
-  emits `ask`/`deny` for E1–E7 zero-false-positive binary rules. Shadow mode is
-  preserved byte-identically. No active `hooks/hooks.json`; enforcement runtime
-  activation is deferred to Phase 6.
-- Phase 6 evaluation harness (deterministic): run-schema validator
-  (`validate-run.mjs`), matched-condition aggregator with outlier reporting and
-  Markdown output (`aggregate-runs.mjs`), F1–F5 fixture manifests, a benign
-  Phase 6H optional Headroom experiment spec, and `test:phase6`. Live evidence
-  is partial/deferred.
+- State and workspace: validated per-checkout run state, reconstruction support,
+  repository snapshot/profile helpers, and conservative resume.
+- Agents: four scoped workers for repository investigation, debug investigation,
+  implementation, and review. Agents never commit or update workflow state.
+- Routing: discovery and implementation remain separate; implementation supports
+  inline, delegated, planned-sequential, and delegated-batch paths.
+- Review: scoped reviewer contracts, causality-aware findings, targeted
+  re-review, whole-work review, and a two-wave remediation ceiling.
+- Hooks: Phase 4 shadow observation and lean SessionStart resume pointer; Phase
+  5A opt-in enforcement mode for E1-E7. No active source-controlled hook config.
+- Evaluation: Phase 6 deterministic run schema, stream parser, aggregator,
+  fixtures, and optional Headroom spec. Live evidence remains pending.
+- Release preparation: Phase 7A runtime package allowlist, candidate/final gate
+  distinction, package inspection, and final-version dry-run.
 
 ## Current Risks
 
-- Phase 5A static enforcement is present (`--decision-mode=enforce` for E1–E7),
-  but live ASK/DENY runtime activation is deferred to Phase 6. Static tests
-  prove the contract shape, not model behavior.
-- There is no active `hooks/hooks.json`; runtime packages must not ship one yet.
-  `hooks/hooks.enforcement.json.example` is an inactive example only.
-- Behavioral and token/cost budgets are not final until Phase 6 evidence is
-  collected.
-- Live model smokes are expensive and environment-sensitive. Static tests and
-  live behavior must be reported separately.
-- The repository may contain unrelated dirty or untracked work. Preserve it.
+- Phase 3B.2, Phase 4, Phase 5, and Phase 6 live evidence gates are still open.
+- `release:check:final` must fail with
+  `LIVE_EVIDENCE_REQUIRED_BEFORE_RELEASE` until those gates are accepted.
+- No token savings or behavior guarantees may be claimed from static tests alone.
+- No active `hooks/hooks.json` may ship in the source tree or runtime package.
+- Preserve unrelated untracked work in the original checkout, especially
+  `phase_7.md` and `analyze-apply-project-rules/`.
 
 ## Next Work
 
-1. Phase 6 (live): run the minimum matrix (F1 VANILLA, F1 COW_SHADOW, F4
-   standard ask, F4 production deny); then F2/F3/F5 when usage allows. Collect
-   token/cost/latency evidence, accept or reject live enforcement behavior, and
-   record conservative numeric budgets only with measured evidence and a dated
-   `DECISIONS.md` entry.
-2. Phase 7: release candidate, version bump to `0.5.0`, final package allowlist,
-   changelog, and full verification.
+1. Run and record the deferred live evidence matrix.
+2. Accept or reject enforcement/live behavior based on saved stream evidence.
+3. Record conservative token/cost thresholds only from measured data.
+4. Perform the final `0.5.0` version bump after final release gates are green.
 
-## Lightweight Verification
+## Verification
 
-For docs-only changes:
+Focused Phase 7A checks:
 
 ```text
 npm.cmd run check
+npm.cmd run test:phase6
+npm.cmd run test:release
+claude plugin validate . --strict
 ```
 
-Run broader Bash/eval/release suites only when the change touches runtime
-behavior, packaging, or a lightweight check exposes a structural risk.
+Full deterministic suite remains required before a Phase 7A handoff is complete.

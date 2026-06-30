@@ -126,6 +126,28 @@
   Benign fixture results (0 ask / 0 deny) are fixture evidence, not proof of
   real-world zero false positives.
 
+## 2026-06-30 - Phase 7A: release-candidate repository preparation
+
+- Phase 7A prepares the repository for a future `0.5.0` release but does not
+  perform the public release, version bump, tag, push, publish, or install.
+- Runtime packaging now targets the v0.5.0 candidate surface: plugin metadata,
+  commands, skills, all four agents, inactive hook examples, README, and license.
+  Tests, docs, scripts, eval fixtures, raw evidence, phase prompts, local
+  worktrees, and active `hooks/hooks.json` remain excluded.
+- Candidate and final gates are intentionally distinct. Candidate validation may
+  pass with live gates pending; final validation fails with
+  `LIVE_EVIDENCE_REQUIRED_BEFORE_RELEASE` until Phase 3B.2, Phase 4, Phase 5,
+  and sufficient Phase 6 live evidence is accepted.
+- Version finalization is dry-run only in this phase. Authoritative locations are
+  `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`,
+  `package.json`, runtime manifest metadata derived from plugin metadata, and
+  the pending `CHANGELOG.md` heading.
+- Runtime package safety rejects personal absolute paths, active hook configs,
+  development-only files, unsafe output roots, duplicate manifest paths, and
+  broken packaged Markdown links.
+- Windows Bash suites now go through a Node wrapper that prefers Git Bash, while
+  the release package test itself is Node-based.
+
 ## Legacy decision log note
 
 The sections below preserve the earlier Turkish decision log. Some old pending

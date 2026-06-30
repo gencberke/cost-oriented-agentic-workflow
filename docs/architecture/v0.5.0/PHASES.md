@@ -1,8 +1,9 @@
 # v0.5.0 Phase Ledger And Roadmap
 
-The version stays `0.4.2` until Phase 7. Each phase must preserve user work,
-runtime zero dependencies, the review matrix, and controller-owned state/commit
-authority.
+The version stays `0.4.2` through Phase 7A release-candidate preparation. The
+final `0.5.0` bump happens only after deferred live evidence gates are accepted.
+Each phase must preserve user work, runtime zero dependencies, the review
+matrix, and controller-owned state/commit authority.
 
 Status terms:
 
@@ -26,8 +27,8 @@ Status terms:
 
 - Status: source-present, static-verified by agent contract tests.
 - Evidence: four `agents/cow-*.md` files and exact scoped dispatch fixtures.
-- Deferred behavior: generated runtime package does not yet ship top-level
-  `agents/**`; release packaging waits for Phase 7.
+- Release-candidate package behavior: Phase 7A runtime packaging includes all
+  four `agents/**` definitions.
 
 ### Phase 3A: Discovery Control Plane
 
@@ -79,7 +80,7 @@ Status terms:
   (default stays shadow; only the exact value `enforce` enables enforcement),
   E1–E7 zero-false-positive binary rules, `isSimpleCommand` guard, additive
   observation `actualDecision`/`reasonCode` fields, `tests/hook-enforcement.test.mjs`
-  (127 checks), a benign fixture corpus under
+  (130 checks), a benign fixture corpus under
   `tests/fixtures/hook-enforcement/`, an inactive
   `hooks/hooks.enforcement.json.example`, and structural checks in
   `validate-structure.mjs`.
@@ -112,19 +113,30 @@ Status terms:
   behavior before any active enforcement `hooks.json` ships.
 - Evidence so far: `tests/eval/phase6/validate-run.mjs` (run-schema validator),
   `aggregate-runs.mjs` (matched-condition comparison + outlier + Markdown),
-  F1–F5 fixture manifests, `tests/phase6.test.mjs` (109 checks), and the Phase
+  F1–F5 fixture manifests, `tests/phase6.test.mjs` (171 checks), and the Phase
   6H optional Headroom experiment specification.
 - Deferred behavior: live runs (F1 VANILLA/COW_SHADOW, F4 ask/deny minimum
   matrix; F2/F3/F5 when budget allows), threshold decisions in
   `docs/DECISIONS.md` (only after evidence), and any active enforcement hook
   activation.
 
-### Phase 7: Release Candidate And v0.5.0
+### Phase 7A: Release Candidate Repository Preparation
+
+- Status: source-present after Phase 7A implementation; final release remains
+  blocked by live evidence.
+- Evidence: runtime package allowlist includes plugin metadata, commands,
+  skills, all four agents, inactive hook examples, README, and license;
+  candidate/final release gates are distinct; final versioning is dry-run only;
+  release handoff lives at [`../../RELEASE_0.5.0.md`](../../RELEASE_0.5.0.md).
+- Deferred behavior: final `0.5.0` version bump, active enforcement hook
+  activation, tag/publish/release creation, and live-evidence acceptance.
+
+### Phase 7B: Final v0.5.0 Release
 
 - Status: planned.
-- Goal: bump versions together, update changelog and release docs, finalize
-  runtime package allowlist, include agents and active hooks only if their gates
-  are green, run full release verification, and produce the v0.5.0 artifact.
+- Goal: accept live evidence, run final release validation, bump versions
+  together, rebuild/inspect the runtime package, and only then decide whether to
+  tag, push, publish, or install.
 
 
 ## Deferred Or Rejected
@@ -135,4 +147,3 @@ Status terms:
 - Broad hook shell parsing.
 - Headroom or other external dependency as a baseline requirement.
 - Lossy transformation of structured evidence.
-

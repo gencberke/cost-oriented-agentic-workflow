@@ -11,6 +11,8 @@ for agents and maintainers.
   rationale without making old phase handoffs canonical.
 - [`DOGFOOD.md`](DOGFOOD.md) defines behavioral smoke and cost-evaluation
   protocol.
+- [`RELEASE_0.5.0.md`](RELEASE_0.5.0.md) is the concise Phase 7A release
+  candidate handoff and final-release procedure.
 - [`architecture/v0.5.0/`](architecture/v0.5.0/) contains the compact v0.5.0
   architecture, state/hook contract, gates, and roadmap.
 - [`architecture/v0.5.0/COW-MASTER-HANDOFF.md`](architecture/v0.5.0/COW-MASTER-HANDOFF.md)

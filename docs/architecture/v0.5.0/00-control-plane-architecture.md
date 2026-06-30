@@ -81,17 +81,14 @@ exact scoped agent identifier.
 
 ## Migration Shape
 
-The source tree adds the control plane while keeping version `0.4.2` until the
-release candidate. Runtime-package allowlist changes that ship agents and active
-hooks are release-phase work. Existing 0.4.x plans and ledgers remain usable:
-without active state, hooks no-op; with reconstruction, state is rebuilt from the
-plan, ledger, and Git.
+The source tree adds the control plane while keeping version `0.4.2` through
+Phase 7A release-candidate preparation. Existing 0.4.x plans and ledgers remain
+usable: without active state, hooks no-op; with reconstruction, state is rebuilt
+from the plan, ledger, and Git.
 
-The generated `0.4.2` runtime package is intentionally not the complete v0.5.0
-control-plane distribution: top-level `agents/**` and an active `hooks/hooks.json`
-are deferred to the release path after their gates pass. Source-tree dogfood may
-therefore exercise capabilities that a generated runtime package does not yet
-ship.
+The Phase 7A generated runtime package includes the v0.5.0 candidate control
+plane, including all four `agents/**` definitions. Active `hooks/hooks.json`
+remains deferred until live evidence gates pass.
 
 ## Non-Goals
 

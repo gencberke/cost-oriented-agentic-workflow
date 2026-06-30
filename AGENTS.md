@@ -37,8 +37,13 @@ bounded worker contracts, scoped review, and hook backstops.
   matched-condition aggregator, F1–F5 fixtures, Phase 6H optional Headroom
   spec). Live evidence is partial/deferred; no live Claude runs were executed
   in the current pass.
-- The next implementation phases are Phase 6 live evaluation (minimum matrix,
-  then F2/F3/F5 when budget allows) and Phase 7 release candidate.
+- Phase 7A prepares the release-candidate repository and runtime package
+  surface: all four agents are packaged, active hooks remain absent, candidate
+  gates may pass with live evidence pending, and final release gates must still
+  fail with `LIVE_EVIDENCE_REQUIRED_BEFORE_RELEASE`.
+- The next implementation phase is live evidence collection for the deferred
+  Phase 3B.2/4/5/6 gates, followed by the final `0.5.0` version bump only after
+  those gates are accepted.
 
 ## Working Rules
 
@@ -105,6 +110,8 @@ and review artifacts remain authoritative.
 - `docs/HANDOFF.md`: concise current snapshot and next work.
 - `docs/DECISIONS.md`: dated decision log.
 - `docs/DOGFOOD.md`: behavioral and live-smoke protocol.
+- `docs/RELEASE_0.5.0.md`: Phase 7A release-candidate handoff and final release
+  procedure.
 - `docs/architecture/v0.5.0/`: compact v0.5.0 architecture and roadmap.
 - `docs/architecture/v0.5.0/COW-MASTER-HANDOFF.md`: deep context recovery when
   a compact handoff is not enough.
