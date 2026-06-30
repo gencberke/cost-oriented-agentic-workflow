@@ -205,6 +205,7 @@ function checkProfile(cwd, file) { const r = spawnSync('node', [SNAP, 'check-pro
   const deny = (src.match(/DENY_PREFIX\s*=\s*\[([^\]]*)\]/s) || [])[1] || '';
   const denyPrefixes = [...deny.matchAll(/'([^']+)'/g)].map((m) => m[1]);
   check(allowPrefixes.includes('skills/'), 'runtime-path: builder ALLOW_PREFIX includes skills/');
+  check(allowPrefixes.includes('agents/'), 'runtime-path: builder ALLOW_PREFIX includes agents/');
   const rels = ['skills/repository-intake/scripts/repo-snapshot.mjs', 'skills/execution-routing/scripts/cow-state.mjs'];
   for (const rel of rels) {
     check(allowPrefixes.some((p) => rel.startsWith(p)), `runtime-path: ${rel} is allowlisted`);

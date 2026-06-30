@@ -86,6 +86,20 @@ if (plugin && packageMeta) {
     `package version matches plugin.json (${plugin.version})`);
   check(!!(packageMeta.scripts && packageMeta.scripts['test:hooks'] === 'node tests/hooks.test.mjs'),
     'package.json has test:hooks script pointing to node tests/hooks.test.mjs');
+  check(!!(packageMeta.scripts && packageMeta.scripts['test:scripts'] === 'node scripts/run-bash.mjs tests/scripts.test.sh'),
+    'package.json routes test:scripts through the cross-platform Bash wrapper');
+  check(!!(packageMeta.scripts && packageMeta.scripts['test:eval'] === 'node scripts/run-bash.mjs tests/eval/run-tests.sh'),
+    'package.json routes test:eval through the cross-platform Bash wrapper');
+  check(!!(packageMeta.scripts && packageMeta.scripts['release:build'] === 'node scripts/build-runtime-package.mjs'),
+    'package.json release:build builds the runtime package');
+  check(!!(packageMeta.scripts && packageMeta.scripts['runtime:inspect'] === 'node scripts/inspect-runtime-package.mjs'),
+    'package.json exposes runtime:inspect');
+  check(!!(packageMeta.scripts && packageMeta.scripts['release:check:candidate'] === 'node scripts/release-gate.mjs --mode=candidate'),
+    'package.json exposes candidate release gate');
+  check(!!(packageMeta.scripts && packageMeta.scripts['release:check:final'] === 'node scripts/release-gate.mjs --mode=final'),
+    'package.json exposes final release gate');
+  check(!!(packageMeta.scripts && packageMeta.scripts['release:version:dry'] === 'node scripts/version-finalize.mjs --target 0.5.0 --dry-run'),
+    'package.json exposes final version dry-run');
 }
 check(!fs.existsSync(path.join(root, 'hooks/hooks.json')), 'no active hooks/hooks.json exists');
 
@@ -149,8 +163,9 @@ if (enforceEx) {
   const ptuArgs = ptu && ptu.hooks && ptu.hooks[0] && ptu.hooks[0].args;
   check(Array.isArray(ptuArgs) && ptuArgs.includes('--decision-mode=enforce'),
     'enforcement example PreToolUse uses --decision-mode=enforce');
-  check(typeof enforceEx._comment === 'string' && /deferred to Phase 6/i.test(enforceEx._comment),
-    'enforcement example states runtime activation is deferred to Phase 6');
+  check(typeof enforceEx._comment === 'string' && /INACTIVE EXAMPLE/i.test(enforceEx._comment)
+    && /deferred until live evidence accepts it/i.test(enforceEx._comment),
+    'enforcement example states runtime activation is deferred until live evidence accepts it');
 }
 check(!fs.existsSync(path.join(root, 'hooks/hooks.json')),
   'Phase 5A: no active hooks/hooks.json exists (enforcement stays inactive)');
@@ -198,6 +213,31 @@ check(/No memory or learn features/.test(phase6hText) && /No output shaping/.tes
   'Phase 6H: spec enforces identical fixtures, no memory/learn, no output shaping, no compression, exact preservation');
 
 // ── 2. Every skill: frontmatter, name == dir, description present & bounded ──
+// Phase 7A release-candidate package and gate structure
+const runtimeBuilderPath = path.join(root, 'scripts/build-runtime-package.mjs');
+const runtimeBuilderText = fs.existsSync(runtimeBuilderPath) ? read(runtimeBuilderPath) : '';
+check(fs.existsSync(path.join(root, 'scripts/run-bash.mjs')), 'Phase 7A: cross-platform Bash wrapper exists');
+check(fs.existsSync(path.join(root, 'scripts/inspect-runtime-package.mjs')), 'Phase 7A: runtime package inspector exists');
+check(fs.existsSync(path.join(root, 'scripts/release-gate.mjs')), 'Phase 7A: release gate script exists');
+check(fs.existsSync(path.join(root, 'scripts/version-finalize.mjs')), 'Phase 7A: version finalization dry-run script exists');
+check(fs.existsSync(path.join(root, 'tests/release-artifact.test.mjs')), 'Phase 7A: Node release artifact test exists');
+check(runtimeBuilderText.includes("'agents/'") && runtimeBuilderText.includes('hooks/hooks.enforcement.json.example'),
+  'Phase 7A: runtime builder allowlists agents and the inactive enforcement example');
+check(runtimeBuilderText.includes("'hooks/hooks.json'") && runtimeBuilderText.includes('PERSONAL_PATH_RE'),
+  'Phase 7A: runtime builder denies active hooks and personal absolute paths');
+check(runtimeBuilderText.includes('validateMarkdownLinks') && runtimeBuilderText.includes('runtime-candidate'),
+  'Phase 7A: runtime builder validates packaged links and writes runtime-candidate metadata');
+const releaseGatePath = path.join(root, 'scripts/release-gate.mjs');
+const releaseGateText = fs.existsSync(releaseGatePath) ? read(releaseGatePath) : '';
+check(/LIVE_EVIDENCE_REQUIRED_BEFORE_RELEASE/.test(releaseGateText)
+  && /PHASE_7A_CANDIDATE_GATE_PASSED/.test(releaseGateText),
+  'Phase 7A: release gate distinguishes candidate pass from final live-evidence block');
+const versionDryPath = path.join(root, 'scripts/version-finalize.mjs');
+const versionDryText = fs.existsSync(versionDryPath) ? read(versionDryPath) : '';
+check(/dry-run only/.test(versionDryText) && /CHANGELOG\.md must contain a pending/.test(versionDryText),
+  'Phase 7A: version finalization is dry-run only and requires the pending changelog heading');
+check(fs.existsSync(path.join(root, 'docs/RELEASE_0.5.0.md')), 'Phase 7A: concise release handoff exists');
+
 const skillsDir = path.join(root, 'skills');
 const skillDirs = fs.readdirSync(skillsDir, { withFileTypes: true })
   .filter((e) => e.isDirectory()).map((e) => e.name);
