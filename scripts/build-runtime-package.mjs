@@ -26,20 +26,32 @@ const ALLOW_EXACT = new Set([
   'hooks/run-hook.cmd',
   'hooks/README.md',
   'hooks/hooks.json.example',
+  'hooks/hooks.enforcement.json.example',
   'README.md',
   'LICENSE',
 ]);
-const ALLOW_PREFIX = ['commands/', 'skills/'];
+const ALLOW_PREFIX = ['agents/', 'commands/', 'skills/'];
 
 // Files that must be present for a usable runtime package.
 const REQUIRED = [
   '.claude-plugin/plugin.json',
   '.claude-plugin/marketplace.json',
+  'agents/cow-debug-investigator.md',
+  'agents/cow-implementer.md',
+  'agents/cow-repo-investigator.md',
+  'agents/cow-reviewer.md',
   'commands/cost-oriented-agentic-workflow.md',
   'commands/production.md',
+  'hooks/README.md',
   'skills/using-cost-oriented-workflow/SKILL.md',
   'skills/execution-routing/SKILL.md',
+  'skills/execution-routing/scripts/cow-hook.mjs',
+  'skills/execution-routing/scripts/cow-state-core.mjs',
+  'skills/execution-routing/scripts/cow-state.mjs',
   'hooks/session-start',
+  'hooks/run-hook.cmd',
+  'hooks/hooks.json.example',
+  'hooks/hooks.enforcement.json.example',
   'README.md',
   'LICENSE',
 ];
@@ -54,14 +66,18 @@ const EXEC_REQUIRED = [
 
 const DENY_PREFIX = [
   '.git/', '.github/', '.cost-oriented-agentic-workflow/', 'tests/', 'docs/',
-  'scripts/', 'dist/', 'node_modules/',
+  'scripts/', 'dist/', 'node_modules/', 'analyze-apply-project-rules/',
 ];
 const DENY_EXACT = new Set([
   'package.json', 'package-lock.json', 'CHANGELOG.md', '.gitignore',
+  'hooks/hooks.json',
 ]);
+const DENY_PATTERNS = [/^phase_.*\.md$/i, /^.*_walkthrough\.md$/i];
 
 const isAllowed = (p) => ALLOW_EXACT.has(p) || ALLOW_PREFIX.some((pre) => p.startsWith(pre));
-const isDenied = (p) => DENY_EXACT.has(p) || DENY_PREFIX.some((pre) => p.startsWith(pre));
+const isDenied = (p) => DENY_EXACT.has(p) || DENY_PREFIX.some((pre) => p.startsWith(pre)) || DENY_PATTERNS.some((re) => re.test(p));
+const isSafePackagePath = (p) => p && !path.posix.isAbsolute(p) && !p.split('/').includes('..') && !p.includes('\\');
+const PERSONAL_PATH_RE = /\b[A-Za-z]:\\Users\\|\/c\/Users\/|\/Users\/|gencberke/i;
 
 // ── Small utilities ─────────────────────────────────────────────────────────
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -124,6 +140,35 @@ function readZipEntries(buf) {
   return out;
 }
 
+function validateMarkdownLinks(relPath, content, allowedPaths) {
+  const linkRe = /\[[^\]]+\]\(([^)]+)\)/g;
+  let m;
+  while ((m = linkRe.exec(content)) !== null) {
+    let target = m[1].trim();
+    if (/^(https?:|mailto:|#)/i.test(target)) continue;
+    target = target.split('#')[0];
+    if (!target) continue;
+    if (target.includes('\\')) die(`${relPath} has a non-portable markdown link: ${target}`);
+    const resolved = path.posix.normalize(path.posix.join(path.posix.dirname(relPath), decodeURIComponent(target)));
+    if (!isSafePackagePath(resolved)) die(`${relPath} links outside the runtime package: ${target}`);
+    if (!allowedPaths.has(resolved)) die(`${relPath} links to a file not packaged at runtime: ${target}`);
+  }
+}
+
+function validateRuntimeFileSafety(files, allowedPaths) {
+  const agents = files.filter((f) => f.path.startsWith('agents/') && f.path.endsWith('.md'));
+  if (agents.length !== 4) die(`runtime package must include exactly four agents (found ${agents.length}).`);
+  if (allowedPaths.has('hooks/hooks.json')) die('active hooks/hooks.json must not be packaged.');
+
+  for (const f of files) {
+    if (!isSafePackagePath(f.path)) die(`unsafe package path: ${f.path}`);
+    if (isDenied(f.path)) die(`forbidden path in runtime package: ${f.path}`);
+    const content = git(['show', `HEAD:${f.path}`]).toString('utf8');
+    if (PERSONAL_PATH_RE.test(content)) die(`personal absolute path found in packaged file: ${f.path}`);
+    if (f.path.endsWith('.md')) validateMarkdownLinks(f.path, content, allowedPaths);
+  }
+}
+
 // ── Resolve repository + git ────────────────────────────────────────────────
 requireGit();
 let REPO;
@@ -167,6 +212,7 @@ const tracked = gitStr(['ls-files', '-s']).split('\n').filter(Boolean).map((line
 });
 const trackedSet = new Set(tracked.map((t) => t.path));
 const allowed = tracked.filter((t) => isAllowed(t.path)).sort((a, b) => (a.path < b.path ? -1 : 1));
+const allowedPaths = new Set(allowed.map((t) => t.path));
 
 for (const f of allowed) {
   if (isDenied(f.path)) die(`allowlist/denylist conflict: ${f.path} is both allowed and denied.`);
@@ -179,6 +225,7 @@ for (const x of EXEC_REQUIRED) {
   if (!f) die(`required executable missing: ${x}`);
   if (f.mode !== '100755') die(`required executable lacks the git index exec bit: ${x} (mode ${f.mode})`);
 }
+validateRuntimeFileSafety(allowed, allowedPaths);
 
 // ── Resolve + guard the output location ─────────────────────────────────────
 const defaultOut = path.resolve(REPO, '..', `${NAME}-runtime`);
@@ -228,6 +275,8 @@ fs.writeFileSync(shaPath, `${zipHash}  ${path.basename(zipPath)}\n`);
 
 // ── Manifest ────────────────────────────────────────────────────────────────
 const manifest = {
+  schemaVersion: 1,
+  packageKind: 'runtime-candidate',
   name: NAME,
   version: VERSION,
   sourceCommit: HEAD,

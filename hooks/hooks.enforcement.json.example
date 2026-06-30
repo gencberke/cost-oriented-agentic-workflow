@@ -1,5 +1,5 @@
 {
-  "_comment": "INACTIVE EXAMPLE — do not copy to hooks.json. Runtime activation of enforcement is deferred to Phase 6. This file only demonstrates the --decision-mode=enforce PreToolUse invocation. Shadow mode (hooks.json.example) remains the default and is unchanged.",
+  "_comment": "INACTIVE EXAMPLE — do not copy to hooks.json. Runtime activation of enforcement is deferred until live evidence accepts it. This file only demonstrates the --decision-mode=enforce PreToolUse invocation. Shadow mode (hooks.json.example) remains the default and is unchanged.",
   "hooks": {
     "SessionStart": [
       {

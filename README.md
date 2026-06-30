@@ -6,8 +6,9 @@ do token-heavy investigation, implementation, and review when delegation is
 cheaper or safer. Bulk code, diffs, reports, and logs stay in files so
 controller context remains lean.
 
-For agent onboarding and current repository status, start with
-[AGENTS.md](AGENTS.md) and [docs/README.md](docs/README.md).
+For source-repository onboarding and current project status, start with the
+source tree's AGENTS.md and docs index. Those source docs are intentionally not
+part of the minimal runtime package.
 
 This project is a focused, self-contained fork of
 [superpowers](https://github.com/obra/superpowers): spend process where it
@@ -93,8 +94,8 @@ hook evaluator: it runs in shadow mode by default (Phase 4 — observes bounded
 hook decisions but does not block, mutate state, or activate hooks by default)
 and additionally supports an opt-in `--decision-mode=enforce` PreToolUse mode
 (Phase 5A) that may emit `ask`/`deny` for the zero-false-positive binary rules
-E1–E7. Runtime activation of enforcement is deferred to Phase 6; the shipped
-default remains shadow.
+E1–E7. Runtime activation of enforcement is deferred until live evidence accepts
+it; the shipped default remains shadow.
 
 Task review packages include committed, staged, unstaged, and allowed untracked
 content only for task-owned paths. Whole-work packages contain committed
@@ -118,18 +119,19 @@ The builder writes outside this repository by default:
 ../cost-oriented-agentic-workflow-runtime/
 ```
 
-The current `0.4.2` runtime package contains `.claude-plugin/`, `commands/`,
-`skills/`, opt-in `hooks/` files, `README.md`, and `LICENSE`. It excludes
-`.git/`, `tests/`, `docs/`, `scripts/`, `dist/`, `package.json`,
-`CHANGELOG.md`, dogfood evidence, and other development files.
+The current release-candidate runtime package contains `.claude-plugin/`,
+`commands/`, `skills/`, all four `agents/`, inactive opt-in `hooks/` examples,
+`README.md`, and `LICENSE`. It excludes `.git/`, `tests/`, `docs/`, `scripts/`,
+`dist/`, `package.json`, `CHANGELOG.md`, dogfood evidence, phase prompts, local
+worktrees, and other development files.
 
-Important capability note: the generated `0.4.2` runtime package is not yet the
-complete v0.5.0 control-plane distribution. Top-level `agents/**` and active
-`hooks/hooks.json` are deferred to the release path. Source-tree dogfood with
-`--plugin-dir` can exercise capabilities that the generated runtime package does
-not yet ship.
+Important release-candidate note: deterministic infrastructure is verified.
+Live behavior and cost evidence remains an explicit final release gate. The
+package intentionally does not include an active `hooks/hooks.json`; shadow and
+enforcement examples remain opt-in examples only.
 
-To clear local generated artifacts safely without `git clean`:
+In the source repository, clear local generated artifacts safely without
+`git clean`:
 
 ```text
 npm run clean:generated:dry
@@ -142,7 +144,7 @@ Build the runtime package, then add the generated runtime directory:
 
 ```text
 npm run runtime:build
-/plugin marketplace add C:\Users\gencberke\Desktop\cost-oriented-agentic-workflow-runtime\cost-oriented-agentic-workflow-0.4.2
+/plugin marketplace add <path-to-runtime-output>/cost-oriented-agentic-workflow-0.4.2
 /plugin install cost-oriented-agentic-workflow
 ```
 
@@ -164,6 +166,12 @@ Code loads the new skill text.
 Both load `using-cost-oriented-workflow`. For opt-in always-on activation, see
 [hooks/README.md](hooks/README.md).
 
+To upgrade an existing local install, rebuild the runtime package, run
+`/plugin update cost-oriented-agentic-workflow`, and start a fresh Claude Code
+session. To roll back, remove the plugin with `/plugin uninstall
+cost-oriented-agentic-workflow`, then install the previous runtime directory
+again.
+
 ## Skills
 
 | Skill | Role |
@@ -182,7 +190,12 @@ Both load `using-cost-oriented-workflow`. For opt-in always-on activation, see
 | `using-git-worktrees` | production or isolation-required work |
 | `finishing-a-development-branch` | final verification and integration choices |
 
-## Validation And Measurement
+## Source Validation And Measurement
+
+These commands are for the source repository, not for the generated runtime
+package. Bash-backed suites use the repository's Bash wrapper. If Python 3 is
+not on `PATH`, set `PYTHON` for eval verification instead of hardcoding a local
+path in the repository:
 
 ```text
 npm run check
@@ -191,13 +204,18 @@ npm run test:enforcement
 npm run test:phase6
 npm run test:eval
 npm run runtime:build
+npm run runtime:inspect
+npm run release:check:candidate
+npm run release:check:final
+npm run release:version:dry
 npm run test:release
 npm run verify:all
 python tests/eval/analyze-token-usage.py SESSION.jsonl [--json OUTPUT]
 ```
 
-Use [docs/DOGFOOD.md](docs/DOGFOOD.md) for behavioral smoke policy and
-[docs/DECISIONS.md](docs/DECISIONS.md) for release and architecture rationale.
+`release:check:final` must fail with `LIVE_EVIDENCE_REQUIRED_BEFORE_RELEASE`
+until the deferred live gates are accepted. Use the source repository docs for
+behavioral smoke policy, release handoff, and architecture rationale.
 
 ## Credits
 

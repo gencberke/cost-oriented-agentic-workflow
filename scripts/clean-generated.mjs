@@ -45,7 +45,8 @@ const REMOVABLE = [
 // (.cost-oriented-agentic-workflow) is intentionally NOT protected — only its
 // generated eval/ subtree is listed above; run/ (recovery state) is never listed.
 const PROTECTED_TOP = new Set([
-  '.git', 'tests', 'docs', 'skills', 'commands', 'scripts', 'hooks', '.claude-plugin', 'README.md', 'LICENSE', 'package.json',
+  '.git', 'tests', 'docs', 'skills', 'commands', 'agents', 'scripts', 'hooks',
+  '.claude-plugin', 'AGENTS.md', 'README.md', 'CHANGELOG.md', 'LICENSE', 'package.json',
 ]);
 
 function isInsideRepo(abs) {
