@@ -15,19 +15,29 @@ REPO=$(mktemp -d)
 OUT=$(mktemp -d)
 trap 'rm -rf "$REPO" "$OUT"' EXIT
 
-# ---- SessionStart / compact anchor ----
-"$HOOK" > "$OUT/hook.json"
-node -e 'JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))' "$OUT/hook.json" >/dev/null 2>&1 && r=ok || r=no
-check "$r" "session-start: emits valid JSON"
-grep -q COW_ENTRY_INJECTED "$OUT/hook.json" 2>/dev/null && r=ok || r=no; check "$r" "session-start: emits entry sentinel"
-grep -q 'do not invoke it again' "$OUT/hook.json" 2>/dev/null && grep -q 'git log' "$OUT/hook.json" 2>/dev/null && r=ok || r=no
-check "$r" "session-start: prevents duplicate entry load and restores ground truth"
+# ---- SessionStart / compact anchor (Absent State) ----
+"$HOOK" > "$OUT/hook_absent.json"
+[ ! -s "$OUT/hook_absent.json" ] && r=ok || r=no
+check "$r" "session-start: absent state emits no stdout"
 
 cd "$REPO"
 git init -q
 git config user.email test@example.com
 git config user.name test
 git config core.autocrlf false
+
+# ---- SessionStart / compact anchor (Active Valid State) ----
+node "$SCRIPTS_DIR/cow-state.mjs" init --mode standard >/dev/null 2>&1
+"$HOOK" > "$OUT/hook_active.json"
+node -e 'JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))' "$OUT/hook_active.json" >/dev/null 2>&1 && r=ok || r=no
+check "$r" "session-start: emits valid JSON"
+grep -q COW_RESUME_POINTER_V1 "$OUT/hook_active.json" 2>/dev/null && r=ok || r=no
+check "$r" "session-start: emits resume sentinel"
+grep -q 'using-cost-oriented-workflow' "$OUT/hook_active.json" 2>/dev/null && \
+grep -q 'State Path:' "$OUT/hook_active.json" 2>/dev/null && \
+grep -q 'Instructions:' "$OUT/hook_active.json" 2>/dev/null && \
+! grep -q 'COW_ENTRY_INJECTED' "$OUT/hook_active.json" 2>/dev/null && r=ok || r=no
+check "$r" "session-start: contains resume pointer details and excludes legacy sentinel"
 
 mkdir -p docs/plans
 cat > docs/plans/plan.md <<'PLAN'

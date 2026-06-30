@@ -17,9 +17,9 @@ Static contract fixtures for the four cost-oriented plugin agents
 These are validated for **shape** by `tests/eval/test_eval.py`
 (`AgentFixtureContractTests`): a malformed agent fixture fails the eval suite. As
 with the routing fixtures, **a passing schema proves nothing about model
-behavior** — it only guarantees the live smoke (`docs/architecture/v0.5.0/PHASE-2-HANDOFF.md`)
-grades against a well-formed contract. Behavioral judgment is the
-human-adjudicated layer.
+behavior** — it only guarantees any live smoke grades against a well-formed
+contract. Behavioral judgment is the human-adjudicated layer documented in
+`docs/DOGFOOD.md`.
 
 The live smokes invoke the **exact scoped identifier** and confirm from the raw
 stream that the intended `agent_type` was spawned; automatic description-based

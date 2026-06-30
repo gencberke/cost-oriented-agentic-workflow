@@ -12,6 +12,5 @@ authorizes neither intake nor regeneration. Each `expected.json` distinguishes:
 
 Validated for shape + coherence by `tests/eval/test_eval.py`
 (`DiscoveryHardeningFixtureTests`). The numeric evidence is produced by
-`tests/eval/analyze-discovery-stream.mjs` on live smoke streams (see
-`docs/architecture/v0.5.0/PHASE-3A.1-HANDOFF.md`); schema validity is not behavioral
-proof.
+`tests/eval/analyze-discovery-stream.mjs` on live smoke streams; schema validity is
+not behavioral proof.

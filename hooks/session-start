@@ -1,30 +1,11 @@
 #!/usr/bin/env bash
-# OPTIONAL SessionStart hook (opt-in — NOT active by default).
-# Injects the cost-oriented workflow entry skill so the workflow is active in
-# every session and re-anchored after a compaction. Default activation is the
-# launcher command; enable this only if you want the workflow always on.
-# To enable: copy hooks.json.example to hooks.json and reinstall the plugin.
+# DEPRECATED: Legacy SessionStart wrapper for compatibility.
+# Scheduled for removal in Phase 7 (v0.5.0 release).
+# Delegates directly to the Node hook script.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PLUGIN_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-entry_content=$(cat "${PLUGIN_ROOT}/skills/using-cost-oriented-workflow/SKILL.md" 2>&1 || echo "Error reading entry skill")
-
-# Escape for JSON embedding (one C-level pass per substitution).
-escape_for_json() {
-    local s="$1"
-    s="${s//\\/\\\\}"
-    s="${s//\"/\\\"}"
-    s="${s//$'\n'/\\n}"
-    s="${s//$'\r'/\\r}"
-    s="${s//$'\t'/\\t}"
-    printf '%s' "$s"
-}
-
-entry_escaped=$(escape_for_json "$entry_content")
-session_context="COW_ENTRY_INJECTED\nThe entry skill is already loaded; do not invoke it again. The workflow is active in standard mode unless the plan anchor says production. On compaction/resume, rebuild state from the plan, ledger, and git log.\n\n${entry_escaped}"
-
-# Claude Code reads hookSpecificOutput.additionalContext (this plugin targets Claude Code).
-printf '{\n  "hookSpecificOutput": {\n    "hookEventName": "SessionStart",\n    "additionalContext": "%s"\n  }\n}\n' "$session_context"
+node "${PLUGIN_ROOT}/skills/execution-routing/scripts/cow-hook.mjs" session-start
 exit 0

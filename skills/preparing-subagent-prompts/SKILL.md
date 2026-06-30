@@ -33,4 +33,4 @@ Never tell a reviewer what *not* to flag, and never pre-rate a finding's severit
 
 ## The return contract
 
-Pass the ledger's exact `COMMIT_POLICY`. Request at most 8 return lines: **status + files changed + one-line verification + concerns + report path**; include commit SHAs only under `implementer`. Code bodies, diffs, and logs stay in files.
+Pass the ledger's exact `COMMIT_POLICY` as controller-owned metadata only; it never grants commit authority to a plugin agent. Request at most 8 return lines: **status + files changed + one-line verification + concerns + report path**. Code bodies, diffs, and logs stay in files.

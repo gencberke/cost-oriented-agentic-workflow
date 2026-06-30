@@ -6,6 +6,65 @@
 
 ---
 
+## 2026-06-30 — Documentation reset and agent onboarding
+
+- Future-facing project documentation is now English-only.
+- `AGENTS.md` is the first-read manifesto for incoming agents: purpose, current
+  state, invariants, verification, docs map, and roadmap.
+- The old v0.5.0 architecture sprawl was aggressively consolidated into a small
+  canonical set under `docs/architecture/v0.5.0/`.
+- Per-phase handoff files and the oversized master handoff were removed from the
+  working tree after their durable facts were folded into `AGENTS.md`,
+  `docs/HANDOFF.md`, and the compact architecture docs.
+- Git history is the archive for exact old handoff text; do not reintroduce long
+  rolling handoff files unless a future release process explicitly requires
+  them.
+
+---
+
+## 2026-06-30 - Superseding correction: master handoff retained
+
+- Correction to the immediately preceding documentation reset entry: the old
+  per-phase handoff files remain removed from the working tree, but a current
+  `docs/architecture/v0.5.0/COW-MASTER-HANDOFF.md` is retained as a deep context
+  recovery document.
+- Git history remains the archive for exact old handoff text. The master handoff
+  is not the first-read surface; `AGENTS.md` and `docs/HANDOFF.md` are.
+
+## 2026-06-30 - v0.5 control-plane decision summary
+
+- State is a validated projection and reconstructable cache. Git, plan, ledger,
+  reports, and review artifacts remain authoritative.
+- Plugin agents are scoped workers. They never update workflow state, never stage,
+  and never commit. `COMMIT_POLICY` is controller-owned metadata and cannot grant
+  commit authority to a plugin agent.
+- Discovery routing and implementation routing are separate axes; task
+  uncertainty can trigger discovery even when repository profile validity is warm.
+- Implementation evidence is attempt-qualified and baseline-relative; retries keep
+  the same unit baseline.
+- Review uses scoped packages, causality classification, targeted re-review after
+  Critical/Important fixes, and a two-wave remediation ceiling.
+- Phase 4 hooks are shadow only: fail-open, bounded observation, no state
+  mutation, no active `hooks/hooks.json`.
+- Phase 5 may enforce only zero-false-positive binary rules. Broad shell parsing
+  and judgment-heavy hook decisions remain rejected.
+- Phase 6 owns repeated behavioral sampling and token/cost calibration. Normal
+  phase work is deterministic-first and live-smoke-minimal.
+- The generated `0.4.2` runtime package is not yet the complete v0.5.0
+  distribution; top-level `agents/**` and active hooks are release-path work.
+- Headroom remains rejected as a baseline dependency. Any compatibility experiment
+  must be optional, lossless for structured evidence, and deferred until after the
+  core control-plane gates.
+
+## Legacy decision log note
+
+The sections below preserve the earlier Turkish decision log. Some old pending
+markers were superseded by the v0.5 control-plane decisions above; use the current
+English docs for active project state and treat the old sections as historical
+rationale unless a later dated entry confirms them.
+
+---
+
 ## A. Kimlik & kapsam
 - **A1** 🟡 Ad: `cost-oriented-agentic-workflow` (komut adından çıkarım).
 - **A2** ✅ Aktivasyon: komutla çağrı tercih; ANCAK SessionStart-hook benzeri bir yapı skill kullanımını tüm session boyunca **garanti ediyorsa** o tercih edilir. Skill kullanımı session boyunca **yüksek öncelik**.

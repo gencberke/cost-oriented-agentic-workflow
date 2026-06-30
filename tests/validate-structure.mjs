@@ -83,13 +83,41 @@ if (plugin && market) {
 if (plugin && packageMeta) {
   check(plugin.version === packageMeta.version,
     `package version matches plugin.json (${plugin.version})`);
+  check(!!(packageMeta.scripts && packageMeta.scripts['test:hooks'] === 'node tests/hooks.test.mjs'),
+    'package.json has test:hooks script pointing to node tests/hooks.test.mjs');
 }
+check(!fs.existsSync(path.join(root, 'hooks/hooks.json')), 'no active hooks/hooks.json exists');
 
-// hooks.json.example must declare a SessionStart hook (the opt-in always-on path)
+// hooks.json.example must declare direct exec-form hooks for SessionStart, PreToolUse, and PreCompact
 const hooksEx = parsed['hooks/hooks.json.example'];
 if (hooksEx) {
   check(!!(hooksEx.hooks && hooksEx.hooks.SessionStart), 'hooks.json.example declares a SessionStart hook');
+  check(!!(hooksEx.hooks && hooksEx.hooks.PreToolUse), 'hooks.json.example declares a PreToolUse hook');
+  check(!!(hooksEx.hooks && hooksEx.hooks.PreCompact), 'hooks.json.example declares a PreCompact hook');
+
+  const assertExecForm = (list, op) => {
+    if (!Array.isArray(list)) return fail(`hooks list for ${op} is not an array`);
+    const cmd = list[0];
+    if (!cmd || cmd.type !== 'command' || cmd.command !== 'node') {
+      fail(`hook for ${op} must use command "node"`);
+    }
+    if (!Array.isArray(cmd.args) || !cmd.args[0].includes('cow-hook.mjs') || cmd.args[1] !== op) {
+      fail(`hook for ${op} args must target cow-hook.mjs and "${op}"`);
+    }
+  };
+
+  if (hooksEx.hooks) {
+    if (hooksEx.hooks.SessionStart && hooksEx.hooks.SessionStart[0]) assertExecForm(hooksEx.hooks.SessionStart[0].hooks, 'session-start');
+    if (hooksEx.hooks.PreToolUse && hooksEx.hooks.PreToolUse[0]) assertExecForm(hooksEx.hooks.PreToolUse[0].hooks, 'pre-tool-use');
+    if (hooksEx.hooks.PreCompact && hooksEx.hooks.PreCompact[0]) assertExecForm(hooksEx.hooks.PreCompact[0].hooks, 'pre-compact');
+  }
 }
+
+// Phase 4 Hook & state-core files must exist
+const stateCorePath = path.join(root, 'skills/execution-routing/scripts/cow-state-core.mjs');
+check(fs.existsSync(stateCorePath), 'skills/execution-routing/scripts/cow-state-core.mjs exists');
+const cowHookPath = path.join(root, 'skills/execution-routing/scripts/cow-hook.mjs');
+check(fs.existsSync(cowHookPath), 'skills/execution-routing/scripts/cow-hook.mjs exists');
 
 // ── 2. Every skill: frontmatter, name == dir, description present & bounded ──
 const skillsDir = path.join(root, 'skills');
@@ -340,13 +368,13 @@ check(/BASE_BRANCH.*refs\/heads\/.*MERGE_BASE_SHA\^\{commit\}.*stop/s.test(finis
 check(/detached HEAD.*never offer local merge/i.test(finishingText),
   'finishing removes local merge from detached HEAD');
 
-check(hookText.includes('COW_ENTRY_INJECTED'), 'SessionStart hook emits the entry sentinel');
+check(hookText.includes('COW_RESUME_POINTER_V1') || hookText.includes('cow-hook.mjs'), 'SessionStart hook invokes cow-hook or emits the resume pointer sentinel');
 check(/COW_ENTRY_INJECTED.*absent.*exactly once.*present.*do not reload/s.test(writingText),
   'writing-plans makes entry loading idempotent after compaction');
-check(/green checkpoint.*COMMIT_POLICY.*controller-per-unit/s.test(tddText),
-  'TDD records green checkpoints without granting commit authority');
-check(/Commit only when.*COMMIT_POLICY.*implementer/s.test(implementerText),
-  'implementer commits only under the implementer policy');
+check(/green checkpoint.*controller owns controlled commits/s.test(tddText),
+  'TDD records green checkpoints without granting agent commit authority');
+check(/Never commit or stage.*COMMIT_POLICY.*metadata/s.test(implementerText),
+  'implementer never commits; COMMIT_POLICY is controller-owned metadata');
 
 check(/at most 8 lines/i.test(implementerText) && /test count/i.test(implementerText)
   && /never full logs/i.test(implementerText),
@@ -435,10 +463,12 @@ for (const id of evalFixtureIds) {
 const dogfoodText = read(path.join(root, 'docs/DOGFOOD.md'));
 check(/ledger.*JSONL/s.test(dogfoodText) && /no dollar\s+claim/s.test(dogfoodText),
   'dogfood separates ledger routing from optional JSONL cost estimates');
-check(/Provide only `brief\.md` and `review\.diff`.*Never expose `expected\.json`/s.test(dogfoodText),
+check(/provide only `brief\.md` and `review\.diff`.*Never expose `expected\.json`/is.test(dogfoodText),
   'dogfood protects raw discovery from expected-result leakage');
-check(/three times.*extend only\s+that fixture to five/s.test(dogfoodText),
-  'dogfood uses per-fixture 3-to-5 repeat policy');
+check(/Run zero live smokes by default/s.test(dogfoodText)
+  && /N=3 for release-blocking behavioral scenarios/s.test(dogfoodText)
+  && /Up to N=5 only for a scenario whose results vary/s.test(dogfoodText),
+  'dogfood defaults to usage-efficient smokes and reserves repeat sampling for Phase 6');
 
 // ── Phase 3A: discovery control-plane structure + reference budgets ──────────
 // Detailed readiness/discovery rules live in on-demand references (measured

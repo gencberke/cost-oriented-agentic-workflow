@@ -38,8 +38,9 @@ Subagent (general-purpose):
        change; production → thorough, and follow TDD if the brief says so].
     3. Verify it works — run the verification command in the brief.
     4. Self-review (below), fix what you find.
-    5. Commit only when `[COMMIT_POLICY]` is exactly `implementer`. Under every
-       other policy, leave changes uncommitted for controller review. Report back.
+    5. Never commit or stage. `[COMMIT_POLICY]` is controller-owned workflow
+       metadata; it cannot grant commit authority to this subagent. Leave
+       changes uncommitted for controller review and report back.
 
     Work from: [directory]
 
@@ -89,7 +90,7 @@ Subagent (general-purpose):
 
     Then return ONLY this (at most 8 lines — detail lives in the report file):
     - **Status:** DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT
-    - Files changed; commit SHA(s) only when policy is `implementer`
+    - Files changed; no commit SHA because subagents never commit
     - One-line test summary (e.g. "8/8 passing, output pristine")
     - Concerns, if any
     - The report file path
@@ -99,4 +100,5 @@ Subagent (general-purpose):
     about: use DONE_WITH_CONCERNS instead.
 ```
 
-**Placeholder:** `[COMMIT_POLICY]` is the exact value from the run ledger.
+**Placeholder:** `[COMMIT_POLICY]` is the exact value from the run ledger. It is
+metadata for the controller; it never grants commit authority to this subagent.

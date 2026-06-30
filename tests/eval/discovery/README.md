@@ -16,6 +16,6 @@ fixture pairs a `prompt.md` scenario with an `expected.json` contract recording:
 
 Validated for **shape** by `tests/eval/test_eval.py`
 (`DiscoveryFixtureContractTests`): a malformed fixture fails the eval suite. As with
-the other fixtures, **a passing schema proves nothing about model behavior** — the
-live smokes (`docs/architecture/v0.5.0/PHASE-3A-HANDOFF.md`) are the behavioral
-layer, graded by human adjudication of saved raw output.
+the other fixtures, **a passing schema proves nothing about model behavior** — live
+smokes are the behavioral layer, graded by human adjudication of saved raw output
+according to `docs/DOGFOOD.md`.

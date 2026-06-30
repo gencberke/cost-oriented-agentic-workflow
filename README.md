@@ -1,37 +1,40 @@
 # cost-oriented-agentic-workflow
 
 A token-economy agentic workflow for Claude Code. The expensive controller
-(Opus) **plans, routes, and adjudicates**; a Sonnet subagent performs
-token-heavy reasoning and writing; independent reviewers gate quality according
-to mode and risk. Bulk code, diffs, and logs stay in files so controller context
-remains lean.
+(Opus) plans, routes, adjudicates, verifies, and commits; bounded Sonnet agents
+do token-heavy investigation, implementation, and review when delegation is
+cheaper or safer. Bulk code, diffs, reports, and logs stay in files so
+controller context remains lean.
 
-It is a focused, self-contained fork of
+For agent onboarding and current repository status, start with
+[AGENTS.md](AGENTS.md) and [docs/README.md](docs/README.md).
+
+This project is a focused, self-contained fork of
 [superpowers](https://github.com/obra/superpowers): spend process where it
 changes the outcome, not by ritual.
 
-## Core flow
+## Core Flow
 
 1. Triage the request by clarity, size, and risk.
-2. Use the light path for a truly trivial low-risk edit; otherwise create a
+2. Use the light path only for truly trivial low-risk edits; otherwise create a
    pinned plan/contract.
-3. Route each unit inline or to a Sonnet writer by contract cost.
-4. Review according to the mode/risk matrix, with task-scoped diffs.
-5. Bound autonomous remediation to two waves; unresolved Critical/Important
-   findings stop rather than becoming “approved.”
-6. Run one integration-lensed whole-work review, verify the exact final state,
-   then finish the branch.
+3. Route discovery separately from implementation.
+4. Route each implementation unit inline or to a scoped Sonnet implementer.
+5. Review according to the mode/risk matrix, with task-scoped packages.
+6. Bound autonomous remediation to two waves; unresolved Critical/Important
+   findings stop rather than becoming approved.
+7. Run whole-work review, verify the exact final state, then finish the branch.
 
-## Modes and review routing
+## Modes And Review Routing
 
-- **standard (default):** cost is active. Contracts, tests, and review scale to
-  the task while high-risk gates remain mandatory.
-- **production:** reliability outranks cost. Every planned unit receives an
-  independent task review; the final whole-work review uses Opus/Opus subagent.
+- `standard` is the default. Cost is active; contracts, tests, and review scale
+  to the task while high-risk gates remain mandatory.
+- `production` favors reliability over cost. Every planned unit receives an
+  independent task review; final whole-work review uses the production path.
 
 | Mode / risk | Independent per-task review |
 |---|---|
-| standard / low | No — self-review, verification, final whole-work review |
+| standard / low | No; self-review, verification, final whole-work review |
 | standard / elevated | Required when the change is non-obvious |
 | standard / high | Required |
 | production / every planned unit | Required |
@@ -41,86 +44,120 @@ Reviewer findings distinguish `introduced`, `worsened`, and `pre-existing`.
 Pre-existing issues are triaged separately and do not silently become verdicts
 on the current unit.
 
-## Artifact workspace
+## Artifact Workspace
 
 Each checkout/worktree gets a writable, self-ignored workspace:
 
 ```text
 <repo-root>/.cost-oriented-agentic-workflow/run/
-├── .gitignore
-├── progress.md
-├── task-N-brief.md
-├── task-N-report.md
-└── review-*.diff
+  .gitignore
+  progress.md
+  state.json
+  state.active
+  repo-snapshot.json
+  repo-profile.json
+  task-N-brief.md
+  task-N-baseline.json
+  task-N-attempt-K-report.json
+  review-*.diff
+  review-package.json
+  review-report.json
+  review-adjudication.json
+  hook-observations.log
 ```
 
 Artifacts stay out of `git status` and `git add -A`; linked worktrees do not
-share them. A legacy `<git-dir>/cow/progress.md` is copied forward without being
-deleted. `git clean -fdx` can remove the workspace, so the plan and `git log`
-remain fallback ground truth.
+share them. Git, the plan, the progress ledger, review artifacts, and reports
+remain authoritative. `state.json` is a reconstructable control-position cache.
 
 The ledger pins `PLAN_FILE`, `MODE`, `COMMIT_POLICY`, `BASE_BRANCH`, and
 `MERGE_BASE_SHA` once, then records route/risk/scope/review/waves/verification
-and commit range for every unit.
+and commit ranges for each unit.
 
-## Helpers
+## Helpers And Runtime Surfaces
 
 ```text
 skills/execution-routing/scripts/cow-workspace
+skills/execution-routing/scripts/cow-state.mjs
+skills/execution-routing/scripts/cow-hook.mjs
 skills/execution-routing/scripts/task-brief PLAN_FILE TASK_NUMBER [OUTFILE]
 skills/execution-routing/scripts/review-package BASE HEAD [OUTFILE] [-- PATH ...]
+skills/execution-routing/scripts/implementation-report.mjs
+skills/execution-routing/scripts/unit-worktree.mjs
+skills/repository-intake/scripts/repo-snapshot.mjs
+skills/repository-intake/scripts/repo-profile.mjs
 ```
+
+`cow-state.mjs` is the only writer for workflow state. `cow-hook.mjs` is the
+Phase 4 shadow hook evaluator: it observes bounded hook decisions but does not
+block, mutate state, or activate hooks by default.
 
 Task review packages include committed, staged, unstaged, and allowed untracked
 content only for task-owned paths. Whole-work packages contain committed
 `BASE..HEAD` changes only and refuse a dirty current tree.
 
-## Development repository vs. runtime package
+## Development Repository Vs. Runtime Package
 
-This repository is the **development tree**: it carries the skills and commands,
-but also tests, evals, docs, release tooling, and Git history. It is *not* the
-clean source to install from — installing the whole repo would copy development
-artifacts into Claude Code's plugin cache.
+This repository is the development tree: it carries skills and commands plus
+tests, evals, docs, release tooling, and Git history. It is not the clean source
+to install from.
 
-Generate the minimal, installable **runtime package** instead:
+Generate the minimal installable runtime package instead:
 
 ```text
 npm run runtime:build
 ```
 
-Built from Git-tracked content only, it produces a clean plugin directory plus a
-ZIP, a SHA-256 checksum, and a manifest, written **outside** this repository
-(default `../cost-oriented-agentic-workflow-runtime/`). The runtime package
-contains only `.claude-plugin/`, `commands/`, `skills/`, the opt-in `hooks/`
-files, `README.md`, and `LICENSE` — it excludes `.git/`, `tests/`, `docs/`,
-`scripts/`, `dist/`, `package.json`, `CHANGELOG.md`, dogfood evidence, and other
-development files. Install later from that generated directory or ZIP; you
-perform the installation yourself.
-
-To clear local generated artifacts (`dist/`, dogfood evidence) safely without
-`git clean`:
+The builder writes outside this repository by default:
 
 ```text
-npm run clean:generated:dry   # preview what would be removed
-npm run clean:generated        # remove them
+../cost-oriented-agentic-workflow-runtime/
 ```
 
-## Install and use
+The current `0.4.2` runtime package contains `.claude-plugin/`, `commands/`,
+`skills/`, opt-in `hooks/` files, `README.md`, and `LICENSE`. It excludes
+`.git/`, `tests/`, `docs/`, `scripts/`, `dist/`, `package.json`,
+`CHANGELOG.md`, dogfood evidence, and other development files.
 
-In Claude Code:
+Important capability note: the generated `0.4.2` runtime package is not yet the
+complete v0.5.0 control-plane distribution. Top-level `agents/**` and active
+`hooks/hooks.json` are deferred to the release path. Source-tree dogfood with
+`--plugin-dir` can exercise capabilities that the generated runtime package does
+not yet ship.
+
+To clear local generated artifacts safely without `git clean`:
 
 ```text
-/plugin marketplace add C:\Users\gencberke\Desktop\cost-oriented-agentic-workflow
+npm run clean:generated:dry
+npm run clean:generated
+```
+
+## Install And Use
+
+Build the runtime package, then add the generated runtime directory:
+
+```text
+npm run runtime:build
+/plugin marketplace add C:\Users\gencberke\Desktop\cost-oriented-agentic-workflow-runtime\cost-oriented-agentic-workflow-0.4.2
 /plugin install cost-oriented-agentic-workflow
 ```
 
-For an existing installation, use `/plugin update`, then start a new session so
-Claude Code loads the new skill text.
+Do not install the development source tree as the clean runtime package. For
+development-only live smokes, explicitly use:
 
-- `/cost-oriented-agentic-workflow:cost-oriented-agentic-workflow [task]` — standard mode
-- `/cost-oriented-agentic-workflow:production [task]` — production mode
+```text
+claude --plugin-dir <repository-root>
+```
 
-Both load `using-cost-oriented-workflow`. For always-on activation, see
+Record those runs as source dogfood, not installed-runtime evidence. For an
+existing installation, use `/plugin update`, then start a new session so Claude
+Code loads the new skill text.
+
+- `/cost-oriented-agentic-workflow:cost-oriented-agentic-workflow [task]`:
+  standard mode
+- `/cost-oriented-agentic-workflow:production [task]`: production mode
+
+Both load `using-cost-oriented-workflow`. For opt-in always-on activation, see
 [hooks/README.md](hooks/README.md).
 
 ## Skills
@@ -128,8 +165,8 @@ Both load `using-cost-oriented-workflow`. For always-on activation, see
 | Skill | Role |
 |---|---|
 | `using-cost-oriented-workflow` | entry policy, modes, risk spine, review matrix |
-| `execution-routing` | plan pre-flight, inline/delegate loop, ledger, remediation budget |
-| `systematic-debugging` | root-cause before fixing or retrying |
+| `execution-routing` | plan pre-flight, routing, units, review/remediation loop |
+| `systematic-debugging` | root cause before fixing or retrying |
 | `writing-plans` | pinned contracts and compaction anchor |
 | `brainstorming` | scaled design gate for ambiguous work |
 | `requesting-review` | task and whole-work independent review |
@@ -141,29 +178,23 @@ Both load `using-cost-oriented-workflow`. For always-on activation, see
 | `using-git-worktrees` | production or isolation-required work |
 | `finishing-a-development-branch` | final verification and integration choices |
 
-## Validation and measurement
+## Validation And Measurement
 
 ```text
-npm test               # structure + real temporary-repository helper behavior
-npm run test:eval      # offline token accounting + review and routing fixtures
-npm run release:build  # build dist/<name>-<version>.zip from the release commit
-npm run test:release   # independently verify the packaged artifact
-npm run verify:all     # check + helpers + eval + packaged-artifact verification
+npm run check
+npm run test:hooks
+npm run test:eval
+npm run runtime:build
+npm run test:release
+npm run verify:all
 python tests/eval/analyze-token-usage.py SESSION.jsonl [--json OUTPUT]
 ```
 
-`npm test` covers structure plus real temporary-repository helper behavior.
-`test:eval` covers offline token accounting, the six hidden-ground-truth review
-fixtures, and the six route-only pressure-test fixtures in `tests/eval/routing/`.
-`release:build` and `test:release` produce and independently verify a clean,
-reproducible ZIP (no `.git/`, correct executable modes, version agreement). See
-[docs/DOGFOOD.md](docs/DOGFOOD.md) for raw discovery, the live route-only
-protocol, scoring, and repeat policy, and [CHANGELOG.md](CHANGELOG.md) for
-release history.
+Use [docs/DOGFOOD.md](docs/DOGFOOD.md) for behavioral smoke policy and
+[docs/DECISIONS.md](docs/DECISIONS.md) for release and architecture rationale.
 
 ## Credits
 
-Derived from **superpowers** by Jesse Vincent (MIT). The original fork baseline
-was 6.0.0; the v0.4 workspace/resume hardening was cross-checked against the
-official 6.0.3 plugin. This project remains runtime-independent and syncs
-selectively; see [docs/DECISIONS.md](docs/DECISIONS.md).
+Derived from Superpowers by Jesse Vincent (MIT). The original fork baseline was
+6.0.0; the v0.4 workspace/resume hardening was cross-checked against the
+official 6.0.3 plugin.
