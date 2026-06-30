@@ -61,6 +61,7 @@ const jsonFiles = [
   '.claude-plugin/plugin.json',
   '.claude-plugin/marketplace.json',
   'hooks/hooks.json.example',
+  'hooks/hooks.enforcement.json.example',
   'package.json',
 ];
 const parsed = {};
@@ -118,6 +119,41 @@ const stateCorePath = path.join(root, 'skills/execution-routing/scripts/cow-stat
 check(fs.existsSync(stateCorePath), 'skills/execution-routing/scripts/cow-state-core.mjs exists');
 const cowHookPath = path.join(root, 'skills/execution-routing/scripts/cow-hook.mjs');
 check(fs.existsSync(cowHookPath), 'skills/execution-routing/scripts/cow-hook.mjs exists');
+
+// ── Phase 5A: selective enforcement (shadow preserved, no active hooks) ───────
+const cowHookText = fs.existsSync(cowHookPath) ? read(cowHookPath) : '';
+check(cowHookText.includes('--decision-mode='), 'cow-hook.mjs parses --decision-mode=');
+check(/decisionMode\s*=\s*['"]enforce['"]/.test(cowHookText) || /===\s*['"]enforce['"]/.test(cowHookText),
+  'cow-hook.mjs enables enforcement only for the exact value enforce');
+check(cowHookText.includes('handlePreToolUseEnforce') && cowHookText.includes('handlePreToolUseShadow'),
+  'cow-hook.mjs separates enforce and shadow PreToolUse handlers');
+check(cowHookText.includes('permissionDecision') && !/updatedInput\s*:/.test(cowHookText),
+  'cow-hook.mjs emits permissionDecision and never emits updatedInput as a key');
+check(/COW E[1-7]:/.test(cowHookText), 'cow-hook.mjs carries the fixed E1-E7 reason prefixes');
+check(cowHookText.includes('isSimpleCommand'), 'cow-hook.mjs guards Bash matching with isSimpleCommand');
+// The simple-command guard rejects compound/redirect/substitution operators
+// (&& || ; | ` $( < >) via a single char-class regex that covers each one.
+check(cowHookText.includes('[&|;`$<>]'),
+  'cow-hook.mjs simple-command guard rejects compound/redirect/substitution operators (&& || ; | ` $( < >)');
+check(fs.existsSync(path.join(root, 'tests/hook-enforcement.test.mjs')),
+  'tests/hook-enforcement.test.mjs exists');
+check(!!(packageMeta.scripts && packageMeta.scripts['test:enforcement'] === 'node tests/hook-enforcement.test.mjs'),
+  'package.json has test:enforcement script pointing to node tests/hook-enforcement.test.mjs');
+check(fs.existsSync(path.join(root, 'tests/fixtures/hook-enforcement')),
+  'tests/fixtures/hook-enforcement benign corpus exists');
+const enforceExPath = path.join(root, 'hooks/hooks.enforcement.json.example');
+check(fs.existsSync(enforceExPath), 'hooks/hooks.enforcement.json.example exists as an inactive example');
+const enforceEx = fs.existsSync(enforceExPath) ? JSON.parse(read(enforceExPath)) : null;
+if (enforceEx) {
+  const ptu = enforceEx.hooks && enforceEx.hooks.PreToolUse && enforceEx.hooks.PreToolUse[0];
+  const ptuArgs = ptu && ptu.hooks && ptu.hooks[0] && ptu.hooks[0].args;
+  check(Array.isArray(ptuArgs) && ptuArgs.includes('--decision-mode=enforce'),
+    'enforcement example PreToolUse uses --decision-mode=enforce');
+  check(typeof enforceEx._comment === 'string' && /deferred to Phase 6/i.test(enforceEx._comment),
+    'enforcement example states runtime activation is deferred to Phase 6');
+}
+check(!fs.existsSync(path.join(root, 'hooks/hooks.json')),
+  'Phase 5A: no active hooks/hooks.json exists (enforcement stays inactive)');
 
 // ── 2. Every skill: frontmatter, name == dir, description present & bounded ──
 const skillsDir = path.join(root, 'skills');

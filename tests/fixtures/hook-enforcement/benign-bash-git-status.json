@@ -1,0 +1,12 @@
+{
+  "id": "benign-bash-git-status",
+  "description": "Read-only git status during implementing. git but not commit/add-broad -> no enforcement.",
+  "stateOverrides": {
+    "phase": "implementing",
+    "implementationRoute": "delegated",
+    "currentUnit": { "id": "1", "allowedPaths": ["src/"], "base": null, "briefPath": null, "reportPath": null, "commitSha": null, "baselinePath": null, "currentAttempt": null, "acceptedAttempt": null }
+  },
+  "setupFiles": { "src/a.js": "a\n" },
+  "payload": { "tool_name": "Bash", "tool_input": { "command": "git status --short" } },
+  "expectDecision": "none"
+}

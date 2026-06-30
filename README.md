@@ -89,8 +89,12 @@ skills/repository-intake/scripts/repo-profile.mjs
 ```
 
 `cow-state.mjs` is the only writer for workflow state. `cow-hook.mjs` is the
-Phase 4 shadow hook evaluator: it observes bounded hook decisions but does not
-block, mutate state, or activate hooks by default.
+hook evaluator: it runs in shadow mode by default (Phase 4 — observes bounded
+hook decisions but does not block, mutate state, or activate hooks by default)
+and additionally supports an opt-in `--decision-mode=enforce` PreToolUse mode
+(Phase 5A) that may emit `ask`/`deny` for the zero-false-positive binary rules
+E1–E7. Runtime activation of enforcement is deferred to Phase 6; the shipped
+default remains shadow.
 
 Task review packages include committed, staged, unstaged, and allowed untracked
 content only for task-owned paths. Whole-work packages contain committed

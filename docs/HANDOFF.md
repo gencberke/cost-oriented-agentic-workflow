@@ -10,20 +10,27 @@ context recovery, see
 
 - Source root: `C:\Users\gencberke\Desktop\cost-oriented-agentic-workflow`.
 - Branch: `feat/v0.5.0-phase-4-shadow-hooks`.
-- HEAD at this handoff update: `4f0c4f0`.
+- HEAD at this handoff update: `75406c5` (Phase 4 substrate committed); Phase 5A
+  work is present as uncommitted changes on top.
 - Package version: `0.4.2`.
 - Runtime dependencies: zero.
 - Last targeted verification before this handoff update:
-  - `npm.cmd run check`: 378 checks passed, 0 failed.
-  - `npm.cmd run test:hooks`: 39 checks passed, 0 failed.
-- Working tree: dirty with Phase 4 hook integration plus documentation reset
-  edits. There is an unrelated untracked `analyze-apply-project-rules/` folder
-  under the source root; do not treat it as canonical project content.
-- Active hook file: none. `hooks/hooks.json` must not exist before the
-  enforcement phase.
+  - `npm.cmd run check`: 393 checks passed, 0 failed.
+  - `npm.cmd run test:hooks`: 39 checks passed, 0 failed (shadow preserved).
+  - `npm.cmd run test:enforcement`: 127 checks passed, 0 failed.
+  - `claude plugin validate . --strict`: passed.
+- Working tree: dirty with Phase 5A enforcement work (intentionally uncommitted;
+  the phase mandates no commit). There is an unrelated untracked
+  `analyze-apply-project-rules/` folder and the `phase_5.md` task spec under the
+  source root; neither is canonical project content.
+- Active hook file: none. `hooks/hooks.json` must not exist before the Phase 6
+  live-activation gate. `hooks/hooks.enforcement.json.example` is an inactive
+  example only.
 - Runtime package capability: the generated `0.4.2` runtime package is not yet
   the complete v0.5.0 control-plane distribution. Top-level `agents/**` and
-  active hooks are release-path work.
+  active hooks are release-path work. `test:release` requires a clean tree and
+  is therefore blocked during Phase 5A by the no-commit policy, not by a code
+  defect.
 
 ## Implemented Control Plane
 
@@ -45,13 +52,18 @@ context recovery, see
   ceiling. Live behavior evidence remains separate from static structure.
 - Phase 4 hooks: SessionStart lean resume pointer, PreToolUse observation, and
   PreCompact observation. Hooks fail open and do not block in this phase.
+- Phase 5A enforcement: explicit `--decision-mode=enforce` PreToolUse mode that
+  emits `ask`/`deny` for E1–E7 zero-false-positive binary rules. Shadow mode is
+  preserved byte-identically. No active `hooks/hooks.json`; enforcement runtime
+  activation is deferred to Phase 6.
 
 ## Current Risks
 
-- Shadow hooks are not enforcement. Allowed-path, no-commit, investigator-write,
-  and mutating-Bash protection still depend on skill contracts plus tests until
-  Phase 5.
+- Phase 5A static enforcement is present (`--decision-mode=enforce` for E1–E7),
+  but live ASK/DENY runtime activation is deferred to Phase 6. Static tests
+  prove the contract shape, not model behavior.
 - There is no active `hooks/hooks.json`; runtime packages must not ship one yet.
+  `hooks/hooks.enforcement.json.example` is an inactive example only.
 - Behavioral and token/cost budgets are not final until Phase 6 evidence is
   collected.
 - Live model smokes are expensive and environment-sensitive. Static tests and
@@ -60,10 +72,10 @@ context recovery, see
 
 ## Next Work
 
-1. Phase 5: selectively enforce only zero-false-positive binary hook rules.
-2. Phase 6: run behavioral, token, and cost evaluation; tune numeric budgets only
-   with measured evidence and a dated `DECISIONS.md` entry.
-3. Phase 7: release candidate, version bump to `0.5.0`, final package allowlist,
+1. Phase 6: accept (or reject) live ASK/DENY enforcement behavior, run
+   behavioral, token, and cost evaluation, and tune numeric budgets only with
+   measured evidence and a dated `DECISIONS.md` entry.
+2. Phase 7: release candidate, version bump to `0.5.0`, final package allowlist,
    changelog, and full verification.
 
 ## Lightweight Verification

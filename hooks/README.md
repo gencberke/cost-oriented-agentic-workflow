@@ -19,3 +19,22 @@ alike. With the hook enabled, standard mode is the default; switch a given
 session to production by running
 `/cost-oriented-agentic-workflow:production`, which writes `MODE: production`
 into the plan/task file's anchor header.
+
+## Shadow vs. enforcement mode
+
+`hooks.json.example` runs `cow-hook.mjs` in **shadow** mode (the default):
+hooks observe rule matches, write bounded observations, and never block. This
+is the Phase 4 behavior and the only mode an active `hooks.json` should ship
+today.
+
+`hooks.enforcement.json.example` is an **inactive** example that adds
+`--decision-mode=enforce` to the PreToolUse hook. In enforcement mode the hook
+may emit `ask` or `deny` for the zero-false-positive binary rules E1–E7 (never
+`allow`/`defer`), and fails open on no-match, uncertainty, internal error, and
+absent/inactive/corrupt state. SessionStart and PreCompact ignore the flag.
+
+**Runtime activation of enforcement is deferred to Phase 6.** Do not copy
+`hooks.enforcement.json.example` to `hooks.json` until the Phase 6 live
+behavioral gate accepts enforcement. The shadow example must remain the
+default.
+

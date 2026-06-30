@@ -1,0 +1,12 @@
+{
+  "id": "benign-bash-git-add-specific",
+  "description": "Staging a specific in-scope path during implementing. git add <path> is not broad staging (no . / -A / --all) -> no E7.",
+  "stateOverrides": {
+    "phase": "implementing",
+    "implementationRoute": "delegated",
+    "currentUnit": { "id": "1", "allowedPaths": ["src/"], "base": null, "briefPath": null, "reportPath": null, "commitSha": null, "baselinePath": null, "currentAttempt": null, "acceptedAttempt": null }
+  },
+  "setupFiles": { "src/a.js": "a\n" },
+  "payload": { "tool_name": "Bash", "tool_input": { "command": "git add src/a.js" } },
+  "expectDecision": "none"
+}

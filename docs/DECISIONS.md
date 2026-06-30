@@ -56,6 +56,40 @@
   must be optional, lossless for structured evidence, and deferred until after the
   core control-plane gates.
 
+## 2026-06-30 — Phase 5A: selective static enforcement
+
+- Added an explicit enforcement mode to `cow-hook.mjs` via
+  `--decision-mode=shadow|enforce` (PreToolUse only). Default stays `shadow`;
+  only the exact value `enforce` enables enforcement. Shadow mode is preserved
+  byte-identically so Phase 4 tests are unaffected.
+- Enforcement may emit only `ask` or `deny` (never `allow`/`defer`/`updatedInput`,
+  never exit 2). No match, uncertainty, internal error, and
+  absent/inactive/corrupt state all fail open with exit 0 and empty stdout.
+- Enforced the zero-false-positive binary set E1–E7 (see
+  `docs/architecture/v0.5.0/04-state-machine-and-hook-enforcement.md`). E8
+  destructive Git and the judgment-based R5 wrong-agent rule stay shadow-only.
+- Interpretations pinned: E5 "executable approved plan" = `plan.status ∈
+  {approved,executing,done}` (matches the Phase 4 `isPlanApproved` test); E7 is
+  gated on `phase=implementing` and uses exact token matching so combined flags
+  like `-am` are not treated as `-a`; E6 is restricted to the four structured
+  `cow-*` agents (agent identity from metadata only, never prompt text); E7 is
+  not agent-bound (controllers can also broad-stage).
+- Bash matching supports only simple commands. A single char-class guard
+  rejects compound/redirect/substitution operators, env-prefixed commands,
+  nested `bash -c`, multiline commands, and deceptive substrings. Ambiguous
+  shapes fail open rather than risk false positives.
+- Observation schema is extended additively with `actualDecision`
+  (`none|ask|deny`) and `reasonCode` (bounded `E1..E7` enum). Shadow
+  observations remain byte-identical (schema version 1 unchanged); `reasonCode`
+  appears only in enforce-mode observations, immediately after `actualDecision`.
+- No active `hooks/hooks.json` is created. `hooks/hooks.enforcement.json.example`
+  is an inactive example whose runtime activation is deferred to Phase 6. State
+  schema version, agents, routing, review matrix, runtime packaging, and package
+  version are unchanged.
+- Live ASK/DENY smoke is deferred to Phase 6 (`PHASE_5_LIVE_ASK_DENY_SMOKE_DEFERRED_TO_PHASE_6`).
+  Benign fixture results (0 ask / 0 deny) are fixture evidence, not proof of
+  real-world zero false positives.
+
 ## Legacy decision log note
 
 The sections below preserve the earlier Turkish decision log. Some old pending

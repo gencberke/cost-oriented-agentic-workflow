@@ -52,6 +52,10 @@ The system spends where correctness changes, not by ritual.
   re-review, whole-work review, and two-wave remediation ceiling.
 - Phase 4: lean SessionStart pointer, PreToolUse/PreCompact shadow observation,
   bounded hook logs, and fail-open hook behavior. No enforcement yet.
+- Phase 5A: selective static enforcement. `--decision-mode=enforce` PreToolUse
+  path emits only `ask`/`deny` for E1–E7 zero-false-positive binary rules;
+  shadow mode is preserved byte-identically; no active `hooks/hooks.json`.
+  Live ASK/DENY behavior is deferred to Phase 6.
 
 ## Evidence Map
 
@@ -74,10 +78,8 @@ reported separately from installed-runtime evidence.
 
 ## Remaining Roadmap
 
-- Phase 5: promote only zero-false-positive binary hook rules to ASK/DENY and
-  ship an active no-op-when-inactive hook.
-- Phase 6: run behavioral, token, and cost evaluation; tune budgets only from
-  measured evidence.
+- Phase 6: accept (or reject) live ASK/DENY enforcement behavior, run behavioral,
+  token, and cost evaluation, and tune budgets only from measured evidence.
 - Phase 7: bump versions to `0.5.0`, update changelog/release docs, package the
   full runtime control plane, and run the full release gate.
 

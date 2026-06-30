@@ -1,0 +1,10 @@
+{
+  "id": "controller-edit-scratch-during-diagnosis",
+  "description": "Edit to the COW runtime workspace during read-only diagnosis. Scratch paths are outside source -> no E1.",
+  "stateOverrides": {
+    "phase": "diagnosis-readonly"
+  },
+  "setupFiles": {},
+  "payload": { "tool_name": "Edit", "tool_input": { "file_path": ".cost-oriented-agentic-workflow/run/notes.md" } },
+  "expectDecision": "none"
+}

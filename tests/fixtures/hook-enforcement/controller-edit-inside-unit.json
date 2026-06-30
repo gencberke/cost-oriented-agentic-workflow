@@ -1,0 +1,12 @@
+{
+  "id": "controller-edit-inside-unit",
+  "description": "Controller edits a file inside the unit's allowed paths during implementing. In-scope edit -> no enforcement.",
+  "stateOverrides": {
+    "phase": "implementing",
+    "implementationRoute": "delegated",
+    "currentUnit": { "id": "1", "allowedPaths": ["src/"], "base": null, "briefPath": null, "reportPath": null, "commitSha": null, "baselinePath": null, "currentAttempt": null, "acceptedAttempt": null }
+  },
+  "setupFiles": { "src/a.js": "a\n" },
+  "payload": { "tool_name": "Edit", "tool_input": { "file_path": "src/a.js" } },
+  "expectDecision": "none"
+}

@@ -101,16 +101,48 @@ unless a future phase adds a measured rule.
 
 ## Phase 5 Enforcement Contract
 
-Phase 5 may promote only zero-false-positive binary rules to `ASK` or `DENY`.
-The first candidates are R1, R2, R3, R4, and high-confidence R6 cases. R5 stays
-warn/observe because role inference is not a safe hard-deny signal.
+Phase 5A adds an explicit enforcement mode to `cow-hook.mjs` while preserving
+shadow mode byte-identically. The interface is
+`node cow-hook.mjs pre-tool-use --decision-mode=shadow|enforce`; the default is
+`shadow`, and only the exact value `enforce` enables enforcement. SessionStart
+and PreCompact ignore the flag. Enforcement may emit only `ask` or `deny` (never
+`allow`/`defer`/`updatedInput`, never exit 2); no match, uncertainty, internal
+error, or absent/inactive/corrupt state fails open with exit 0 and empty stdout.
 
-Enforcement must keep these invariants:
+The enforced rules are the zero-false-positive binary set:
+
+| Rule | Condition | Standard | Production |
+| --- | --- | --- | --- |
+| E1 | Tracked Edit/Write during `diagnosis-readonly`, outside COW workspace | ask | deny |
+| E2 | Edit/Write outside current unit `allowedPaths` during `implementing` | ask | deny |
+| E3 | Edit/Write during `implementing` with no/invalid current-unit boundary | ask | deny |
+| E4 | Repo/debug investigator Edit/Write outside COW workspace | deny | deny |
+| E5 | Production Edit/Write on `planned-sequential`/`delegated-batch` without an approved plan | none | deny |
+| E6 | Structured COW agent metadata plus a simple `git commit` | deny | deny |
+| E7 | Broad staging during a controlled unit: `git add .`/`-A`/`--all`/`git commit -a` | ask | deny |
+
+E8 destructive Git commands and all judgment-based rules (R5 wrong-agent) remain
+shadow-only. Bash matching supports only simple commands: compound/redirect/
+substitution operators (`&&` `||` `;` `|` `` ` `` `$(` `<` `>`), env-prefixed
+commands, nested `bash -c`/`sh -c`, multiline commands, and deceptive substrings
+(`echo git commit`) are not enforced. Agent identity comes only from structured
+hook metadata, never from prompt text. `git commit -am` is a simple command (E6
+applies to agents) but the combined `-am` flag is not E7's exact `-a`.
+
+Enforcement reuses the Phase 4 path/state helpers (no second normalization
+system); `git ls-files --error-unmatch` tracked checks use argument-vector
+invocation. The observation schema is extended additively with `actualDecision`
+(`none|ask|deny`) and `reasonCode` (a bounded `E1..E7` enum, present only in
+enforce-mode observations); shadow observations remain byte-identical with
+schema version 1.
+
+Enforcement keeps these invariants:
 
 - missing, inactive, and corrupt state fail open;
 - hooks never emit blanket allow decisions;
 - hooks do not parse arbitrary shell semantics;
 - hooks name the state gate and the action needed to proceed;
-- active `hooks/hooks.json` is shipped only when no-op-when-inactive behavior is
-  verified.
+- no active `hooks/hooks.json` is shipped; `hooks/hooks.enforcement.json.example`
+  is an inactive example whose runtime activation is deferred to Phase 6.
+
 

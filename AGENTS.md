@@ -21,14 +21,19 @@ bounded worker contracts, scoped review, and hook backstops.
 - Package version remains `0.4.2`; do not bump versions before the release phase.
 - The branch is in the v0.5.0 control-plane series.
 - State, repository intake, plugin agents, discovery routing, implementation
-  routing, unit ownership, review control, and Phase 4 shadow hook substrate are
-  present in the source tree.
+  routing, unit ownership, review control, Phase 4 shadow hook substrate, and
+  Phase 5A selective static enforcement are present in the source tree.
 - `hooks/hooks.json.example` contains opt-in SessionStart, PreToolUse, and
-  PreCompact hooks. There is intentionally no active `hooks/hooks.json`.
+  PreCompact hooks (shadow mode). `hooks/hooks.enforcement.json.example` is an
+  inactive enforcement example. There is intentionally no active
+  `hooks/hooks.json`.
 - Phase 4 hooks are shadow/static: they fail open, never block, never mutate
   workflow state, and write bounded observations when a rule is observed.
-- The next implementation phases are Phase 5 selective enforcement, Phase 6
-  behavioral/cost evaluation, and Phase 7 release candidate.
+- Phase 5A adds an opt-in `--decision-mode=enforce` PreToolUse mode that may
+  emit `ask`/`deny` for the E1–E7 zero-false-positive binary rules; shadow mode
+  is preserved byte-identically. Live ASK/DENY activation is deferred to Phase 6.
+- The next implementation phases are Phase 6 behavioral/cost evaluation (and live
+  enforcement acceptance) and Phase 7 release candidate.
 
 ## Working Rules
 
@@ -71,10 +76,13 @@ Important runtime surfaces:
   finishing gates.
 - `skills/execution-routing/scripts/cow-state.mjs` is the only writer for
   workflow state.
-- `skills/execution-routing/scripts/cow-hook.mjs` is the Phase 4 shadow hook
-  evaluator.
+- `skills/execution-routing/scripts/cow-hook.mjs` is the hook evaluator: Phase 4
+  shadow mode by default, plus the Phase 5A opt-in `--decision-mode=enforce`
+  PreToolUse path.
 - `agents/cow-*.md` are the four scoped plugin agents.
-- `hooks/hooks.json.example` is opt-in; active hook shipping is a later phase.
+- `hooks/hooks.json.example` is the opt-in shadow example;
+  `hooks/hooks.enforcement.json.example` is an inactive enforcement example.
+  Active hook shipping is a later phase.
 
 Workflow state is per checkout:
 

@@ -70,21 +70,43 @@ Status terms:
 - Deferred behavior: no active `hooks/hooks.json`, no ASK/DENY enforcement, no
   runtime-package activation.
 
+### Phase 5A: Selective Enforcement (Static)
+
+- Status: source-present, static-verified by `npm run test:enforcement` plus
+  `npm run test:hooks` (shadow preserved byte-identically). Live ASK/DENY
+  behavior is reported separately and deferred to Phase 6.
+- Evidence: `--decision-mode=enforce` PreToolUse path in `cow-hook.mjs`
+  (default stays shadow; only the exact value `enforce` enables enforcement),
+  E1–E7 zero-false-positive binary rules, `isSimpleCommand` guard, additive
+  observation `actualDecision`/`reasonCode` fields, `tests/hook-enforcement.test.mjs`
+  (127 checks), a benign fixture corpus under
+  `tests/fixtures/hook-enforcement/`, an inactive
+  `hooks/hooks.enforcement.json.example`, and structural checks in
+  `validate-structure.mjs`.
+- Enforced rules: E1 tracked edit during read-only diagnosis; E2 edit outside
+  the current unit's `allowedPaths`; E3 edit during implementing with no unit
+  boundary; E4 investigator read-only write; E5 production edit on
+  planned-sequential/delegated-batch without an approved plan; E6 structured
+  COW agent `git commit`; E7 broad staging (`git add .`/`-A`/`--all`/`commit -a`)
+  during a controlled unit. Standard/production decisions follow the phase
+  matrix; E8 destructive git and judgment rules stay shadow-only.
+- Fail-open invariants preserved: no match, uncertainty, internal error, and
+  absent/inactive/corrupt state all exit 0 with empty stdout. Enforcement may
+  emit only `ask` or `deny` (never `allow`/`defer`/`updatedInput`); no exit 2.
+- Deferred behavior: no active `hooks/hooks.json` is created; runtime
+  activation of enforcement is deferred to Phase 6. The shadow example is
+  unchanged. State schema version, agents, routing, review matrix, runtime
+  packaging, and package version are unchanged.
+
 ## Remaining Roadmap
-
-### Phase 5: Selective Enforcement
-
-- Status: planned.
-- Goal: promote only zero-false-positive binary hook rules to `ASK` or `DENY`.
-- Acceptance: no-op when inactive/missing/corrupt state, active hook packaged
-  intentionally, benign-command false positives remain zero.
 
 ### Phase 6: Behavioral, Token, And Cost Evaluation
 
 - Status: planned.
 - Goal: run full route-only and full-path dogfood, collect stream evidence,
-  measure controller/subagent/cache token behavior, and tune numeric budgets only
-  from recorded evidence.
+  measure controller/subagent/cache token behavior, tune numeric budgets only
+  from recorded evidence, and accept (or reject) live ASK/DENY enforcement
+  behavior before any active enforcement `hooks.json` ships.
 
 ### Phase 7: Release Candidate And v0.5.0
 
@@ -92,6 +114,7 @@ Status terms:
 - Goal: bump versions together, update changelog and release docs, finalize
   runtime package allowlist, include agents and active hooks only if their gates
   are green, run full release verification, and produce the v0.5.0 artifact.
+
 
 ## Deferred Or Rejected
 

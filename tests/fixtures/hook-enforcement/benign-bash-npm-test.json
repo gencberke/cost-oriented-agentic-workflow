@@ -1,0 +1,12 @@
+{
+  "id": "benign-bash-npm-test",
+  "description": "Running the test suite during implementing. npm is not git and not a broad-staging command -> no enforcement.",
+  "stateOverrides": {
+    "phase": "implementing",
+    "implementationRoute": "delegated",
+    "currentUnit": { "id": "1", "allowedPaths": ["src/"], "base": null, "briefPath": null, "reportPath": null, "commitSha": null, "baselinePath": null, "currentAttempt": null, "acceptedAttempt": null }
+  },
+  "setupFiles": { "src/a.js": "a\n" },
+  "payload": { "tool_name": "Bash", "tool_input": { "command": "npm test" } },
+  "expectDecision": "none"
+}
