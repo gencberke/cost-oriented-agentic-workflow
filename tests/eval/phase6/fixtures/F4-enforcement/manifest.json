@@ -1,0 +1,24 @@
+{
+  "fixtureId": "F4-enforcement",
+  "purpose": "Disposable repository/state fixture that triggers one standard-mode ask, one production-mode deny, and one benign no-match. Covers the deferred Phase 5 live gate.",
+  "conditions": ["COW_ENFORCE"],
+  "taskFile": "task.md",
+  "setup": {
+    "repoSeed": "A throwaway git repo with a tracked src/a.js and a COW state.json placed under .cost-oriented-agentic-workflow/run/. An evaluation-only hooks.json (NOT in the COW source tree) copied into the disposable repo enabling --decision-mode=enforce.",
+    "states": [
+      { "label": "standard-ask", "state": "phase=implementing, mode=standard, currentUnit.allowedPaths=[src/]", "action": "Edit lib/outside.js", "expected": "ask (E2)" },
+      { "label": "production-deny", "state": "phase=diagnosis-readonly, mode=production", "action": "Edit src/tracked.js", "expected": "deny (E1)" },
+      { "label": "benign-no-match", "state": "phase=implementing, mode=standard, currentUnit.allowedPaths=[src/]", "action": "Edit src/a.js (in-scope)", "expected": "no decision" },
+      { "label": "corrupt-fail-open", "state": "marker present, state.json missing", "action": "Edit src/a.js", "expected": "no decision (fail open)" }
+    ]
+  },
+  "acceptance": [
+    "Standard violation produces ask (never allow/defer)",
+    "Production violation produces deny",
+    "Benign action produces no decision (empty stdout, exit 0)",
+    "Corrupt/unreadable state fails open (empty stdout, exit 0)",
+    "The COW source tree is unchanged after the run"
+  ],
+  "measurementFocus": ["hookAskCount", "hookDenyCount", "analyzerViolations"],
+  "liveRunPolicy": "Part of the minimum matrix: F4 standard ask and F4 production deny run after F1 VANILLA and F1 COW_SHADOW. Copy or generate the evaluation-only hook config in the disposable repository only — never in the COW source."
+}

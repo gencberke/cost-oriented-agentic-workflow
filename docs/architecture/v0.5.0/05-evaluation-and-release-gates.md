@@ -29,6 +29,10 @@ rg "<stale architecture reference pattern>" README.md docs tests skills commands
 - `npm run test:review-report`: review report validation.
 - `npm run test:unit-worktree`: unit ownership and baseline behavior.
 - `npm run test:hooks`: Phase 4 hook observation behavior.
+- `npm run test:enforcement`: Phase 5A enforcement-mode behavior.
+- `npm run test:phase6`: Phase 6 evaluation harness (run-schema validator,
+  aggregator arithmetic, mismatch refusal, outlier reporting, sensitive-field
+  rejection, fixture manifests).
 - stream analyzer tests for discovery, implementation, and review.
 
 On Windows, Bash suites should be run through Git Bash when plain `bash`

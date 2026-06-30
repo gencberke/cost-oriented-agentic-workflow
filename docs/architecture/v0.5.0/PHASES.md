@@ -102,11 +102,22 @@ Status terms:
 
 ### Phase 6: Behavioral, Token, And Cost Evaluation
 
-- Status: planned.
+- Status: harness-ready, static-verified by `npm run test:phase6`. Live evidence
+  is partial/deferred — the deterministic harness, run-schema validator,
+  aggregator, F1–F5 fixtures, and Phase 6H experiment spec are present; no live
+  Claude runs were executed in this pass.
 - Goal: run full route-only and full-path dogfood, collect stream evidence,
   measure controller/subagent/cache token behavior, tune numeric budgets only
   from recorded evidence, and accept (or reject) live ASK/DENY enforcement
   behavior before any active enforcement `hooks.json` ships.
+- Evidence so far: `tests/eval/phase6/validate-run.mjs` (run-schema validator),
+  `aggregate-runs.mjs` (matched-condition comparison + outlier + Markdown),
+  F1–F5 fixture manifests, `tests/phase6.test.mjs` (109 checks), and the Phase
+  6H optional Headroom experiment specification.
+- Deferred behavior: live runs (F1 VANILLA/COW_SHADOW, F4 ask/deny minimum
+  matrix; F2/F3/F5 when budget allows), threshold decisions in
+  `docs/DECISIONS.md` (only after evidence), and any active enforcement hook
+  activation.
 
 ### Phase 7: Release Candidate And v0.5.0
 

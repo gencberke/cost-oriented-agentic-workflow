@@ -155,6 +155,48 @@ if (enforceEx) {
 check(!fs.existsSync(path.join(root, 'hooks/hooks.json')),
   'Phase 5A: no active hooks/hooks.json exists (enforcement stays inactive)');
 
+// ── Phase 6: behavioral/token/cost evaluation harness (deterministic) ────────
+const phase6Dir = path.join(root, 'tests/eval/phase6');
+check(fs.existsSync(path.join(phase6Dir, 'validate-run.mjs')), 'Phase 6: validate-run.mjs exists');
+check(fs.existsSync(path.join(phase6Dir, 'aggregate-runs.mjs')), 'Phase 6: aggregate-runs.mjs exists');
+check(fs.existsSync(path.join(phase6Dir, 'README.md')), 'Phase 6: harness README exists');
+check(fs.existsSync(path.join(phase6Dir, 'phase6h-experiment.md')), 'Phase 6: 6H experiment spec exists');
+check(fs.existsSync(path.join(root, 'tests/phase6.test.mjs')), 'Phase 6: phase6.test.mjs exists');
+check(!!(packageMeta.scripts && packageMeta.scripts['test:phase6'] === 'node tests/phase6.test.mjs'),
+  'package.json has test:phase6 script pointing to node tests/phase6.test.mjs');
+const phase6FixtureRoot = path.join(phase6Dir, 'fixtures');
+for (const fx of ['F1-bounded-implementation', 'F2-diagnosis-fix', 'F3-review-remediation', 'F4-enforcement', 'F5-resume-compact']) {
+  check(fs.existsSync(path.join(phase6FixtureRoot, fx, 'manifest.json')), `Phase 6: fixture ${fx}/manifest.json exists`);
+  check(fs.existsSync(path.join(phase6FixtureRoot, fx, 'task.md')), `Phase 6: fixture ${fx}/task.md exists`);
+}
+const validateRunText = fs.existsSync(path.join(phase6Dir, 'validate-run.mjs')) ? read(path.join(phase6Dir, 'validate-run.mjs')) : '';
+check(validateRunText.includes('RUN_SCHEMA_VERSION') && validateRunText.includes('SENSITIVE_KEYS'),
+  'Phase 6: validate-run carries schema version + sensitive-key rejection');
+check(/WORKFLOW_COMPLETED.*WORKFLOW_BLOCKED_EXPECTED.*WORKFLOW_FAILED.*HARNESS_FAILURE.*PROCESS_FAILURE.*INSUFFICIENT_EVIDENCE/s.test(validateRunText),
+  'Phase 6: validate-run defines all six semantic result classes');
+// Phase 6 stream-to-run parser + reproducible fixture setup (remediation pass)
+check(fs.existsSync(path.join(phase6Dir, 'stream-to-run.mjs')), 'Phase 6: stream-to-run.mjs parser exists');
+check(fs.existsSync(path.join(phase6FixtureRoot, 'setup.mjs')), 'Phase 6: fixtures/setup.mjs reproducible builder exists');
+const streamText = fs.existsSync(path.join(phase6Dir, 'stream-to-run.mjs')) ? read(path.join(phase6Dir, 'stream-to-run.mjs')) : '';
+check(streamText.includes('parseStream') && streamText.includes('hookAskCount') && streamText.includes('subagentDispatchCountByType'),
+  'Phase 6: stream-to-run parses streams, counts hooks + subagent dispatches');
+check(streamText.includes('FORBIDDEN_INPUT_KEYS') || streamText.includes('sensitive'),
+  'Phase 6: stream-to-run rejects sensitive content in summary records');
+const setupText = fs.existsSync(path.join(phase6FixtureRoot, 'setup.mjs')) ? read(path.join(phase6FixtureRoot, 'setup.mjs')) : '';
+check(setupText.includes('F1-bounded-implementation') && setupText.includes('F4-enforcement'),
+  'Phase 6: setup.mjs builds F1 and F4 reproducible repos');
+check(/refusing to create a fixture repo inside the COW source tree/.test(setupText),
+  'Phase 6: setup.mjs refuses to operate inside the COW source tree');
+check(setupText.includes('--decision-mode=enforce'),
+  'Phase 6: setup.mjs F4 disposable hooks.json uses enforcement mode (in disposable repo only)');
+const aggregateText = fs.existsSync(path.join(phase6Dir, 'aggregate-runs.mjs')) ? read(path.join(phase6Dir, 'aggregate-runs.mjs')) : '';
+check(aggregateText.includes('PAIR_ORDER') && aggregateText.includes('outliers') && aggregateText.includes('costImprovementClaimAllowed'),
+  'Phase 6: aggregator compares matched pairs, reports outliers, gates cost claims on correctness');
+const phase6hText = fs.existsSync(path.join(phase6Dir, 'phase6h-experiment.md')) ? read(path.join(phase6Dir, 'phase6h-experiment.md')) : '';
+check(/No memory or learn features/.test(phase6hText) && /No output shaping/.test(phase6hText)
+  && /No code compression/.test(phase6hText) && /Exact contract.path.SHA preservation/.test(phase6hText),
+  'Phase 6H: spec enforces identical fixtures, no memory/learn, no output shaping, no compression, exact preservation');
+
 // ── 2. Every skill: frontmatter, name == dir, description present & bounded ──
 const skillsDir = path.join(root, 'skills');
 const skillDirs = fs.readdirSync(skillsDir, { withFileTypes: true })

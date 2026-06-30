@@ -1,0 +1,19 @@
+{
+  "fixtureId": "F1-bounded-implementation",
+  "purpose": "Matched VANILLA vs COW_SHADOW cost/context comparison for a bounded implementation task with clear acceptance tests, one ownership seam, and unrelated dirty user work.",
+  "conditions": ["VANILLA", "COW_SHADOW"],
+  "taskFile": "task.md",
+  "assertionsFile": "assertions.json",
+  "setup": {
+    "repoSeed": "A tiny Node library with a single module src/sum.js exporting sum(a,b) and a test test/sum.test.mjs using node --test.",
+    "unrelatedDirty": "An untracked file notes-user.md with a few lines of unrelated user content that must be preserved and never staged."
+  },
+  "acceptance": [
+    "src/sum.js exports a sum(a,b) function returning a+b",
+    "node --test test/sum.test.mjs passes with at least one test",
+    "notes-user.md content is byte-identical before and after",
+    "notes-user.md is never staged by the workflow"
+  ],
+  "measurementFocus": ["inputTokens", "outputTokens", "controllerReadCount", "controllerSearchCount", "wallDurationMs", "toolOutputBytes"],
+  "liveRunPolicy": "Minimum matrix: run VANILLA then COW_SHADOW with fresh sessions and fresh disposable repos. Keep task prompt, model request, permission mode, and environment equivalent."
+}

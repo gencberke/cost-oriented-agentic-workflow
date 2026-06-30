@@ -56,6 +56,10 @@ The system spends where correctness changes, not by ritual.
   path emits only `ask`/`deny` for E1–E7 zero-false-positive binary rules;
   shadow mode is preserved byte-identically; no active `hooks/hooks.json`.
   Live ASK/DENY behavior is deferred to Phase 6.
+- Phase 6 (harness-ready): deterministic evaluation harness — run-schema
+  validator, matched-condition aggregator with outlier reporting, F1–F5 fixtures,
+  and the Phase 6H optional Headroom experiment spec. Live evidence is
+  partial/deferred; no live Claude runs were executed in this pass.
 
 ## Evidence Map
 
@@ -78,8 +82,10 @@ reported separately from installed-runtime evidence.
 
 ## Remaining Roadmap
 
-- Phase 6: accept (or reject) live ASK/DENY enforcement behavior, run behavioral,
-  token, and cost evaluation, and tune budgets only from measured evidence.
+- Phase 6: run the live minimum matrix (F1 VANILLA/COW_SHADOW, F4 ask/deny;
+  F2/F3/F5 when budget allows), collect token/cost/latency evidence, accept or
+  reject live enforcement behavior, and record conservative thresholds only
+  from measured evidence.
 - Phase 7: bump versions to `0.5.0`, update changelog/release docs, package the
   full runtime control plane, and run the full release gate.
 

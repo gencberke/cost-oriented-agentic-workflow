@@ -56,6 +56,42 @@
   must be optional, lossless for structured evidence, and deferred until after the
   core control-plane gates.
 
+## 2026-06-30 — Phase 6: deterministic evaluation harness (live evidence deferred)
+
+- Built the Phase 6 evaluation harness as deterministic tooling only. No live
+  Claude runs were executed in this pass; live evidence is partial/deferred.
+- Run-record schema version 1 captures one bounded record per run: identity
+  (runId, datedAt, environmentId, claudeCodeVersion, condition, fixtureId),
+  actual models from result metadata, process exit code, semantic result, token
+  and cost metrics (missing vs zero preserved), tool/dispatch/read accounting,
+  workflow accounting (attempts, waves, commits, changed paths), hook
+  ask/deny counts, analyzer violations, task and preservation assertions, and a
+  retry classification. Sensitive fields (prompts, secrets, transcripts,
+  chain-of-thought) are rejected; records are capped at 20 KiB.
+- Six semantic result classes: `WORKFLOW_COMPLETED`,
+  `WORKFLOW_BLOCKED_EXPECTED`, `WORKFLOW_FAILED`, `HARNESS_FAILURE`,
+  `PROCESS_FAILURE`, `INSUFFICIENT_EVIDENCE`. A clean repo or exit 0 alone is
+  not success.
+- The aggregator compares matched conditions pairwise (VANILLA vs COW_SHADOW,
+  COW_SHADOW vs COW_ENFORCE), refuses comparisons on fixture/model/environment
+  mismatch, distinguishes missing from zero, reports outliers without deleting
+  them, and gates cost-improvement claims on correctness + preservation first.
+  Percentage with a zero baseline reports absolute diff only (null percent).
+- F1–F5 fixtures are prepared now; live runs are deferred. The minimum live
+  matrix is F1 VANILLA → F1 COW_SHADOW → F4 standard ask → F4 production deny,
+  stopping when usage/environment is insufficient.
+- Phase 6H: an optional Headroom experiment specification is recorded. Headroom
+  is not installed, configured, or invoked in Phase 6 core. The spec requires
+  identical fixtures, no COW mutation, no memory/learn, no output shaping, no
+  code compression, exact contract/path/SHA preservation, and separate
+  correctness and token results.
+- No numeric thresholds are set in this pass. Thresholds will be recorded in a
+  dated `DECISIONS.md` entry only after live evidence exists, with
+  insufficient-sample values marked provisional. Historical decision records
+  are not modified.
+- No active `hooks/hooks.json` is created. State schema version, agents,
+  routing, review matrix, runtime packaging, and package version are unchanged.
+
 ## 2026-06-30 — Phase 5A: selective static enforcement
 
 - Added an explicit enforcement mode to `cow-hook.mjs` via

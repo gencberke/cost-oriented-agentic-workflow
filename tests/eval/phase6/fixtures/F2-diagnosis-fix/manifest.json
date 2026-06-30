@@ -1,0 +1,17 @@
+{
+  "fixtureId": "F2-diagnosis-fix",
+  "purpose": "Reproducible bug requiring evidence-based diagnosis before modification. Measures controller reads, investigator usage, duplicate investigation, attempts, and task correctness.",
+  "conditions": ["COW_SHADOW", "COW_ENFORCE"],
+  "taskFile": "task.md",
+  "setup": {
+    "repoSeed": "A small module src/normalize.js with a hidden off-by-one or null-handling bug that produces wrong output for a specific input; a test test/normalize.test.mjs that currently fails for that input.",
+    "unrelatedDirty": "none required"
+  },
+  "acceptance": [
+    "The failing test passes after the fix",
+    "No new failing tests are introduced",
+    "The fix addresses the root cause, not the symptom"
+  ],
+  "measurementFocus": ["controllerReadCount", "controllerSearchCount", "subagentDispatchCountByType", "implementationAttempts", "inputTokens"],
+  "liveRunPolicy": "Run only after the F1 minimum matrix completes and usage remains available. Measure whether diagnosis is delegated to cow-debug-investigator vs performed inline, and whether duplicate investigation occurs."
+}

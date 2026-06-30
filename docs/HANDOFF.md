@@ -10,27 +10,28 @@ context recovery, see
 
 - Source root: `C:\Users\gencberke\Desktop\cost-oriented-agentic-workflow`.
 - Branch: `feat/v0.5.0-phase-4-shadow-hooks`.
-- HEAD at this handoff update: `75406c5` (Phase 4 substrate committed); Phase 5A
+- HEAD at this handoff update: `1352587` (Phase 5A committed); Phase 6 harness
   work is present as uncommitted changes on top.
 - Package version: `0.4.2`.
 - Runtime dependencies: zero.
 - Last targeted verification before this handoff update:
-  - `npm.cmd run check`: 393 checks passed, 0 failed.
+  - `npm.cmd run check`: 413 checks passed, 0 failed.
   - `npm.cmd run test:hooks`: 39 checks passed, 0 failed (shadow preserved).
-  - `npm.cmd run test:enforcement`: 127 checks passed, 0 failed.
+  - `npm.cmd run test:enforcement`: 130 checks passed, 0 failed.
+  - `npm.cmd run test:phase6`: 109 checks passed, 0 failed.
   - `claude plugin validate . --strict`: passed.
-- Working tree: dirty with Phase 5A enforcement work (intentionally uncommitted;
-  the phase mandates no commit). There is an unrelated untracked
-  `analyze-apply-project-rules/` folder and the `phase_5.md` task spec under the
+- Working tree: dirty with Phase 6 harness work (intentionally uncommitted; the
+  phase mandates no commit). There is an unrelated untracked
+  `analyze-apply-project-rules/` folder and the `phase_6.md` task spec under the
   source root; neither is canonical project content.
 - Active hook file: none. `hooks/hooks.json` must not exist before the Phase 6
   live-activation gate. `hooks/hooks.enforcement.json.example` is an inactive
   example only.
 - Runtime package capability: the generated `0.4.2` runtime package is not yet
   the complete v0.5.0 control-plane distribution. Top-level `agents/**` and
-  active hooks are release-path work. `test:release` requires a clean tree and
-  is therefore blocked during Phase 5A by the no-commit policy, not by a code
-  defect.
+  active hooks are release-path work. `test:release` requires a clean committed
+  tree and is therefore skipped during Phase 6 by the no-commit policy, not by a
+  code defect.
 
 ## Implemented Control Plane
 
@@ -56,6 +57,11 @@ context recovery, see
   emits `ask`/`deny` for E1–E7 zero-false-positive binary rules. Shadow mode is
   preserved byte-identically. No active `hooks/hooks.json`; enforcement runtime
   activation is deferred to Phase 6.
+- Phase 6 evaluation harness (deterministic): run-schema validator
+  (`validate-run.mjs`), matched-condition aggregator with outlier reporting and
+  Markdown output (`aggregate-runs.mjs`), F1–F5 fixture manifests, a benign
+  Phase 6H optional Headroom experiment spec, and `test:phase6`. Live evidence
+  is partial/deferred.
 
 ## Current Risks
 
@@ -72,9 +78,11 @@ context recovery, see
 
 ## Next Work
 
-1. Phase 6: accept (or reject) live ASK/DENY enforcement behavior, run
-   behavioral, token, and cost evaluation, and tune numeric budgets only with
-   measured evidence and a dated `DECISIONS.md` entry.
+1. Phase 6 (live): run the minimum matrix (F1 VANILLA, F1 COW_SHADOW, F4
+   standard ask, F4 production deny); then F2/F3/F5 when usage allows. Collect
+   token/cost/latency evidence, accept or reject live enforcement behavior, and
+   record conservative numeric budgets only with measured evidence and a dated
+   `DECISIONS.md` entry.
 2. Phase 7: release candidate, version bump to `0.5.0`, final package allowlist,
    changelog, and full verification.
 

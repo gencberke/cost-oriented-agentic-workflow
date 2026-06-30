@@ -187,6 +187,8 @@ Both load `using-cost-oriented-workflow`. For opt-in always-on activation, see
 ```text
 npm run check
 npm run test:hooks
+npm run test:enforcement
+npm run test:phase6
 npm run test:eval
 npm run runtime:build
 npm run test:release

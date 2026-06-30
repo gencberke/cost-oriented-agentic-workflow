@@ -22,7 +22,8 @@
     "test:release": "bash tests/release-artifact.test.sh",
     "test:hooks": "node tests/hooks.test.mjs",
     "test:enforcement": "node tests/hook-enforcement.test.mjs",
-    "verify:all": "npm run check && npm run test:scripts && npm run test:hooks && npm run test:enforcement && npm run test:eval && npm run test:release",
+    "test:phase6": "node tests/phase6.test.mjs",
+    "verify:all": "npm run check && npm run test:scripts && npm run test:hooks && npm run test:enforcement && npm run test:phase6 && npm run test:eval && npm run test:release",
     "clean:generated:dry": "node scripts/clean-generated.mjs",
     "clean:generated": "node scripts/clean-generated.mjs --apply",
     "runtime:build": "node scripts/build-runtime-package.mjs"

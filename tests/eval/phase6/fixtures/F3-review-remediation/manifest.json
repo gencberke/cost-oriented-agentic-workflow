@@ -1,0 +1,18 @@
+{
+  "fixtureId": "F3-review-remediation",
+  "purpose": "A small task capable of producing one eligible Critical/Important finding, adjudication, one remediation wave, and targeted re-review. Covers the deferred Phase 3B.2 evidence.",
+  "conditions": ["COW_SHADOW", "COW_ENFORCE"],
+  "taskFile": "task.md",
+  "setup": {
+    "repoSeed": "A small change that legitimately invites one Critical or Important review finding (e.g. an error path that swallows a failure or a missing input validation that a reviewer would flag), without corrupting product behavior to force a synthetic finding.",
+    "unrelatedDirty": "none required"
+  },
+  "acceptance": [
+    "At most one remediation wave is used",
+    "Any Critical/Important fix is followed by a fresh targeted re-review",
+    "The reviewer does not write files or run shell commands",
+    "Findings are adjudicated before any fix is dispatched"
+  ],
+  "measurementFocus": ["remediationWaves", "subagentDispatchCountByType", "analyzerViolations"],
+  "liveRunPolicy": "Run only after F1 and F2 complete and usage remains available. Do not force a synthetic reviewer finding by corrupting product behavior."
+}
