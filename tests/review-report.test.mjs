@@ -170,6 +170,52 @@ for (const [label, obj] of rejectCases) {
   check(tr.status !== 0, 'package build: TARGETED_REREVIEW without prior report / accepted ids rejected');
 }
 
+// package --output path safety
+{
+  const { dir } = freshRepo();
+  const w = ws(dir);
+  const diff = path.join(w, 'unit.diff');
+  fs.writeFileSync(diff, '# diff\n');
+
+  const runBuild = (outPath) => rp(dir, 'build',
+    '--scope', 'UNIT_REVIEW', '--target', 'task-1', '--mode', 'standard', '--risk', 'high',
+    '--output', outPath,
+    '--diff', '.cost-oriented-agentic-workflow/run/unit.diff',
+    '--unit-owned-path', 'src/a.js',
+    '--base-sha', 'abc1234',
+    '--head-sha', 'def5678');
+
+  const relOut = '.cost-oriented-agentic-workflow/run/pkg.json';
+  const ok = runBuild(relOut);
+  check(ok.status === 0, 'package build: valid relative --output succeeds');
+  check(fs.existsSync(path.join(dir, relOut)), 'package build: valid relative --output file exists');
+
+  const suffix = () => Math.random().toString(36).slice(2, 10);
+  const badOutputs = [
+    ['platform-native absolute path', path.resolve(dir, `outside-abs-${suffix()}.json`)],
+    ['Windows drive-qualified backslash', `C:\\outside-win-back-${suffix()}.json`],
+    ['Windows drive-qualified forward slash', `C:/outside-win-forward-${suffix()}.json`],
+    ['root-qualified forward slash', `/outside-root-slash-${suffix()}.json`],
+    ['root-qualified backslash', `\\outside-root-back-${suffix()}.json`],
+    ['traversal path', `../outside-trav-${suffix()}.json`],
+  ];
+
+  const beforeRootFiles = new Set(fs.readdirSync(dir));
+  for (const [label, outPath] of badOutputs) {
+    const res = runBuild(outPath);
+    check(res.status !== 0, `package build: rejected ${label} exits non-zero`);
+    const resolved = path.isAbsolute(outPath) || /^[A-Za-z]:[\\/]/.test(outPath)
+      ? outPath
+      : path.resolve(dir, outPath);
+    check(!fs.existsSync(resolved), `package build: rejected ${label} does not create output file`);
+    check(!fs.existsSync(resolved + '.tmp'), `package build: rejected ${label} does not leave .tmp file`);
+    check(!fs.existsSync(path.join(dir, outPath)), `package build: rejected ${label} does not create file inside worktree`);
+    check(!fs.existsSync(path.join(dir, outPath + '.tmp')), `package build: rejected ${label} does not leave .tmp file inside worktree`);
+  }
+  const newRootFiles = fs.readdirSync(dir).filter((f) => !beforeRootFiles.has(f));
+  check(newRootFiles.length === 0, 'package build: rejected paths do not create unrelated files in the repo root');
+}
+
 // ── summary ──────────────────────────────────────────────────────────────────
 for (const d of tmps) { try { fs.rmSync(d, { recursive: true, force: true }); } catch { /* */ } }
 console.log(`\nreview-report + review-package: ${passes} checks passed, ${fails} failed.`);

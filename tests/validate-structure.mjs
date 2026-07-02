@@ -827,6 +827,13 @@ check(fs.existsSync(path.join(root, 'skills/requesting-review/scripts/review-rep
   '3B.2: the review-report validation helper exists');
 check(fs.existsSync(path.join(root, 'skills/requesting-review/scripts/review-package.mjs')),
   '3B.2: the review-package descriptor helper exists');
+const reviewPackageHelperText = read(path.join(root, 'skills', 'requesting-review', 'scripts', 'review-package.mjs'));
+check(/safeRepoPath\(root, flags\.output, '--output'\)/.test(reviewPackageHelperText)
+  && /const out = path\.join\(root, relOut\)/.test(reviewPackageHelperText),
+  '3B.2: review-package --output is repo-relative and path-safe before writing');
+check(/input evidence/.test(reviewPackageRef) && /output evidence/.test(reviewPackageRef)
+  && !/findingLedgerPath,\s*remainingRisks/.test(reviewPackageRef),
+  '3B.2: review package docs keep package inputs separate from report remainingRisks output');
 
 // the exact scoped reviewer is named where review is dispatched; never automatic
 check(executionText.includes('cost-oriented-agentic-workflow:cow-reviewer')

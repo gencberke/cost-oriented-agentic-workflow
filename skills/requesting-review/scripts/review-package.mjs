@@ -174,6 +174,12 @@ function main() {
         'accepted-finding-id', 'unit-commit', 'unit-review-report'],
     });
     if (!flags.output) die('build requires --output <pkg>', 2);
+    let relOut;
+    try {
+      relOut = safeRepoPath(root, flags.output, '--output');
+    } catch (err) {
+      die(err.message, 2);
+    }
     const pkg = { schemaVersion: SCHEMA_VERSION, reviewScope: flags.scope, reviewTargetId: flags.target, mode: flags.mode, risk: flags.risk };
     const set = (k, v) => { if (v !== undefined && v !== null) pkg[k] = v; };
     const arr = (k, v) => { if (v && v.length) pkg[k] = v; };
@@ -192,7 +198,7 @@ function main() {
     const text = JSON.stringify(pkg, null, 2) + '\n';
     const errs = validatePackage(pkg, Buffer.byteLength(text, 'utf8'), root);
     if (errs.length) { for (const m of errs) process.stderr.write(`  - ${m}\n`); die(`refusing to write an invalid package (${errs.length} problem(s)).`); }
-    const out = path.isAbsolute(flags.output) ? flags.output : path.join(root, flags.output);
+    const out = path.join(root, relOut);
     const tmp = out + '.tmp';
     fs.writeFileSync(tmp, text); fs.renameSync(tmp, out);
     process.stdout.write(`wrote ${flags.output}: ${pkg.reviewScope} ${pkg.reviewTargetId}.\n`);

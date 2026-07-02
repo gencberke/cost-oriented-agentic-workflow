@@ -23,6 +23,8 @@ Required: `REVIEW_SCOPE`, `MODE`, `RISK`, `REVIEW_PACKAGE_PATH`,
 
 ## Package descriptor (schema v1; ≤ 8 KB; references artifacts, never inlines bulk)
 
+A review package serves as bounded, controller-provided input evidence for the reviewer.
+
 - **Unit:** `reviewScope, reviewTargetId, mode, risk, taskBriefPath, planPath,
   unitBaselinePath, implementationReportPath, acceptedAttempt, unitOwnedPaths,
   allowedPaths, knownPreExistingPaths, baseSha, headSha, diffArtifactPath,
@@ -31,7 +33,7 @@ Required: `REVIEW_SCOPE`, `MODE`, `RISK`, `REVIEW_PACKAGE_PATH`,
   remediationWave, changedPathsSinceReview, verificationSummaryPath`.
 - **Whole-work:** `planPath, ledgerPath, unitCommitList, baseSha, headSha,
   diffArtifactPath, verificationSummaryPath, unitReviewReportPaths,
-  findingLedgerPath, remainingRisks`.
+  findingLedgerPath`.
 
 Build with `review-package.mjs build --scope … --target … --mode … --risk …
 --output <pkg> [path/sha flags]`; it validates per-scope required fields and
@@ -40,6 +42,7 @@ rejects unsafe paths before writing.
 ## Report (schema v1; ≤ 12 KB)
 
 The reviewer is read-only (no Write tool): it returns **one fenced JSON object**.
+The report serves as reviewer-produced output evidence, including `remainingRisks[]`.
 The controller persists it to `REVIEW_REPORT_PATH` and runs
 `review-report.mjs validate <report> --package <pkg> [--accepted-finding-ids …]`
 **before** adjudicating. Run `review-report.mjs validate` before adjudication or remediation. Fields:
