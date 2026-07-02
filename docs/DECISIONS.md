@@ -138,10 +138,13 @@
   pass with live gates pending; final validation fails with
   `LIVE_EVIDENCE_REQUIRED_BEFORE_RELEASE` until Phase 3B.2, Phase 4, Phase 5,
   and sufficient Phase 6 live evidence is accepted.
+- Current docs phrase live hook activation as deferred until evidence accepts
+  it. Older Phase 5 entries that say "deferred to Phase 6" are historical
+  records, not permission to activate enforcement now.
 - Version finalization is dry-run only in this phase. Authoritative locations are
   `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`,
-  `package.json`, runtime manifest metadata derived from plugin metadata, and
-  the pending `CHANGELOG.md` heading.
+  `package.json`, the version-neutral README install example, runtime manifest
+  metadata derived from plugin metadata, and the pending `CHANGELOG.md` heading.
 - Runtime package safety rejects personal absolute paths, active hook configs,
   development-only files, unsafe output roots, duplicate manifest paths, and
   broken packaged Markdown links.

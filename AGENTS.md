@@ -1,8 +1,7 @@
 # Agent Onboarding Manifesto
 
 This file is the first read for any agent joining this repository. It is the
-current operational map for the source tree at
-`C:\Users\gencberke\Desktop\cost-oriented-agentic-workflow`.
+current operational map for whichever checkout or worktree contains this file.
 
 ## Purpose
 
@@ -31,8 +30,9 @@ bounded worker contracts, scoped review, and hook backstops.
 - Phase 4 hooks are shadow/static: they fail open, never block, never mutate
   workflow state, and write bounded observations when a rule is observed.
 - Phase 5A adds an opt-in `--decision-mode=enforce` PreToolUse mode that may
-  emit `ask`/`deny` for the E1–E7 zero-false-positive binary rules; shadow mode
-  is preserved byte-identically. Live ASK/DENY activation is deferred to Phase 6.
+  emit `ask`/`deny` for the E1-E7 zero-false-positive binary rules; shadow mode
+  is preserved byte-identically. Live ASK/DENY activation is deferred until
+  live evidence accepts it.
 - Phase 6 adds a deterministic evaluation harness (run-schema validator,
   matched-condition aggregator, F1–F5 fixtures, Phase 6H optional Headroom
   spec). Live evidence is partial/deferred; no live Claude runs were executed
@@ -132,7 +132,7 @@ On this Windows machine, plain `bash` may resolve to the WSL launcher. For Bash
 suites, call Git Bash explicitly:
 
 ```text
-& "C:\Program Files\Git\bin\bash.exe" -lc "cd /c/Users/gencberke/Desktop/cost-oriented-agentic-workflow && <command>"
+& "C:\Program Files\Git\bin\bash.exe" -lc "cd <repo-root-posix> && <command>"
 ```
 
 Do not run long live smokes or full release gates for docs-only changes unless a

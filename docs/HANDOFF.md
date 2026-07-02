@@ -6,8 +6,7 @@ candidate status, see [`RELEASE_0.5.0.md`](RELEASE_0.5.0.md).
 
 ## Verified State
 
-- Source root for this worktree:
-  `C:\Users\gencberke\Desktop\cost-oriented-agentic-workflow-phase7a`.
+- Source root: the current checkout or worktree containing this file.
 - Branch: `codex/phase-7a-release-candidate`.
 - Baseline: `308be7c` contains the committed Phase 6 deterministic harness.
 - Package version: `0.4.2`; the final `0.5.0` bump is prepared only as a dry-run.
@@ -41,8 +40,7 @@ candidate status, see [`RELEASE_0.5.0.md`](RELEASE_0.5.0.md).
   `LIVE_EVIDENCE_REQUIRED_BEFORE_RELEASE` until those gates are accepted.
 - No token savings or behavior guarantees may be claimed from static tests alone.
 - No active `hooks/hooks.json` may ship in the source tree or runtime package.
-- Preserve unrelated untracked work in the original checkout, especially
-  `phase_7.md` and `analyze-apply-project-rules/`.
+- Preserve unrelated dirty or untracked work in any checkout you touch.
 
 ## Next Work
 

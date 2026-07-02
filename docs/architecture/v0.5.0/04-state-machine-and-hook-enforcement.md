@@ -143,6 +143,6 @@ Enforcement keeps these invariants:
 - hooks do not parse arbitrary shell semantics;
 - hooks name the state gate and the action needed to proceed;
 - no active `hooks/hooks.json` is shipped; `hooks/hooks.enforcement.json.example`
-  is an inactive example whose runtime activation is deferred to Phase 6.
-
+  is an inactive example whose runtime activation is deferred until live
+  evidence accepts it.
 

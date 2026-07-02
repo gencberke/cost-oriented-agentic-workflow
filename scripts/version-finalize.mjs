@@ -49,12 +49,17 @@ const changelog = fs.readFileSync(path.join(root, 'CHANGELOG.md'), 'utf8');
 if (!new RegExp(`## \\[${target.replace(/\./g, '\\.')}\\] - Pending`).test(changelog)) {
   die(`CHANGELOG.md must contain a pending ${target} section.`);
 }
+const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
+if (!/\/plugin marketplace add <runtime-package-dir>/.test(readme)) {
+  die('README.md must keep the runtime install example version-neutral.');
+}
 
 const locations = [
   { file: '.claude-plugin/plugin.json', jsonPath: '$.version', from: current.plugin, to: target },
   { file: '.claude-plugin/marketplace.json', jsonPath: `$.plugins[${marketIndex}].version`, from: current.marketplace, to: target },
   { file: 'package.json', jsonPath: '$.version', from: current.package, to: target },
   { file: 'CHANGELOG.md', heading: `## [${target}] - Pending`, finalHeading: `## [${target}] - YYYY-MM-DD` },
+  { file: 'README.md', installExample: '<runtime-package-dir>', action: 'keep version-neutral' },
   { file: 'runtime manifest', field: 'version', source: '.claude-plugin/plugin.json' },
 ];
 

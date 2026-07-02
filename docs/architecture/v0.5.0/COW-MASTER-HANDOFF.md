@@ -7,7 +7,7 @@ needs more continuity than the compact handoff provides.
 
 ## Repository Snapshot
 
-- Source root: `C:\Users\gencberke\Desktop\cost-oriented-agentic-workflow`.
+- Source root: the current checkout or worktree containing this file.
 - Package version: `0.4.2`.
 - Runtime dependencies: zero.
 - Active hook file: none. `hooks/hooks.json` is intentionally absent.
@@ -53,9 +53,9 @@ The system spends where correctness changes, not by ritual.
 - Phase 4: lean SessionStart pointer, PreToolUse/PreCompact shadow observation,
   bounded hook logs, and fail-open hook behavior. No enforcement yet.
 - Phase 5A: selective static enforcement. `--decision-mode=enforce` PreToolUse
-  path emits only `ask`/`deny` for E1–E7 zero-false-positive binary rules;
+  path emits only `ask`/`deny` for E1-E7 zero-false-positive binary rules;
   shadow mode is preserved byte-identically; no active `hooks/hooks.json`.
-  Live ASK/DENY behavior is deferred to Phase 6.
+  Live ASK/DENY behavior is deferred until live evidence accepts it.
 - Phase 6 (harness-ready): deterministic evaluation harness — run-schema
   validator, matched-condition aggregator with outlier reporting, F1–F5 fixtures,
   and the Phase 6H optional Headroom experiment spec. Live evidence is

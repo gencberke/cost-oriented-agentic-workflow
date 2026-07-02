@@ -144,7 +144,7 @@ Build the runtime package, then add the generated runtime directory:
 
 ```text
 npm run runtime:build
-/plugin marketplace add <path-to-runtime-output>/cost-oriented-agentic-workflow-0.4.2
+/plugin marketplace add <runtime-package-dir>
 /plugin install cost-oriented-agentic-workflow
 ```
 

@@ -236,6 +236,8 @@ const versionDryPath = path.join(root, 'scripts/version-finalize.mjs');
 const versionDryText = fs.existsSync(versionDryPath) ? read(versionDryPath) : '';
 check(/dry-run only/.test(versionDryText) && /CHANGELOG\.md must contain a pending/.test(versionDryText),
   'Phase 7A: version finalization is dry-run only and requires the pending changelog heading');
+check(/README\.md must keep the runtime install example version-neutral/.test(versionDryText),
+  'Phase 7A: version dry-run guards README install docs against stale versioned paths');
 check(fs.existsSync(path.join(root, 'docs/RELEASE_0.5.0.md')), 'Phase 7A: concise release handoff exists');
 
 const skillsDir = path.join(root, 'skills');
@@ -268,8 +270,41 @@ if (isDir(cmdDir)) {
 const qualifiedLauncher = '/cost-oriented-agentic-workflow:cost-oriented-agentic-workflow';
 check(read(path.join(root, 'README.md')).includes(qualifiedLauncher),
   'README uses the qualified standard launcher command');
+check(/\/plugin marketplace add <runtime-package-dir>/.test(read(path.join(root, 'README.md'))),
+  'README uses a version-neutral runtime install path');
 check(read(path.join(root, 'hooks/README.md')).includes(qualifiedLauncher),
   'hooks README uses the qualified standard launcher command');
+const agentsDoc = read(path.join(root, 'AGENTS.md'));
+const handoffDoc = read(path.join(root, 'docs', 'HANDOFF.md'));
+const hooksReadme = read(path.join(root, 'hooks', 'README.md'));
+const phaseLedger = read(path.join(root, 'docs', 'architecture', 'v0.5.0', 'PHASES.md'));
+const hookArchitecture = read(path.join(root, 'docs', 'architecture', 'v0.5.0', '04-state-machine-and-hook-enforcement.md'));
+const masterHandoff = read(path.join(root, 'docs', 'architecture', 'v0.5.0', 'COW-MASTER-HANDOFF.md'));
+const currentDocs = [
+  ['AGENTS.md', agentsDoc],
+  ['docs/HANDOFF.md', handoffDoc],
+  ['hooks/README.md', hooksReadme],
+  ['docs/architecture/v0.5.0/PHASES.md', phaseLedger],
+  ['docs/architecture/v0.5.0/04-state-machine-and-hook-enforcement.md', hookArchitecture],
+  ['docs/architecture/v0.5.0/COW-MASTER-HANDOFF.md', masterHandoff],
+];
+for (const [docName, docText] of currentDocs) {
+  check(!/C:\\Users\\|\/c\/Users\/gencberke|cost-oriented-agentic-workflow-phase7a/.test(docText),
+    `${docName}: current docs do not hardcode a local checkout path`);
+}
+for (const [docName, docText] of [
+  ['AGENTS.md', agentsDoc],
+  ['docs/architecture/v0.5.0/PHASES.md', phaseLedger],
+  ['docs/architecture/v0.5.0/04-state-machine-and-hook-enforcement.md', hookArchitecture],
+  ['docs/architecture/v0.5.0/COW-MASTER-HANDOFF.md', masterHandoff],
+]) {
+  check(!/deferred to Phase 6/i.test(docText),
+    `${docName}: current docs defer live enforcement to evidence, not a stale phase number`);
+}
+check(/COW_RESUME_POINTER_V1/.test(hooksReadme) && !/COW_ENTRY_INJECTED sentinel/.test(hooksReadme),
+  'hooks README documents the actual SessionStart resume pointer, not a nonexistent injected sentinel');
+check(/Preserve unrelated dirty or untracked work/.test(handoffDoc) && !/phase_7\.md|analyze-apply-project-rules/.test(handoffDoc),
+  'handoff uses generic preservation guidance instead of local task artifacts');
 
 // ── 4. Relative markdown links resolve to a real file ───────────────────────
 const mdFiles = walk(root).filter((f) => f.endsWith('.md'));

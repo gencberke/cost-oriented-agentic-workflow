@@ -75,7 +75,7 @@ Status terms:
 
 - Status: source-present, static-verified by `npm run test:enforcement` plus
   `npm run test:hooks` (shadow preserved byte-identically). Live ASK/DENY
-  behavior is reported separately and deferred to Phase 6.
+  behavior is reported separately and deferred until live evidence accepts it.
 - Evidence: `--decision-mode=enforce` PreToolUse path in `cow-hook.mjs`
   (default stays shadow; only the exact value `enforce` enables enforcement),
   E1–E7 zero-false-positive binary rules, `isSimpleCommand` guard, additive
@@ -95,9 +95,9 @@ Status terms:
   absent/inactive/corrupt state all exit 0 with empty stdout. Enforcement may
   emit only `ask` or `deny` (never `allow`/`defer`/`updatedInput`); no exit 2.
 - Deferred behavior: no active `hooks/hooks.json` is created; runtime
-  activation of enforcement is deferred to Phase 6. The shadow example is
-  unchanged. State schema version, agents, routing, review matrix, runtime
-  packaging, and package version are unchanged.
+  activation of enforcement is deferred until live evidence accepts it. The
+  shadow example is unchanged. State schema version, agents, routing, review
+  matrix, runtime packaging, and package version are unchanged.
 
 ## Remaining Roadmap
 
