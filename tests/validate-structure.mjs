@@ -13,6 +13,13 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// Real cow-state enums: packaged prose that documents CLI values is checked
+// against these so a skill can never teach a command that fails at runtime.
+import {
+  PHASES as STATE_PHASES, ROOTCAUSE_STATUS, BLOCK_CODES, COMMIT_POLICIES,
+  DISCOVERY_ROUTES, IMPLEMENTATION_ROUTES,
+} from '../skills/execution-routing/scripts/cow-state-core.mjs';
+
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 let failures = 0;
 let passes = 0;
@@ -684,6 +691,40 @@ check(/REQUIRES_REROUTE/.test(sysDebugText) && /TRACKED_DIAGNOSTIC_INSTRUMENTATI
   'routing: tracked diagnostic instrumentation re-routes before any tracked edit');
 check(/cow-state.mjs root-cause/.test(sysDebugText) && /controller[^.]*adjudicates the diagnosis/i.test(sysDebugText),
   'routing: the controller (not the investigator) owns diagnosis adjudication + state');
+
+// ── Skill-followability: documented CLI enum values must be real ─────────────
+// A packaged skill or agent that documents an invalid cow-state value teaches
+// the controller a command that fails at runtime (`invalid --status`). Every
+// `<a|b|c>` / `(a|b|c)` value list adjacent to a cow-state flag must be a
+// subset of the enum exported by cow-state-core.mjs. The pattern is
+// conservative: only bracketed lists of two or more plain tokens are checked.
+{
+  const ENUM_LIST_RE = (flag) => new RegExp(`${flag}\\s*[<(]\`?([a-z0-9-]+(?:\\s*[|/]\\s*[a-z0-9-]+)+)\`?[>)]`, 'g');
+  const FLAG_ENUMS = [
+    ['root-cause --status', ROOTCAUSE_STATUS],
+    ['block --reason', BLOCK_CODES],
+    ['transition --phase', STATE_PHASES],
+    ['route --discovery', DISCOVERY_ROUTES],
+    ['route --implementation', IMPLEMENTATION_ROUTES],
+    ['--commit-policy', COMMIT_POLICIES],
+  ];
+  const followFiles = walk(skillsDir).concat(isDir(agentsDir) ? walk(agentsDir) : []).filter((f) => f.endsWith('.md'));
+  let followLists = 0;
+  for (const file of followFiles) {
+    const text = read(file);
+    for (const [flag, allowed] of FLAG_ENUMS) {
+      const re = ENUM_LIST_RE(flag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+      let m;
+      while ((m = re.exec(text)) !== null) {
+        followLists += 1;
+        for (const v of m[1].split(/[|/]/).map((x) => x.trim()).filter(Boolean)) {
+          check(allowed.includes(v), `${rel(file)}: documented \`${flag}\` value "${v}" is a real cow-state enum value`);
+        }
+      }
+    }
+  }
+  check(followLists >= 1, 'skill-followability: at least one documented cow-state enum list is under test');
+}
 
 // ── Phase 3A.1: warm-profile boundary + moved-content + safety invariants ────
 check(/Profile validity controls repository intake\. Task uncertainty controls/i.test(readinessRef),

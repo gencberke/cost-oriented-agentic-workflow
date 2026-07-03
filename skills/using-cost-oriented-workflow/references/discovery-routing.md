@@ -72,6 +72,8 @@ fix size out of the discovery decision, and adjudicate whether the reports revea
 independent root causes or one shared root cause — never merge outcomes merely
 because they eventually touch the same file.
 
-Diagnosis adjudication and the `cow-state.mjs root-cause` recording (evidenced /
-partial / requires-reroute / blocked), plus the tracked-instrumentation re-route,
-are owned by `cost-oriented-agentic-workflow:systematic-debugging`.
+Diagnosis adjudication and the `cow-state.mjs root-cause` recording (`--status`
+enum `none|investigating|evidenced|failed`; the investigator's `PARTIAL` maps to
+`investigating`, `BLOCKED` to `failed`, and `REQUIRES_REROUTE` re-routes via
+`transition --phase triage --reroute`), plus the tracked-instrumentation
+re-route, are owned by `cost-oriented-agentic-workflow:systematic-debugging`.
