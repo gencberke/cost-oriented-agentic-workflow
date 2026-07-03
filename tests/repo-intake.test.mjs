@@ -10,11 +10,14 @@ import path from 'path';
 import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
 
+// The real package rules (shared by builder + inspector) — imported directly
+// so this guarantee can never drift from what actually ships.
+import { ALLOW_PREFIX, DENY_PREFIX } from '../scripts/runtime-package-lib.mjs';
+
 const here = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(here, '..');
 const SNAP = path.join(REPO, 'skills/repository-intake/scripts/repo-snapshot.mjs');
 const COW_STATE = path.join(REPO, 'skills/execution-routing/scripts/cow-state.mjs');
-const BUILDER = path.join(REPO, 'scripts/build-runtime-package.mjs');
 
 let fails = 0, passes = 0;
 const check = (cond, msg) => { if (cond) { passes += 1; } else { fails += 1; console.error('FAIL: ' + msg); } };
@@ -199,17 +202,12 @@ function checkProfile(cwd, file) { const r = spawnSync('node', [SNAP, 'check-pro
 {
   check(fs.existsSync(SNAP), 'runtime-path: repo-snapshot.mjs exists at the colocated skills path');
   check(fs.existsSync(COW_STATE), 'runtime-path: cow-state.mjs exists at the colocated skills path');
-  const src = fs.readFileSync(BUILDER, 'utf8');
-  const allow = (src.match(/ALLOW_PREFIX\s*=\s*\[([^\]]*)\]/s) || [])[1] || '';
-  const allowPrefixes = [...allow.matchAll(/'([^']+)'/g)].map((m) => m[1]);
-  const deny = (src.match(/DENY_PREFIX\s*=\s*\[([^\]]*)\]/s) || [])[1] || '';
-  const denyPrefixes = [...deny.matchAll(/'([^']+)'/g)].map((m) => m[1]);
-  check(allowPrefixes.includes('skills/'), 'runtime-path: builder ALLOW_PREFIX includes skills/');
-  check(allowPrefixes.includes('agents/'), 'runtime-path: builder ALLOW_PREFIX includes agents/');
+  check(ALLOW_PREFIX.includes('skills/'), 'runtime-path: package rules ALLOW_PREFIX includes skills/');
+  check(ALLOW_PREFIX.includes('agents/'), 'runtime-path: package rules ALLOW_PREFIX includes agents/');
   const rels = ['skills/repository-intake/scripts/repo-snapshot.mjs', 'skills/execution-routing/scripts/cow-state.mjs'];
   for (const rel of rels) {
-    check(allowPrefixes.some((p) => rel.startsWith(p)), `runtime-path: ${rel} is allowlisted`);
-    check(!denyPrefixes.some((p) => rel.startsWith(p)), `runtime-path: ${rel} is not denylisted`);
+    check(ALLOW_PREFIX.some((p) => rel.startsWith(p)), `runtime-path: ${rel} is allowlisted`);
+    check(!DENY_PREFIX.some((p) => rel.startsWith(p)), `runtime-path: ${rel} is not denylisted`);
   }
 }
 
