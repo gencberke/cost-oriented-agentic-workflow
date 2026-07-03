@@ -526,7 +526,6 @@ const tddText = read(path.join(skillsDir, 'test-driven-development', 'SKILL.md')
 const implementerText = read(path.join(skillsDir, 'execution-routing', 'implementer-prompt.md'));
 const cowReviewerText = read(path.join(root, 'agents', 'cow-reviewer.md'));
 const securityLensPath = path.join(skillsDir, 'requesting-review', 'references', 'security-lens.md');
-const hookText = read(path.join(root, 'hooks/session-start'));
 
 check(/PLAN_FILE:.*MODE:.*COMMIT_POLICY:.*BASE_BRANCH:.*MERGE_BASE_SHA:/s.test(executionText),
   'execution-routing pins the complete run-identity ledger header');
@@ -541,7 +540,11 @@ check(/BASE_BRANCH.*refs\/heads\/.*MERGE_BASE_SHA\^\{commit\}.*stop/s.test(finis
 check(/detached HEAD.*never offer local merge/i.test(finishingText),
   'finishing removes local merge from detached HEAD');
 
-check(hookText.includes('COW_RESUME_POINTER_V1') || hookText.includes('cow-hook.mjs'), 'SessionStart hook invokes cow-hook or emits the resume pointer sentinel');
+// The deprecated hooks/session-start and hooks/run-hook.cmd wrappers were
+// removed; SessionStart behavior lives in cow-hook.mjs and is covered by
+// tests/hooks.test.mjs. No wrapper file may reappear.
+check(!fs.existsSync(path.join(root, 'hooks/session-start')) && !fs.existsSync(path.join(root, 'hooks/run-hook.cmd')),
+  'deprecated hook wrapper scripts stay removed (hooks/session-start, hooks/run-hook.cmd)');
 check(/COW_ENTRY_INJECTED.*absent.*exactly once.*present.*do not reload/s.test(writingText),
   'writing-plans makes entry loading idempotent after compaction');
 check(/green checkpoint.*controller owns controlled commits/s.test(tddText),

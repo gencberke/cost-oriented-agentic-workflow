@@ -72,7 +72,7 @@ required = [
     "README.md", "commands/cost-oriented-agentic-workflow.md", "commands/production.md",
     "skills/using-cost-oriented-workflow/SKILL.md", "skills/execution-routing/SKILL.md",
     "skills/systematic-debugging/SKILL.md", "skills/writing-plans/SKILL.md",
-    "hooks/session-start", "tests/validate-structure.mjs", "tests/scripts.test.sh",
+    "tests/validate-structure.mjs", "tests/scripts.test.sh",
     "tests/eval/run-tests.sh", "tests/eval/test_eval.py", "tests/eval/routing/README.md",
     "skills/execution-routing/scripts/cow-workspace",
     "skills/execution-routing/scripts/task-brief",
@@ -93,7 +93,6 @@ ok(versions == {version}, "three version declarations all == %s (saw %s)" % (ver
 
 # Required executables carry Unix executable metadata (create_system Unix + +x).
 required_exec = [
-    "hooks/session-start",
     "skills/execution-routing/scripts/cow-workspace",
     "skills/execution-routing/scripts/task-brief",
     "skills/execution-routing/scripts/review-package",

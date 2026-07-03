@@ -7,7 +7,11 @@ SCRIPTS_DIR="$(cd "$(dirname "$0")/../skills/execution-routing/scripts" && pwd)"
 COW="$SCRIPTS_DIR/cow-workspace"
 TB="$SCRIPTS_DIR/task-brief"
 RP="$SCRIPTS_DIR/review-package"
-HOOK="$(cd "$SCRIPTS_DIR/../../.." && pwd)/hooks/session-start"
+# The SessionStart hook is cow-hook.mjs directly (the legacy bash wrapper was
+# removed); this suite keeps covering the same absent/active behaviors. The
+# hook reads stdin to EOF, so close it explicitly — an inherited open pipe
+# (npm, CI, background shells) would otherwise block forever.
+HOOK() { node "$SCRIPTS_DIR/cow-hook.mjs" session-start < /dev/null; }
 fails=0
 check() { if [ "$1" = ok ]; then printf 'PASS: %s\n' "$2"; else printf 'FAIL: %s\n' "$2"; fails=$((fails + 1)); fi; }
 
@@ -16,7 +20,7 @@ OUT=$(mktemp -d)
 trap 'rm -rf "$REPO" "$OUT"' EXIT
 
 # ---- SessionStart / compact anchor (Absent State) ----
-"$HOOK" > "$OUT/hook_absent.json"
+HOOK > "$OUT/hook_absent.json"
 [ ! -s "$OUT/hook_absent.json" ] && r=ok || r=no
 check "$r" "session-start: absent state emits no stdout"
 
@@ -28,7 +32,7 @@ git config core.autocrlf false
 
 # ---- SessionStart / compact anchor (Active Valid State) ----
 node "$SCRIPTS_DIR/cow-state.mjs" init --mode standard >/dev/null 2>&1
-"$HOOK" > "$OUT/hook_active.json"
+HOOK > "$OUT/hook_active.json"
 node -e 'JSON.parse(require("fs").readFileSync(process.argv[1], "utf8"))' "$OUT/hook_active.json" >/dev/null 2>&1 && r=ok || r=no
 check "$r" "session-start: emits valid JSON"
 grep -q COW_RESUME_POINTER_V1 "$OUT/hook_active.json" 2>/dev/null && r=ok || r=no

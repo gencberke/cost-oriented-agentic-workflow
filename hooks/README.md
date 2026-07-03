@@ -11,14 +11,14 @@ If you instead want the workflow loaded automatically in **every** session
 1. Copy `hooks.json.example` to `hooks.json` in this directory.
 2. Reinstall / re-enable the plugin so Claude Code picks up the hook.
 
-The hook (`session-start`) emits a compact `COW_RESUME_POINTER_V1` pointer on
-`startup | clear | compact`. The pointer names the entry skill and tells the
-session to re-anchor from Git, the plan, the ledger, and workflow state.
-`run-hook.cmd` is a polyglot wrapper that runs the bash script on Windows (via
-Git Bash) and Unix alike. With the hook enabled, standard mode is the default;
-switch a given session to production by running
-`/cost-oriented-agentic-workflow:production`, which writes `MODE: production`
-into the plan/task file's anchor header.
+The SessionStart hook (`cow-hook.mjs session-start`) emits a compact
+`COW_RESUME_POINTER_V1` pointer on `startup | resume | clear | compact`. The
+pointer names the entry skill and tells the session to re-anchor from Git, the
+plan, the ledger, and workflow state. Both example configs invoke the Node
+hook script directly — no shell wrapper is needed on Windows or Unix. With the
+hook enabled, standard mode is the default; switch a given session to
+production by running `/cost-oriented-agentic-workflow:production`, which
+writes `MODE: production` into the plan/task file's anchor header.
 
 ## Shadow vs. enforcement mode
 

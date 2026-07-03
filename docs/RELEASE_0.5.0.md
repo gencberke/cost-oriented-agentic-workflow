@@ -26,8 +26,6 @@ Included categories:
 - `agents/cow-implementer.md`
 - `agents/cow-repo-investigator.md`
 - `agents/cow-reviewer.md`
-- `hooks/session-start`
-- `hooks/run-hook.cmd`
 - `hooks/README.md`
 - `hooks/hooks.json.example`
 - `hooks/hooks.enforcement.json.example`

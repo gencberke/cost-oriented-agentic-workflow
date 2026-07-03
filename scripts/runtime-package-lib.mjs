@@ -12,8 +12,6 @@ import crypto from 'crypto';
 export const ALLOW_EXACT = new Set([
   '.claude-plugin/plugin.json',
   '.claude-plugin/marketplace.json',
-  'hooks/session-start',
-  'hooks/run-hook.cmd',
   'hooks/README.md',
   'hooks/hooks.json.example',
   'hooks/hooks.enforcement.json.example',
@@ -38,8 +36,6 @@ export const REQUIRED = [
   'skills/execution-routing/scripts/cow-hook.mjs',
   'skills/execution-routing/scripts/cow-state-core.mjs',
   'skills/execution-routing/scripts/cow-state.mjs',
-  'hooks/session-start',
-  'hooks/run-hook.cmd',
   'hooks/hooks.json.example',
   'hooks/hooks.enforcement.json.example',
   'README.md',
@@ -48,7 +44,6 @@ export const REQUIRED = [
 
 // Tracked files that must carry the executable bit in the runtime package.
 export const EXEC_REQUIRED = [
-  'hooks/session-start',
   'skills/execution-routing/scripts/cow-workspace',
   'skills/execution-routing/scripts/task-brief',
   'skills/execution-routing/scripts/review-package',

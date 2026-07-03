@@ -75,7 +75,7 @@ check(paths.includes('README.md') && paths.includes('LICENSE'), 'runtime contain
 check(paths.some((p) => p.startsWith('commands/')), 'runtime contains commands');
 check(paths.some((p) => p.startsWith('skills/')), 'runtime contains skills');
 check(paths.filter((p) => p.startsWith('agents/') && p.endsWith('.md')).length === 4, 'runtime contains exactly four agents');
-check(paths.includes('hooks/session-start') && paths.includes('hooks/run-hook.cmd'), 'runtime contains hook wrappers');
+check(!paths.includes('hooks/session-start') && !paths.includes('hooks/run-hook.cmd'), 'deprecated hook wrappers are not packaged');
 check(paths.includes('hooks/hooks.json.example') && paths.includes('hooks/hooks.enforcement.json.example'), 'runtime contains inactive hook examples');
 check(!paths.includes('hooks/hooks.json'), 'active hooks/hooks.json is not packaged');
 check(!paths.some((p) => /^(tests|docs|scripts|dist|node_modules|\.git)\//.test(p)), 'development-only directories do not leak into runtime');
