@@ -68,7 +68,7 @@ skill defines its contract —
 `git` unavailable / not a repo → the helper exits non-zero; fall back to a minimal
 scoped map and record the profile absent. A bad manifest never aborts the snapshot.
 
-> Phase 3A: intake is **live** — the entry skill establishes repository readiness on
+> Intake is **live**: the entry skill establishes repository readiness on
 > activation (`using-cost-oriented-workflow/references/repository-readiness.md`), and
-> profile acceptance is mandatory via `repo-profile.mjs`. Implementation routing is
-> still the legacy path.
+> profile acceptance is mandatory via `repo-profile.mjs`. `execution-routing`
+> selects the implementation route separately.

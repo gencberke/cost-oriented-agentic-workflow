@@ -41,8 +41,8 @@ STATUS: REQUIRES_REROUTE
 REROUTE_TRIGGER: TRACKED_DIAGNOSTIC_INSTRUMENTATION
 ```
 
-Do not perform the edit. (Deterministic Bash enforcement arrives in a later hook
-phase; in Phase 2 this is a contract you keep.)
+Do not perform the edit. (Hook enforcement may back this up when enabled; the
+contract binds regardless.)
 
 ## Hypotheses
 

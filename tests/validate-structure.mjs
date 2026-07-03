@@ -580,6 +580,16 @@ check(read(path.join(skillsDir, 'requesting-review', 'SKILL.md')).includes('refe
     .map(rel);
   check(gpFiles.length === 0,
     `no packaged prose instructs a general-purpose dispatch (${gpFiles.join(', ') || 'clean'})`);
+
+  // Packaged prose is read by installed-runtime users who have no phase
+  // ledger — dev-internal phase annotations that contradict shipped behavior
+  // must not survive into skills or agents.
+  const STALE_PHRASES = ['once it ships', 'still the legacy path', 'in Phase 2 this is a contract'];
+  const staleHits = walk(skillsDir).concat(isDir(agentsDir) ? walk(agentsDir) : [])
+    .filter((f) => f.endsWith('.md'))
+    .flatMap((f) => STALE_PHRASES.filter((p) => read(f).includes(p)).map((p) => `${rel(f)}: "${p}"`));
+  check(staleHits.length === 0,
+    `packaged prose carries no known-stale phase annotations (${staleHits.join('; ') || 'clean'})`);
 }
 check(/this turn.*HEAD, index, and working tree are unchanged/s.test(verificationText)
   && /merge always requires a new run/i.test(verificationText),
