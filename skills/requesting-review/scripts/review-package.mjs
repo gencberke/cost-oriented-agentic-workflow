@@ -180,6 +180,11 @@ function main() {
     } catch (err) {
       die(err.message, 2);
     }
+    // This helper NEVER modifies source: the descriptor is a run artifact, so
+    // the output must stay inside the self-ignored workflow workspace.
+    if (!relOut.startsWith('.cost-oriented-agentic-workflow/')) {
+      die(`--output must stay inside .cost-oriented-agentic-workflow/ ("${flags.output}"); this helper never writes source paths.`, 2);
+    }
     const pkg = { schemaVersion: SCHEMA_VERSION, reviewScope: flags.scope, reviewTargetId: flags.target, mode: flags.mode, risk: flags.risk };
     const set = (k, v) => { if (v !== undefined && v !== null) pkg[k] = v; };
     const arr = (k, v) => { if (v && v.length) pkg[k] = v; };

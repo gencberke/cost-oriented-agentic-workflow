@@ -214,6 +214,17 @@ for (const [label, obj] of rejectCases) {
   }
   const newRootFiles = fs.readdirSync(dir).filter((f) => !beforeRootFiles.has(f));
   check(newRootFiles.length === 0, 'package build: rejected paths do not create unrelated files in the repo root');
+
+  // Repo-relative but outside the workflow workspace: the helper never writes
+  // source paths, so a tracked file or a new repo-root file must be refused.
+  const beforeA = fs.readFileSync(path.join(dir, 'src', 'a.js'), 'utf8');
+  const rSrc = runBuild('src/a.js');
+  check(rSrc.status !== 0, 'package build: rejected tracked-source --output (src/a.js) exits non-zero');
+  check(fs.readFileSync(path.join(dir, 'src', 'a.js'), 'utf8') === beforeA,
+    'package build: rejected tracked-source --output does not overwrite the file');
+  const rReadme = runBuild('README.md');
+  check(rReadme.status !== 0, 'package build: rejected repo-root --output (README.md) exits non-zero');
+  check(!fs.existsSync(path.join(dir, 'README.md')), 'package build: rejected repo-root --output creates no file');
 }
 
 // ── summary ──────────────────────────────────────────────────────────────────
