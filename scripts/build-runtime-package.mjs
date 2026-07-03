@@ -14,75 +14,20 @@
 
 import fs from 'fs';
 import path from 'path';
-import crypto from 'crypto';
 import { execFileSync } from 'child_process';
 import { fileURLToPath } from 'url';
 
-// ── Runtime allowlist / denylist ────────────────────────────────────────────
-const ALLOW_EXACT = new Set([
-  '.claude-plugin/plugin.json',
-  '.claude-plugin/marketplace.json',
-  'hooks/session-start',
-  'hooks/run-hook.cmd',
-  'hooks/README.md',
-  'hooks/hooks.json.example',
-  'hooks/hooks.enforcement.json.example',
-  'README.md',
-  'LICENSE',
-]);
-const ALLOW_PREFIX = ['agents/', 'commands/', 'skills/'];
-
-// Files that must be present for a usable runtime package.
-const REQUIRED = [
-  '.claude-plugin/plugin.json',
-  '.claude-plugin/marketplace.json',
-  'agents/cow-debug-investigator.md',
-  'agents/cow-implementer.md',
-  'agents/cow-repo-investigator.md',
-  'agents/cow-reviewer.md',
-  'commands/cost-oriented-agentic-workflow.md',
-  'commands/production.md',
-  'hooks/README.md',
-  'skills/using-cost-oriented-workflow/SKILL.md',
-  'skills/execution-routing/SKILL.md',
-  'skills/execution-routing/scripts/cow-hook.mjs',
-  'skills/execution-routing/scripts/cow-state-core.mjs',
-  'skills/execution-routing/scripts/cow-state.mjs',
-  'hooks/session-start',
-  'hooks/run-hook.cmd',
-  'hooks/hooks.json.example',
-  'hooks/hooks.enforcement.json.example',
-  'README.md',
-  'LICENSE',
-];
-
-// Tracked files that must carry the executable bit in the runtime package.
-const EXEC_REQUIRED = [
-  'hooks/session-start',
-  'skills/execution-routing/scripts/cow-workspace',
-  'skills/execution-routing/scripts/task-brief',
-  'skills/execution-routing/scripts/review-package',
-];
-
-const DENY_PREFIX = [
-  '.git/', '.github/', '.cost-oriented-agentic-workflow/', 'tests/', 'docs/',
-  'scripts/', 'dist/', 'node_modules/', 'analyze-apply-project-rules/',
-];
-const DENY_EXACT = new Set([
-  'package.json', 'package-lock.json', 'CHANGELOG.md', '.gitignore',
-  'hooks/hooks.json',
-]);
-const DENY_PATTERNS = [/^phase_.*\.md$/i, /^.*_walkthrough\.md$/i];
-
-const isAllowed = (p) => ALLOW_EXACT.has(p) || ALLOW_PREFIX.some((pre) => p.startsWith(pre));
-const isDenied = (p) => DENY_EXACT.has(p) || DENY_PREFIX.some((pre) => p.startsWith(pre)) || DENY_PATTERNS.some((re) => re.test(p));
-const isSafePackagePath = (p) => p && !path.posix.isAbsolute(p) && !p.split('/').includes('..') && !p.includes('\\');
-const PERSONAL_PATH_RE = /\b[A-Za-z]:\\Users\\|\/c\/Users\/|\/Users\/|gencberke/i;
+// The allowlist/denylist/REQUIRED/EXEC_REQUIRED rules, path safety,
+// PERSONAL_PATH_RE, hashing, directory walking, and ZIP reading are shared
+// with the inspector via one module so the two can never drift apart.
+import {
+  isAllowed, isDenied, isSafePackagePath, PERSONAL_PATH_RE,
+  REQUIRED, EXEC_REQUIRED, sha256, walkFiles, readZipEntries,
+} from './runtime-package-lib.mjs';
 
 // ── Small utilities ─────────────────────────────────────────────────────────
 const here = path.dirname(fileURLToPath(import.meta.url));
 const die = (msg) => { console.error(`build-runtime-package: ERROR: ${msg}`); process.exit(1); };
-const sha256 = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
 const toGit = (p) => p.split(path.sep).join('/');
 
 function git(args, opts = {}) {
@@ -104,40 +49,6 @@ function resolveRepoRoot() {
 
 function readJSON(rel) {
   return JSON.parse(fs.readFileSync(path.join(REPO, rel), 'utf8'));
-}
-
-function walkFiles(root, base = root, acc = []) {
-  for (const e of fs.readdirSync(root, { withFileTypes: true })) {
-    const abs = path.join(root, e.name);
-    if (e.isDirectory()) walkFiles(abs, base, acc);
-    else acc.push(toGit(path.relative(base, abs)));
-  }
-  return acc;
-}
-
-// Minimal ZIP central-directory reader (no zip64; sufficient for git-archive
-// output). Returns [{ name, unixMode }] for every entry.
-function readZipEntries(buf) {
-  const EOCD = 0x06054b50;
-  let eocd = -1;
-  for (let i = buf.length - 22; i >= 0; i--) {
-    if (buf.readUInt32LE(i) === EOCD) { eocd = i; break; }
-  }
-  if (eocd < 0) die('ZIP end-of-central-directory record not found.');
-  const total = buf.readUInt16LE(eocd + 10);
-  let off = buf.readUInt32LE(eocd + 16);
-  const out = [];
-  for (let n = 0; n < total; n++) {
-    if (buf.readUInt32LE(off) !== 0x02014b50) die('ZIP central-directory record malformed.');
-    const externalAttr = buf.readUInt32LE(off + 38);
-    const nameLen = buf.readUInt16LE(off + 28);
-    const extraLen = buf.readUInt16LE(off + 30);
-    const commentLen = buf.readUInt16LE(off + 32);
-    const name = buf.toString('utf8', off + 46, off + 46 + nameLen);
-    out.push({ name, unixMode: (externalAttr >>> 16) & 0xffff });
-    off += 46 + nameLen + extraLen + commentLen;
-  }
-  return out;
 }
 
 function validateMarkdownLinks(relPath, content, allowedPaths) {
@@ -330,7 +241,9 @@ dirExecOk
 
 // ZIP: created, entries == manifest, no forbidden, exec bits preserved, checksum present
 let zipOk = fs.existsSync(zipPath) && zipBuf.length > 0;
-const zipEntries = readZipEntries(zipBuf);
+let zipEntries;
+try { zipEntries = readZipEntries(zipBuf); }
+catch (e) { die(e.message); }
 const zipFiles = zipEntries.filter((e) => !e.name.endsWith('/')).map((e) => e.name).sort();
 const zipMatches = JSON.stringify(zipFiles) === JSON.stringify(manifestPaths);
 const zipNoForbidden = zipFiles.every((n) => !isDenied(n));

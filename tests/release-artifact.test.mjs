@@ -113,6 +113,47 @@ check(readmeEntry && modifiedReadmeHash !== readmeEntry.sha256, 'checksum change
 const inspect = run([process.execPath, 'scripts/inspect-runtime-package.mjs', '--out', out1]);
 check(inspect.status === 0 && /"agentCount": 4/.test(inspect.stdout), 'runtime inspector accepts generated package');
 
+// Inspector must reject corrupted/incomplete artifacts. Each scenario corrupts
+// a fresh copy of the generated package so failures cannot mask each other.
+function corruptCase(label, mutate) {
+  if (!fs.existsSync(runtimeDir)) {
+    check(false, `inspector rejects ${label} (no generated package to corrupt)`);
+    return;
+  }
+  const copyRoot = tmpdir();
+  fs.cpSync(out1, copyRoot, { recursive: true });
+  mutate(copyRoot, path.join(copyRoot, base));
+  const r = run([process.execPath, 'scripts/inspect-runtime-package.mjs', '--out', copyRoot]);
+  check(r.status !== 0, `inspector rejects ${label}`);
+}
+corruptCase('tampered runtime file bytes', (root, dir) => {
+  fs.appendFileSync(path.join(dir, 'skills/execution-routing/scripts/cow-hook.mjs'), '\n// tampered\n');
+});
+corruptCase('deleted required runtime file', (root, dir) => {
+  fs.rmSync(path.join(dir, 'LICENSE'));
+});
+corruptCase('extra file injected into runtime dir', (root, dir) => {
+  fs.writeFileSync(path.join(dir, 'extra.txt'), 'x\n');
+});
+corruptCase('falsified manifest fileCount', (root) => {
+  const mp = path.join(root, `${base}.manifest.json`);
+  const m = readJSON(mp);
+  m.fileCount = 999;
+  fs.writeFileSync(mp, JSON.stringify(m, null, 2) + '\n');
+});
+corruptCase('injected active hooks.json', (root, dir) => {
+  fs.writeFileSync(path.join(dir, 'hooks/hooks.json'), '{"hooks":{}}\n');
+});
+corruptCase('unsafe manifest path', (root) => {
+  const mp = path.join(root, `${base}.manifest.json`);
+  const m = readJSON(mp);
+  m.files[0] = { ...m.files[0], path: '../evil.md' };
+  fs.writeFileSync(mp, JSON.stringify(m, null, 2) + '\n');
+});
+corruptCase('zip bytes changed after checksum', (root) => {
+  fs.appendFileSync(path.join(root, `${base}.zip`), Buffer.from([0x00]));
+});
+
 fs.writeFileSync(path.join(out1, 'keep.txt'), 'keep\n');
 const rebuild = run([process.execPath, 'scripts/build-runtime-package.mjs', '--out', out1]);
 check(rebuild.status === 0 && fs.existsSync(path.join(out1, 'keep.txt')), 'existing output root is handled narrowly');

@@ -215,9 +215,22 @@ check(/No memory or learn features/.test(phase6hText) && /No output shaping/.tes
 // ── 2. Every skill: frontmatter, name == dir, description present & bounded ──
 // Phase 7A release-candidate package and gate structure
 const runtimeBuilderPath = path.join(root, 'scripts/build-runtime-package.mjs');
-const runtimeBuilderText = fs.existsSync(runtimeBuilderPath) ? read(runtimeBuilderPath) : '';
+const runtimeLibPath = path.join(root, 'scripts/runtime-package-lib.mjs');
+const runtimeInspectorPath = path.join(root, 'scripts/inspect-runtime-package.mjs');
+// The package rules live in one shared module; the token checks below run
+// against builder + lib together so the extraction cannot silently drop a rule.
+const runtimeBuilderOnlyText = fs.existsSync(runtimeBuilderPath) ? read(runtimeBuilderPath) : '';
+const runtimeLibText = fs.existsSync(runtimeLibPath) ? read(runtimeLibPath) : '';
+const runtimeInspectorText = fs.existsSync(runtimeInspectorPath) ? read(runtimeInspectorPath) : '';
+const runtimeBuilderText = runtimeBuilderOnlyText + '\n' + runtimeLibText;
 check(fs.existsSync(path.join(root, 'scripts/run-bash.mjs')), 'Phase 7A: cross-platform Bash wrapper exists');
-check(fs.existsSync(path.join(root, 'scripts/inspect-runtime-package.mjs')), 'Phase 7A: runtime package inspector exists');
+check(fs.existsSync(runtimeLibPath), 'Phase 7A: shared runtime-package rule module exists');
+check(fs.existsSync(runtimeInspectorPath), 'Phase 7A: runtime package inspector exists');
+check(runtimeBuilderOnlyText.includes('./runtime-package-lib.mjs') && runtimeInspectorText.includes('./runtime-package-lib.mjs'),
+  'Phase 7A: builder and inspector import the shared runtime-package rule module');
+check(['fileCount', 'walkFiles', 'sha256(', 'readZipEntries', 'EXEC_REQUIRED', 'PERSONAL_PATH_RE', 'REQUIRED']
+  .every((t) => runtimeInspectorText.includes(t)),
+  'Phase 7A: inspector verifies fileCount, directory contents, hashes, exec modes, required files, and ZIP entries');
 check(fs.existsSync(path.join(root, 'scripts/release-gate.mjs')), 'Phase 7A: release gate script exists');
 check(fs.existsSync(path.join(root, 'scripts/version-finalize.mjs')), 'Phase 7A: version finalization dry-run script exists');
 check(fs.existsSync(path.join(root, 'tests/release-artifact.test.mjs')), 'Phase 7A: Node release artifact test exists');
