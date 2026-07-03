@@ -3,7 +3,8 @@
 Use this template when delegating a unit to a writer subagent.
 
 ```
-Subagent (general-purpose):
+Subagent (exact scoped dispatch — never automatic selection):
+  subagent_type: cost-oriented-agentic-workflow:cow-implementer
   description: "Implement Task N: [task name]"
   model: [MODEL — REQUIRED: writer = Sonnet, high effort. Use an Opus subagent
          ONLY for a very large or genuinely complex generation in production

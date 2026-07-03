@@ -524,8 +524,8 @@ const finishingText = read(path.join(skillsDir, 'finishing-a-development-branch'
 const verificationText = read(path.join(skillsDir, 'verification-before-completion', 'SKILL.md'));
 const tddText = read(path.join(skillsDir, 'test-driven-development', 'SKILL.md'));
 const implementerText = read(path.join(skillsDir, 'execution-routing', 'implementer-prompt.md'));
-const taskReviewerText = read(path.join(skillsDir, 'execution-routing', 'task-reviewer-prompt.md'));
-const wholeReviewerText = read(path.join(skillsDir, 'requesting-review', 'code-reviewer.md'));
+const cowReviewerText = read(path.join(root, 'agents', 'cow-reviewer.md'));
+const securityLensPath = path.join(skillsDir, 'requesting-review', 'references', 'security-lens.md');
 const hookText = read(path.join(root, 'hooks/session-start'));
 
 check(/PLAN_FILE:.*MODE:.*COMMIT_POLICY:.*BASE_BRANCH:.*MERGE_BASE_SHA:/s.test(executionText),
@@ -552,24 +552,34 @@ check(/Never commit or stage.*COMMIT_POLICY.*metadata/s.test(implementerText),
 check(/at most 8 lines/i.test(implementerText) && /test count/i.test(implementerText)
   && /never full logs/i.test(implementerText),
   'implementer output and full-report evidence are bounded');
-for (const [label, text] of [['task reviewer', taskReviewerText], ['whole reviewer', wholeReviewerText]]) {
-  check(/Return every valid\s+Critical and Important\s+finding/s.test(text)
-    && /at most the 3\s+highest-impact Minor/s.test(text)
-    && /Strengths are at most one line/i.test(text)
-    && /no preamble,\s+process narration, or closing summary/s.test(text),
-  `${label} preserves C/I findings while bounding low-value output`);
+// The reviewer role is the scoped cow-reviewer agent (the legacy
+// general-purpose reviewer templates were retired); its contract must keep
+// preserving C/I findings while bounding low-value output.
+check(/Return every Critical and Important finding/.test(cowReviewerText)
+  && /cap Minor at 3/.test(cowReviewerText)
+  && /≤ 60 lines/.test(cowReviewerText)
+  && /No\s+prose, chain-of-thought/s.test(cowReviewerText),
+  'cow-reviewer preserves C/I findings while bounding low-value output');
+const securityLensText = fs.existsSync(securityLensPath) ? read(securityLensPath) : '';
+check(/cow-reviewer/.test(securityLensText) && /Authn\/authz/.test(securityLensText)
+  && /Secrets\/tokens/.test(securityLensText) && /Dependencies\/migrations/.test(securityLensText),
+  'security lens reference exists and targets the cow-reviewer dispatch');
+check(read(path.join(skillsDir, 'requesting-review', 'SKILL.md')).includes('references/security-lens.md'),
+  'requesting-review routes security-sensitive review through the security lens reference');
+{
+  const gpFiles = walk(skillsDir)
+    .concat(isDir(agentsDir) ? walk(agentsDir) : [], isDir(cmdDir) ? walk(cmdDir) : [])
+    .filter((f) => f.endsWith('.md') && read(f).includes('Subagent (general-purpose)'))
+    .map(rel);
+  check(gpFiles.length === 0,
+    `no packaged prose instructs a general-purpose dispatch (${gpFiles.join(', ') || 'clean'})`);
 }
-check(wholeReviewerText.includes('[PLAN_FILE]') && wholeReviewerText.includes('[BINDING_CONSTRAINTS]')
-  && !wholeReviewerText.includes('[PLAN_OR_REQUIREMENTS]'),
-  'whole-work reviewer uses plan path plus short binding constraints');
 check(/this turn.*HEAD, index, and working tree are unchanged/s.test(verificationText)
   && /merge always requires a new run/i.test(verificationText),
   'verification reuses only identical-state evidence and re-runs after merge');
 
 const dispatchTemplates = [
   'skills/execution-routing/implementer-prompt.md',
-  'skills/execution-routing/task-reviewer-prompt.md',
-  'skills/requesting-review/code-reviewer.md',
 ];
 // Runtime prose budget, refined for the 0.5.0 control plane (Phase 1).
 //
@@ -603,8 +613,6 @@ const baselineBytes = {
   'skills/using-cost-oriented-workflow/SKILL.md': 13013,
   'skills/execution-routing/SKILL.md': 13248,
   'skills/execution-routing/implementer-prompt.md': 4355,
-  'skills/execution-routing/task-reviewer-prompt.md': 6044,
-  'skills/requesting-review/code-reviewer.md': 4557,
 };
 for (const [file, baseline] of Object.entries(baselineBytes)) {
   const current = Buffer.byteLength(read(path.join(root, file)), 'utf8');

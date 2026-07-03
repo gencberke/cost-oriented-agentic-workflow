@@ -29,7 +29,7 @@ An omitted model silently inherits your expensive controller model. Writer = Son
 
 ## For reviewer prompts: don't pre-judge
 
-Never tell a reviewer what *not* to flag, and never pre-rate a finding's severity. A human decision (e.g. "we deliberately set `verified=true` on register") goes in as a **binding requirement to check against** — write "Binding decision: X — review the implementation against it," never "X is intentional, do NOT flag it." The reviewer stays free to flag a *bad implementation* of the decision; you only remove its license to re-litigate the decision itself. The short binding Global Constraints go inline as the attention lens (and travel with the brief via `task-brief`); the process rules already live in the reviewer template.
+Never tell a reviewer what *not* to flag, and never pre-rate a finding's severity. A human decision (e.g. "we deliberately set `verified=true` on register") goes in as a **binding requirement to check against** — write "Binding decision: X — review the implementation against it," never "X is intentional, do NOT flag it." The reviewer stays free to flag a *bad implementation* of the decision; you only remove its license to re-litigate the decision itself. The short binding Global Constraints go inline as the attention lens (and travel with the brief via `task-brief`); the reviewer's process rules live in the `cow-reviewer` agent contract.
 
 ## The return contract
 

@@ -120,6 +120,6 @@ The per-unit loop gates each task in isolation; it does not catch cross-unit pro
 
 - [implementation-routing.md](references/implementation-routing.md), [delegated-execution.md](references/delegated-execution.md), [implementation-report.md](references/implementation-report.md)
 - [review-routing.md](references/review-routing.md), [review-package.md](references/review-package.md), [review-adjudication.md](references/review-adjudication.md), [remediation-and-rereview.md](references/remediation-and-rereview.md)
-- [implementer-prompt.md](implementer-prompt.md), [task-reviewer-prompt.md](task-reviewer-prompt.md) (legacy reviewer template; superseded by cow-reviewer)
+- [implementer-prompt.md](implementer-prompt.md) (the cow-implementer dispatch prompt body)
 
 **Related:** preparing-subagent-prompts (contract packaging) | requesting-review (review depth by mode) | receiving-code-review (adjudicate findings before fixing) | verification-before-completion (evidence) | systematic-debugging (root-cause before re-dispatch) | dispatching-parallel-agents (parallel + file ownership) | finishing-a-development-branch (integrate).
