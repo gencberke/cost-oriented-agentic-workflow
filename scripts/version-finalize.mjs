@@ -54,10 +54,26 @@ if (!/\/plugin marketplace add <runtime-package-dir>/.test(readme)) {
   die('README.md must keep the runtime install example version-neutral.');
 }
 
+// Deliberate anti-accidental-bump tripwires: these tests pin the current
+// version as a literal and MUST be updated in the same final-release commit,
+// or the deterministic suite fails after the bump. The dry run verifies each
+// pin still exists so this location list can never go stale silently.
+const TEST_PIN_FILES = ['tests/validate-structure.mjs', 'tests/agent-contracts.test.mjs'];
+for (const f of TEST_PIN_FILES) {
+  let text;
+  try { text = fs.readFileSync(path.join(root, f), 'utf8'); }
+  catch (err) { die(`cannot read version test-pin file ${f}: ${err.message}`); }
+  if (!text.includes(`'${current.plugin}'`)) {
+    die(`${f} no longer pins the current version '${current.plugin}'; update the finalization location list.`);
+  }
+}
+
 const locations = [
   { file: '.claude-plugin/plugin.json', jsonPath: '$.version', from: current.plugin, to: target },
   { file: '.claude-plugin/marketplace.json', jsonPath: `$.plugins[${marketIndex}].version`, from: current.marketplace, to: target },
   { file: 'package.json', jsonPath: '$.version', from: current.package, to: target },
+  { file: 'tests/validate-structure.mjs', kind: 'test-pin', from: current.plugin, to: target },
+  { file: 'tests/agent-contracts.test.mjs', kind: 'test-pin', from: current.plugin, to: target },
   { file: 'CHANGELOG.md', heading: `## [${target}] - Pending`, finalHeading: `## [${target}] - YYYY-MM-DD` },
   { file: 'README.md', installExample: '<runtime-package-dir>', action: 'keep version-neutral' },
   { file: 'runtime manifest', field: 'version', source: '.claude-plugin/plugin.json' },

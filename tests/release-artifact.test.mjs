@@ -178,6 +178,9 @@ check(finalGate.status !== 0 && /LIVE_EVIDENCE_REQUIRED_BEFORE_RELEASE/.test(fin
 const versionDry = run([process.execPath, 'scripts/version-finalize.mjs', '--target', '0.5.0', '--dry-run']);
 check(versionDry.status === 0 && /"targetVersion": "0.5.0"/.test(versionDry.stdout) && /README\.md/.test(versionDry.stdout),
   'final version dry-run locates authoritative version fields and version-neutral README install docs');
+check(/tests\/validate-structure\.mjs/.test(versionDry.stdout) && /tests\/agent-contracts\.test\.mjs/.test(versionDry.stdout)
+  && /"kind": "test-pin"/.test(versionDry.stdout),
+  'final version dry-run lists the deterministic-test version pins');
 
 const mismatchRoot = tmpdir();
 fs.mkdirSync(path.join(mismatchRoot, '.claude-plugin'), { recursive: true });
