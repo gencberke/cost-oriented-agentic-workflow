@@ -62,7 +62,9 @@ export const DENY_PATTERNS = [/^phase_.*\.md$/i, /^.*_walkthrough\.md$/i];
 export const isAllowed = (p) => ALLOW_EXACT.has(p) || ALLOW_PREFIX.some((pre) => p.startsWith(pre));
 export const isDenied = (p) => DENY_EXACT.has(p) || DENY_PREFIX.some((pre) => p.startsWith(pre)) || DENY_PATTERNS.some((re) => re.test(p));
 export const isSafePackagePath = (p) => p && !path.posix.isAbsolute(p) && !p.split('/').includes('..') && !p.includes('\\');
-export const PERSONAL_PATH_RE = /\b[A-Za-z]:\\Users\\|\/c\/Users\/|\/Users\/|gencberke/i;
+// \\{1,2} also catches the JSON-escaped form (C:\\Users\\name) that appears
+// inside string literals in packaged .json/.mjs files.
+export const PERSONAL_PATH_RE = /\b[A-Za-z]:\\{1,2}Users\\{1,2}|\/c\/Users\/|\/Users\/|gencberke/i;
 
 export const sha256 = (buf) => crypto.createHash('sha256').update(buf).digest('hex');
 

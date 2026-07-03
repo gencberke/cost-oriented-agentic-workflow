@@ -8,6 +8,8 @@ import crypto from 'crypto';
 import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
 
+import { PERSONAL_PATH_RE } from '../scripts/runtime-package-lib.mjs';
+
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 let passes = 0;
 let fails = 0;
@@ -94,10 +96,19 @@ for (const f of manifest.files) {
   const abs = path.join(runtimeDir, f.path);
   const buf = fs.existsSync(abs) ? fs.readFileSync(abs) : Buffer.from('');
   if (sha256(buf) !== f.sha256) fileHashesOk = false;
-  if (/\b[A-Za-z]:\\Users\\|\/c\/Users\/|\/Users\/|gencberke/i.test(buf.toString('utf8'))) personalPathsOk = false;
+  if (PERSONAL_PATH_RE.test(buf.toString('utf8'))) personalPathsOk = false;
 }
 check(fileHashesOk, 'manifest per-file hashes match runtime bytes');
 check(personalPathsOk, 'no packaged file contains personal absolute paths');
+
+// The personal-path defense must catch every Windows/POSIX variant, including
+// the JSON-escaped double-backslash form inside packaged string literals.
+check(PERSONAL_PATH_RE.test('C:\\Users\\bob\\project'), 'personal-path regex catches C:\\Users\\<name>');
+check(PERSONAL_PATH_RE.test('C:\\\\Users\\\\bob\\\\project'), 'personal-path regex catches JSON-escaped C:\\\\Users\\\\<name>');
+check(PERSONAL_PATH_RE.test('C:/Users/bob/project'), 'personal-path regex catches C:/Users/<name>');
+check(PERSONAL_PATH_RE.test('/c/Users/bob/project'), 'personal-path regex catches /c/Users/<name>');
+check(PERSONAL_PATH_RE.test('/Users/bob/project'), 'personal-path regex catches /Users/<name>');
+check(!PERSONAL_PATH_RE.test('Users of the plugin configure hooks'), 'personal-path regex ignores plain prose about users');
 
 const enforcementExample = fs.existsSync(path.join(runtimeDir, 'hooks/hooks.enforcement.json.example'))
   ? readJSON(path.join(runtimeDir, 'hooks/hooks.enforcement.json.example'))

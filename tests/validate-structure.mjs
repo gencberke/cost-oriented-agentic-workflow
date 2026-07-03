@@ -308,9 +308,13 @@ const currentDocs = [
   ['docs/architecture/v0.5.0/04-state-machine-and-hook-enforcement.md', hookArchitecture],
   ['docs/architecture/v0.5.0/COW-MASTER-HANDOFF.md', masterHandoff],
 ];
-for (const [docName, docText] of currentDocs) {
-  check(!/C:\\Users\\|\/c\/Users\/gencberke|cost-oriented-agentic-workflow-phase7a/.test(docText),
-    `${docName}: current docs do not hardcode a local checkout path`);
+// No doc may hardcode a local checkout path, a personal path, or the local
+// username — checked generically across ALL docs, not a named subset.
+const LOCAL_PATH_DOC_RE = /[A-Za-z]:\\{1,2}Users\\{1,2}|\/c\/Users\/|\/Users\/[A-Za-z]|gencberke|cost-oriented-agentic-workflow-phase\w+/i;
+const pathCheckDocs = walk(path.join(root, 'docs')).filter((f) => f.endsWith('.md'))
+  .concat([path.join(root, 'README.md'), path.join(root, 'AGENTS.md'), path.join(root, 'hooks', 'README.md')]);
+for (const f of pathCheckDocs) {
+  check(!LOCAL_PATH_DOC_RE.test(read(f)), `${rel(f)}: no hardcoded local checkout, personal path, or username`);
 }
 for (const [docName, docText] of [
   ['AGENTS.md', agentsDoc],
