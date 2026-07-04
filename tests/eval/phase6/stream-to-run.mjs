@@ -53,6 +53,28 @@ function addSubagentModel(arr, agentType, model) {
   arr.push({ agentType, model: isStr(model) ? model : null });
 }
 
+function parseJsonObject(text) {
+  if (!isStr(text)) return null;
+  try {
+    const parsed = JSON.parse(text);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function hookSpecificOutputFromEvent(o) {
+  const direct = o.hookSpecificOutput || (o.hook && o.hook.hookSpecificOutput) || null;
+  if (direct && typeof direct === 'object') return direct;
+  for (const field of ['output', 'stdout']) {
+    const parsed = parseJsonObject(o[field]);
+    const hso = parsed && parsed.hookSpecificOutput;
+    if (hso && typeof hso === 'object') return hso;
+    if (parsed && parsed.permissionDecision) return parsed;
+  }
+  return null;
+}
+
 function sumUsageInto(metrics, usage) {
   if (!usage || typeof usage !== 'object') return;
   // input/output tokens are cumulative per assistant message in stream-json.
@@ -103,18 +125,20 @@ export function parseStream(text, ctx = {}) {
   for (const o of events) {
     // ── final result envelope ───────────────────────────────────────────────
     if (o.type === 'result' || (o.subtype === 'result' && o.result)) {
-      const r = o.result || o;
+      const r = o.result && typeof o.result === 'object' && !Array.isArray(o.result) ? o.result : o;
       finalResult = r;
       if (isNonNegInt(r.duration_ms)) wallDurationMs = r.wallDurationMs ?? r.duration_ms;
       if (isNonNegInt(r.api_duration_ms)) apiDurationMs = r.api_duration_ms;
+      if (isNonNegInt(r.duration_api_ms)) apiDurationMs = r.duration_api_ms;
       if (isInt(r.exit_code)) processExitCodeFromStream = r.exit_code;
       if (r.usage) sumUsageInto(metrics, r.usage);
       if (r.cost_usd != null && isNum(r.cost_usd)) metrics.estimatedCostUsd = r.cost_usd;
+      if (r.total_cost_usd != null && isNum(r.total_cost_usd)) metrics.estimatedCostUsd = r.total_cost_usd;
       continue;
     }
     // ── hook events ─────────────────────────────────────────────────────────
-    if (o.type === 'hook' || o.subtype === 'hook' || (o.hookSpecificOutput)) {
-      const hso = o.hookSpecificOutput || (o.hook && o.hook.hookSpecificOutput) || null;
+    if (o.type === 'hook' || o.subtype === 'hook' || o.subtype === 'hook_response' || (o.hookSpecificOutput)) {
+      const hso = hookSpecificOutputFromEvent(o);
       if (hso && hso.permissionDecision) {
         if (hso.permissionDecision === 'ask') hookAskCount += 1;
         else if (hso.permissionDecision === 'deny') hookDenyCount += 1;

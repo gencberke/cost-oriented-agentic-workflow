@@ -24,9 +24,45 @@ Usage: node cow-hook.mjs <session-start|pre-tool-use|pre-compact> [--decision-mo
 Default decision-mode is shadow. Only the exact value 'enforce' enables enforcement
 (PreToolUse only); shadow emits no stdout and only writes observations.`;
 
+function cleanGitEnv() {
+  const env = { ...process.env };
+  for (const key of Object.keys(env)) {
+    if (key.toUpperCase().startsWith('GIT_')) {
+      delete env[key];
+    }
+  }
+  return env;
+}
+
+function gitCandidates() {
+  const candidates = [];
+  if (process.env.COW_GIT_BINARY) candidates.push(process.env.COW_GIT_BINARY);
+  candidates.push('git');
+  if (process.platform === 'win32') {
+    candidates.push('C:\\Program Files\\Git\\cmd\\git.exe');
+    candidates.push('C:\\Program Files\\Git\\bin\\git.exe');
+  }
+  return [...new Set(candidates)];
+}
+
+function spawnGit(args, opts = {}) {
+  let last = null;
+  for (const candidate of gitCandidates()) {
+    const r = spawnSync(candidate, args, { ...opts, encoding: 'utf8', env: cleanGitEnv() });
+    last = r;
+    if (!r.error || r.error.code !== 'ENOENT') return r;
+  }
+  return last;
+}
+
+function safeDirectoryArg(root) {
+  return `safe.directory=${path.resolve(root).replace(/\\/g, '/')}`;
+}
+
 function getRoot() {
   try {
-    const r = spawnSync('git', ['rev-parse', '--show-toplevel'], { encoding: 'utf8' });
+    const cwd = path.resolve(process.cwd());
+    const r = spawnGit(['-c', safeDirectoryArg(cwd), 'rev-parse', '--show-toplevel']);
     if (r.status === 0 && r.stdout) {
       return path.resolve(r.stdout.trim());
     }
@@ -64,10 +100,7 @@ function isUnderAllowed(relPath, allowedPaths) {
 function isGitTracked(root, relPath) {
   if (!relPath || relPath.startsWith('..')) return false;
   try {
-    const r = spawnSync('git', ['ls-files', '--error-unmatch', '--', relPath], {
-      cwd: root,
-      encoding: 'utf8'
-    });
+    const r = spawnGit(['-c', safeDirectoryArg(root), 'ls-files', '--error-unmatch', '--', relPath], { cwd: root });
     return r.status === 0;
   } catch (e) {
     return false;
