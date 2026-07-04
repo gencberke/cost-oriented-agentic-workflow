@@ -32,12 +32,17 @@ candidate status, see [`RELEASE_0.5.0.md`](RELEASE_0.5.0.md).
   fixtures, and optional Headroom spec. Live evidence remains pending.
 - Release preparation: Phase 7A runtime package allowlist, candidate/final gate
   distinction, package inspection, and final-version dry-run.
+- Phase 7B evidence gate: committed pending manifest and deterministic final
+  evidence validator are present; live Claude model evidence is blocked by
+  authentication failure, so final release remains closed.
 
 ## Current Risks
 
 - Phase 3B.2, Phase 4, Phase 5, and Phase 6 live evidence gates are still open.
 - `release:check:final` must fail with
   `LIVE_EVIDENCE_REQUIRED_BEFORE_RELEASE` until those gates are accepted.
+- `docs/release-evidence/0.5.0/live-evidence.json` is pending evidence, not a
+  final release approval.
 - No token savings or behavior guarantees may be claimed from static tests alone.
 - No active `hooks/hooks.json` may ship in the source tree or runtime package.
 - Preserve unrelated dirty or untracked work in any checkout you touch.
@@ -45,7 +50,8 @@ candidate status, see [`RELEASE_0.5.0.md`](RELEASE_0.5.0.md).
 ## Next Work
 
 1. Run and record the deferred live evidence matrix.
-2. Accept or reject enforcement/live behavior based on saved stream evidence.
+2. Resolve Claude Code authentication for non-interactive live smokes, then
+   accept or reject enforcement/live behavior based on saved stream evidence.
 3. Record conservative token/cost thresholds only from measured data.
 4. Perform the final `0.5.0` version bump after final release gates are green.
 

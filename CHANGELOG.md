@@ -17,6 +17,9 @@ prepared but not performed.
 - Candidate/final release gates. Candidate validation may pass with live gates
   pending; final validation refuses release with
   `LIVE_EVIDENCE_REQUIRED_BEFORE_RELEASE`.
+- Phase 7B final-evidence manifest validation. Final release can pass only from
+  committed evidence under `docs/release-evidence/0.5.0/`; ignored raw stream
+  paths are provenance metadata only.
 - Deterministic runtime package inspection, final-version dry-run, and Node
   release artifact tests covering allowlists, SHA-256 checksums, reproducible
   manifests, inactive hook status, and package safety.
@@ -34,6 +37,9 @@ prepared but not performed.
 - Phase 4 live resume/compact evidence.
 - Phase 5 live ASK/DENY evidence.
 - Sufficient Phase 6 behavioral, token, and cost evidence.
+- A 2026-07-04 live attempt remains pending because Claude Code API calls
+  returned `authentication_failed` before model execution. No final-release
+  claim or version bump was made from that attempt.
 
 ## [0.4.2] - 2026-06-24
 

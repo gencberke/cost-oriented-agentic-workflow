@@ -241,6 +241,7 @@ check(['fileCount', 'walkFiles', 'sha256(', 'readZipEntries', 'EXEC_REQUIRED', '
 check(fs.existsSync(path.join(root, 'scripts/release-gate.mjs')), 'Phase 7A: release gate script exists');
 check(fs.existsSync(path.join(root, 'scripts/version-finalize.mjs')), 'Phase 7A: version finalization dry-run script exists');
 check(fs.existsSync(path.join(root, 'tests/release-artifact.test.mjs')), 'Phase 7A: Node release artifact test exists');
+check(fs.existsSync(path.join(root, 'tests/release-gate.test.mjs')), 'Phase 7B: focused release gate test exists');
 check(runtimeBuilderText.includes("'agents/'") && runtimeBuilderText.includes('hooks/hooks.enforcement.json.example'),
   'Phase 7A: runtime builder allowlists agents and the inactive enforcement example');
 check(runtimeBuilderText.includes("'hooks/hooks.json'") && runtimeBuilderText.includes('PERSONAL_PATH_RE'),
@@ -252,6 +253,10 @@ const releaseGateText = fs.existsSync(releaseGatePath) ? read(releaseGatePath) :
 check(/LIVE_EVIDENCE_REQUIRED_BEFORE_RELEASE/.test(releaseGateText)
   && /PHASE_7A_CANDIDATE_GATE_PASSED/.test(releaseGateText),
   'Phase 7A: release gate distinguishes candidate pass from final live-evidence block');
+check(/PHASE_7B_FINAL_EVIDENCE_GATE_PASSED/.test(releaseGateText)
+  && /LIVE_EVIDENCE_INVALID/.test(releaseGateText)
+  && /rawProvenance/.test(releaseGateText),
+  'Phase 7B: release gate validates final evidence manifest and raw provenance shape');
 const versionDryPath = path.join(root, 'scripts/version-finalize.mjs');
 const versionDryText = fs.existsSync(versionDryPath) ? read(versionDryPath) : '';
 check(/dry-run only/.test(versionDryText) && /CHANGELOG\.md must contain a pending/.test(versionDryText),
@@ -311,7 +316,7 @@ const currentDocs = [
 // No doc may hardcode a local checkout path, a personal path, or the local
 // username — checked generically across ALL docs, not a named subset.
 const LOCAL_PATH_DOC_RE = /[A-Za-z]:\\{1,2}Users\\{1,2}|\/c\/Users\/|\/Users\/[A-Za-z]|gencberke|cost-oriented-agentic-workflow-phase\w+/i;
-const pathCheckDocs = walk(path.join(root, 'docs')).filter((f) => f.endsWith('.md'))
+const pathCheckDocs = walk(path.join(root, 'docs')).filter((f) => f.endsWith('.md') || f.endsWith('.json'))
   .concat([path.join(root, 'README.md'), path.join(root, 'AGENTS.md'), path.join(root, 'hooks', 'README.md')]);
 for (const f of pathCheckDocs) {
   check(!LOCAL_PATH_DOC_RE.test(read(f)), `${rel(f)}: no hardcoded local checkout, personal path, or username`);

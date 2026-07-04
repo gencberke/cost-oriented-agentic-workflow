@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "evidenceKind": "phase7b-gate-summary",
+  "gate": "phase5AskDeny",
+  "status": "pending",
+  "decision": "Deterministic enforcement behavior passed, but the live ASK/DENY activation gate remains pending because Claude Code hook-event stream evidence could not run under the current authentication state.",
+  "observations": [
+    "npm.cmd run test:enforcement passed with 130 checks and 0 failures.",
+    "The deterministic suite covers E1-E7 ask/deny behavior and benign zero-false-positive corpus checks.",
+    "Live hook activation through a Claude stream was not accepted in this run."
+  ],
+  "blocker": {
+    "code": "AUTH",
+    "stream": ".cost-oriented-agentic-workflow/eval/phase7b/auth-default-smoke.stream.jsonl"
+  }
+}

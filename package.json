@@ -19,7 +19,7 @@
     "test:eval": "node scripts/run-bash.mjs tests/eval/run-tests.sh",
     "test": "node tests/validate-structure.mjs && node scripts/run-bash.mjs tests/scripts.test.sh",
     "release:build": "node scripts/build-runtime-package.mjs",
-    "test:release": "node tests/release-artifact.test.mjs",
+    "test:release": "node tests/release-gate.test.mjs && node tests/release-artifact.test.mjs",
     "test:hooks": "node tests/hooks.test.mjs",
     "test:enforcement": "node tests/hook-enforcement.test.mjs",
     "test:phase6": "node tests/phase6.test.mjs",

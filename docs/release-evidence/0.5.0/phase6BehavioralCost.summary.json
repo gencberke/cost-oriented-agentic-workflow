@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "evidenceKind": "phase7b-gate-summary",
+  "gate": "phase6BehavioralCost",
+  "status": "pending",
+  "decision": "Behavioral/token/cost evidence could not be accepted because the first live F1 VANILLA run failed at Claude Code authentication before model execution.",
+  "observations": [
+    "F1 VANILLA stream was captured and converted with stream-to-run.mjs.",
+    "validate-run.mjs accepted the resulting run record as schema-valid.",
+    "The run record is classified as PROCESS_FAILURE with retryClassification AUTH.",
+    "The stream reported zero input tokens, zero output tokens, and zero total cost because no model inference completed."
+  ],
+  "blocker": {
+    "code": "AUTH",
+    "runRecord": ".cost-oriented-agentic-workflow/eval/phase7b/F1-vanilla.auth-failed.run.json"
+  }
+}

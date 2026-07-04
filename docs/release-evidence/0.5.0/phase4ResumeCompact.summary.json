@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "evidenceKind": "phase7b-gate-summary",
+  "gate": "phase4ResumeCompact",
+  "status": "pending",
+  "decision": "Live resume/compact evidence could not be accepted because Claude Code API calls returned authentication_failed before a real session lifecycle could run.",
+  "observations": [
+    "No real SessionStart/resume/compact session was completed.",
+    "COW_RESUME_POINTER_V1 remains statically implemented, but live resume behavior was not accepted in this run."
+  ],
+  "blocker": {
+    "code": "AUTH",
+    "stream": ".cost-oriented-agentic-workflow/eval/phase7b/auth-default-smoke.stream.jsonl"
+  }
+}

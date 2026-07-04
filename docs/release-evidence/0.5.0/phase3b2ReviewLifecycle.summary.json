@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "evidenceKind": "phase7b-gate-summary",
+  "gate": "phase3b2ReviewLifecycle",
+  "status": "pending",
+  "decision": "Live reviewer lifecycle evidence could not be accepted because Claude Code API calls returned authentication_failed before model execution.",
+  "observations": [
+    "No live reviewer invocation was completed.",
+    "No review-package to reviewer to review-report validation to remediation to targeted re-review lifecycle was observed in a live Claude session."
+  ],
+  "blocker": {
+    "code": "AUTH",
+    "stream": ".cost-oriented-agentic-workflow/eval/phase7b/auth-default-smoke.stream.jsonl"
+  }
+}

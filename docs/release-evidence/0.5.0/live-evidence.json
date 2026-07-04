@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "release": "0.5.0",
+  "sourceVersion": "0.4.2",
+  "commit": "03924df7383e5192aa0ad41a263defb5de1303a2",
+  "generatedAt": "2026-07-04T08:00:00.000Z",
+  "gates": {
+    "phase3b2ReviewLifecycle": {
+      "status": "pending",
+      "artifacts": [
+        {
+          "path": "docs/release-evidence/0.5.0/phase3b2ReviewLifecycle.summary.json",
+          "kind": "gate-summary-json",
+          "sha256": "d6c96376894d9ed46942fd59c04b8f091f6cc7290f742dc9fa29bd9a167c7bf1"
+        }
+      ]
+    },
+    "phase4ResumeCompact": {
+      "status": "pending",
+      "artifacts": [
+        {
+          "path": "docs/release-evidence/0.5.0/phase4ResumeCompact.summary.json",
+          "kind": "gate-summary-json",
+          "sha256": "625297477c7002fa37ffa69d2fd9ff7bd22c0052af225736cfb17582d6148ed7"
+        }
+      ]
+    },
+    "phase5AskDeny": {
+      "status": "pending",
+      "artifacts": [
+        {
+          "path": "docs/release-evidence/0.5.0/phase5AskDeny.summary.json",
+          "kind": "gate-summary-json",
+          "sha256": "2060e4d6476a72b1085d98a5ac7194f0ea05795eb5d4b4ede442e49dd8b9b577"
+        }
+      ]
+    },
+    "phase6BehavioralCost": {
+      "status": "pending",
+      "artifacts": [
+        {
+          "path": "docs/release-evidence/0.5.0/phase6BehavioralCost.summary.json",
+          "kind": "gate-summary-json",
+          "sha256": "d987b4ec9086a6ab18d15b667e460e35dfe0b315a8cc936dbf878835da3a6605"
+        }
+      ]
+    }
+  },
+  "rawProvenance": [
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F1-vanilla.stream.jsonl",
+      "sha256": "c0b6843ff8a4111fb15c916a089c91609a6b0a21f5c2c97cca5ffe3d22b08582"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/auth-default-smoke.stream.jsonl",
+      "sha256": "ff32966901d2baaf54b74292a8fcce9ecd55e6116881d2b841ceb013fb7252e3"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F1-vanilla.auth-failed.run.json",
+      "sha256": "fb82f9305b2b43403ae102e1c23c8f6d2041cfa0807debdde257490fbf2c60d7"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/phase5-enforcement-tests.log",
+      "sha256": "cd59356d6a5e659a6a702217a227629bcd760e5476b4f0714e61caa97060686a"
+    }
+  ]
+}

@@ -151,6 +151,35 @@
 - Windows Bash suites now go through a Node wrapper that prefers Git Bash, while
   the release package test itself is Node-based.
 
+## 2026-07-04 - Phase 7B live evidence attempt: final release remains blocked
+
+- Baseline matched the Phase 7B expectation: `npm.cmd run check` passed with
+  467 checks, `npm.cmd run release:check:candidate` passed, and
+  `npm.cmd run release:check:final` failed with
+  `LIVE_EVIDENCE_REQUIRED_BEFORE_RELEASE`.
+- Live Claude Code model evidence could not be accepted. The F1 VANILLA smoke
+  and a minimal auth confirmation smoke both reached Claude Code stream-json
+  output but stopped before model execution with `authentication_failed`.
+  Token and completed-model cost numbers were zero.
+- The F1 auth-failed stream was converted with
+  `tests/eval/phase6/stream-to-run.mjs` and the resulting run record validated
+  with `tests/eval/phase6/validate-run.mjs`. The record is
+  `PROCESS_FAILURE` with retry classification `AUTH`, not behavioral evidence.
+- Phase 5 deterministic enforcement was re-run with
+  `npm.cmd run test:enforcement`: 130 checks passed, 0 failed. This remains
+  partial support only; the live ASK/DENY hook-event stream was not accepted.
+- The Phase 7B evidence manifest is recorded at
+  `docs/release-evidence/0.5.0/live-evidence.json`. It intentionally keeps all
+  four required final gates pending: Phase 3B.2 review lifecycle, Phase 4
+  resume/compact, Phase 5 ASK/DENY, and Phase 6 behavioral/token/cost.
+- Raw stream provenance is repo-relative only and lives under the ignored
+  `.cost-oriented-agentic-workflow/eval/phase7b/` workspace. The final release
+  gate treats those raw paths and SHA-256 values as provenance metadata; it
+  validates only committed evidence artifacts under `docs/release-evidence/`.
+- Final release remains blocked. No `0.5.0` version bump, tag, push, publish,
+  install, runtime activation, or token-savings/behavior claim is permitted from
+  this run.
+
 ## Legacy decision log note
 
 The sections below preserve the earlier Turkish decision log. Some old pending

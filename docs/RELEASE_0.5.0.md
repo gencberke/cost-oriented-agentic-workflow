@@ -13,6 +13,9 @@ pass. `LIVE EVIDENCE REQUIRED BEFORE FINAL RELEASE`.
 - Final release validation intentionally fails with
   `LIVE_EVIDENCE_REQUIRED_BEFORE_RELEASE`.
 - Version finalization is dry-run only in Phase 7A and targets `0.5.0`.
+- Phase 7B added a committed evidence manifest and deterministic final-evidence
+  validator, but the live gates remain pending because Claude Code API calls
+  returned `authentication_failed` before model execution.
 
 ## Runtime Package Inventory
 
@@ -60,6 +63,10 @@ npm.cmd run release:check:final
 Expected Phase 7A result: fail with
 `LIVE_EVIDENCE_REQUIRED_BEFORE_RELEASE`.
 
+Current Phase 7B result: still fail with
+`LIVE_EVIDENCE_REQUIRED_BEFORE_RELEASE` while
+`docs/release-evidence/0.5.0/live-evidence.json` contains pending gate statuses.
+
 Final version dry-run:
 
 ```text
@@ -78,6 +85,10 @@ Expected result: report all authoritative version locations for the future
 
 No token savings, behavioral guarantees, or enforcement activation may be
 advertised until these gates are accepted.
+
+The 2026-07-04 Phase 7B attempt is recorded in
+`docs/release-evidence/0.5.0/phase7b-summary.md` and `docs/DECISIONS.md`.
+It is not acceptance evidence.
 
 ## Final Release Procedure
 
