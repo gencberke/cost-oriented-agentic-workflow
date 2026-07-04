@@ -3,13 +3,33 @@
   "evidenceKind": "phase7b-gate-summary",
   "gate": "phase3b2ReviewLifecycle",
   "status": "pending",
-  "decision": "Live reviewer lifecycle evidence could not be accepted because Claude Code API calls returned authentication_failed before model execution.",
+  "decision": "Live reviewer lifecycle evidence is not accepted yet. Authentication was refreshed, but the latest hardened F3 run stopped at the Claude session limit before targeted re-review and commit completed.",
   "observations": [
-    "No live reviewer invocation was completed.",
-    "No review-package to reviewer to review-report validation to remediation to targeted re-review lifecycle was observed in a live Claude session."
+    "R3 was a harness/CLI defect: print-mode slash command shorthand returned Unknown command before model work.",
+    "R4 entered a live review flow but used inline controller edits, missing review package/report dispatch fields, and hit the max-budget cap before completion.",
+    "R5 completed a full behavioral review/remediation loop, but it did not use REVIEW_PACKAGE_PATH/REVIEW_REPORT_PATH and its targeted re-review report fails review-report.mjs validation when checked with accepted finding ids.",
+    "After routing hardening, R6 used REVIEW_PACKAGE_PATH and REVIEW_REPORT_PATH for UNIT_REVIEW and the analyzer reported no structural violations, but the run hit the Claude session limit before TARGETED_REREVIEW and final commit completed.",
+    "No Phase 3B.2 evidence is accepted until one live stream shows review package, reviewer invocation, report validation with package, adjudication, remediation, targeted re-review validation with accepted ids, and final gate/commit completion."
+  ],
+  "attempts": [
+    {
+      "label": "F3 R5",
+      "stream": ".cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r5.stream.jsonl",
+      "streamSha256": "e693c6bcbb13a87a4ad2d4d9925eb2dbdf816de5e0f0ea24d2b7eed0aa737a05",
+      "result": "rejected",
+      "reason": "Missing literal review package/report dispatch fields and targeted re-review validation fails with accepted finding ids."
+    },
+    {
+      "label": "F3 R6",
+      "stream": ".cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r6.stream.jsonl",
+      "streamSha256": "d20d421549b7d3569f611a6d86c3c43340849d1c1b562c58407011df4e084544",
+      "result": "pending",
+      "reason": "Review package/report dispatch fields were observed and analyzer violations were zero, but the session limit stopped before targeted re-review completion."
+    }
   ],
   "blocker": {
-    "code": "AUTH",
-    "stream": ".cost-oriented-agentic-workflow/eval/phase7b/auth-default-smoke.stream.jsonl"
+    "code": "RATE_LIMIT",
+    "stream": ".cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r6.stream.jsonl",
+    "retryAfter": "2026-07-05T02:00:00+03:00"
   }
 }

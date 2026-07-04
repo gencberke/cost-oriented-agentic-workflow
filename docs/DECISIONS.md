@@ -183,6 +183,23 @@
 - Current docs phrase live hook activation as deferred until evidence accepts
   it. Older Phase 5 entries that say "deferred to Phase 6" are historical
   records, not permission to activate enforcement now.
+
+## 2026-07-04 - Phase 7B: Phase 3B.2 review evidence remains pending
+
+- Authentication was refreshed and F3 review/remediation smokes reached live
+  model execution.
+- R5 completed the intended review/remediation behavior but is rejected as final
+  evidence because it used the raw diff as `REVIEW_PACKAGE` instead of literal
+  `REVIEW_PACKAGE_PATH`/`REVIEW_REPORT_PATH`, and its targeted re-review report
+  fails validation when checked with accepted finding ids.
+- `execution-routing` now makes the review package descriptor fields and
+  targeted accepted-id validation literal in the main skill, with structure
+  checks covering those tripwires.
+- R6 showed the hardened UNIT_REVIEW path with package/report fields and zero
+  analyzer violations, but hit the Claude session limit before targeted
+  re-review and final commit completion.
+- Final release remains blocked; Phase 3B.2 stays pending until a complete
+  hardened F3 lifecycle stream is accepted.
 - Version finalization is dry-run only in this phase. Authoritative locations are
   `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`,
   `package.json`, the version-neutral README install example, runtime manifest

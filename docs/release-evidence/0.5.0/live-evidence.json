@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "release": "0.5.0",
   "sourceVersion": "0.4.2",
-  "commit": "9c7ed37a7d3ac22c68a2d42d8fff0b14d473ee0e",
-  "generatedAt": "2026-07-04T13:18:54.016Z",
+  "commit": "b63d5d4754044c23ec3fdb77eacd671054f35352",
+  "generatedAt": "2026-07-04T18:47:00.000Z",
   "gates": {
     "phase3b2ReviewLifecycle": {
       "status": "pending",
@@ -11,7 +11,7 @@
         {
           "path": "docs/release-evidence/0.5.0/phase3b2ReviewLifecycle.summary.json",
           "kind": "gate-summary-json",
-          "sha256": "d6c96376894d9ed46942fd59c04b8f091f6cc7290f742dc9fa29bd9a167c7bf1"
+          "sha256": "67e35ab021277d36e861856eb7342d6621b04672a75be676c13bfa3fa182960b"
         }
       ]
     },
@@ -58,6 +58,22 @@
     {
       "path": ".cost-oriented-agentic-workflow/eval/phase7b/F1-vanilla.auth-failed.run.json",
       "sha256": "fb82f9305b2b43403ae102e1c23c8f6d2041cfa0807debdde257490fbf2c60d7"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r3.stream.jsonl",
+      "sha256": "00d8efa7942a4b4dcc0a8e6dd5d08783e2eafbb1ffcef6b3ca836265dac80ba5"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r4.stream.jsonl",
+      "sha256": "80de15b709ab199320809a06a142df34e33afad6eea2bd766b67bb9b2c8f843d"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r5.stream.jsonl",
+      "sha256": "e693c6bcbb13a87a4ad2d4d9925eb2dbdf816de5e0f0ea24d2b7eed0aa737a05"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r6.stream.jsonl",
+      "sha256": "d20d421549b7d3569f611a6d86c3c43340849d1c1b562c58407011df4e084544"
     },
     {
       "path": ".cost-oriented-agentic-workflow/eval/phase7b/F1-vanilla-r2.stream.jsonl",

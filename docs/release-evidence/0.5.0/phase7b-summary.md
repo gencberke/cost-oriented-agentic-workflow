@@ -26,8 +26,26 @@ behavioral/cost evidence are accepted, but Phase 3B.2 remains pending.
 - F1 VANILLA vs COW_SHADOW was aggregated with 2 valid runs and 0 invalid runs.
   The aggregate rejects any cost-improvement claim because preservation
   assertions are absent.
-- Earlier auth-failed streams remain raw provenance only and are not accepted as
-  successful gate evidence.
+- Phase 3B.2 F3 review/remediation smokes progressed beyond authentication.
+  R5 completed behaviorally but failed the strict package/report and targeted
+  accepted-id validation contract. R6 observed literal review package/report
+  fields with zero analyzer violations, then stopped at the Claude session limit
+  before targeted re-review completion.
+- Earlier auth-failed and incomplete F3 streams remain raw provenance only and
+  are not accepted as successful gate evidence.
+
+## Phase 3B.2 Evidence
+
+- Current blocker: Claude session limit before a complete hardened F3 lifecycle
+  could finish.
+- Rejected R5 stream:
+  `.cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r5.stream.jsonl`.
+- Pending R6 stream:
+  `.cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r6.stream.jsonl`.
+- Final acceptance still requires one stream with review package, reviewer
+  invocation, report validation with package, adjudication, remediation,
+  targeted re-review validation with accepted ids, and final gate/commit
+  completion.
 
 ## Phase 4 Evidence
 
