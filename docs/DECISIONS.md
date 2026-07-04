@@ -661,3 +661,31 @@ dahil. Çözüm: kaynak repoyu (geliştirme ağacı) minimal runtime paketinden 
 Sürüm **0.4.1 → 0.4.2** (cleanup/packaging; davranış değişikliği yok). Testler
 ve dogfood bu cleanup-only yamada bilinçli olarak yeniden koşulmadı; kurulum/
 rollout yapılmadı. Sonraki mimari faz: **0.5.0**.
+
+### 2026-07-05 - Phase 7B live evidence: Phase 3B.2 accepted
+
+**Decision:** accept Phase 3B.2 review lifecycle evidence for the `0.5.0`
+final release gate.
+
+**Evidence:** R7 ran in a disposable F3 review-remediation fixture with the
+source checkout loaded as plugin input only. The accepted normalized stream is
+`.cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r7.utf8.stream.jsonl`
+and the canonical run record is
+`.cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r7.run.json`.
+The original PowerShell-captured stream is retained as encoded provenance at
+`.cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r7.stream.jsonl`.
+
+**Observed lifecycle:** the stream records UNIT_REVIEW and TARGETED_REREVIEW
+dispatches to `cost-oriented-agentic-workflow:cow-reviewer` with literal
+`REVIEW_PACKAGE_PATH` and `REVIEW_REPORT_PATH` fields. The unit report
+validated with `review-report.mjs validate --package`. The controller accepted
+F-001, rejected F-002 as a process-timing artifact of controller-owned final
+commit, and treated F-003 as non-blocking. One remediation wave fixed F-001,
+targeted re-review validated with accepted finding id F-001, fresh verification
+passed 11/11, and the disposable fixture committed locally as `3947c75`.
+
+**Release impact:** `phase3b2ReviewLifecycle` is now accepted in
+`docs/release-evidence/0.5.0/live-evidence.json`. Together with the already
+accepted Phase 4, Phase 5, and conservative Phase 6 summaries, final release
+evidence is complete. This does not itself perform the `0.5.0` version bump,
+push, tag, publish, install, or GitHub release.
