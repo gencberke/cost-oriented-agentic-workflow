@@ -138,6 +138,22 @@
   pass with live gates pending; final validation fails with
   `LIVE_EVIDENCE_REQUIRED_BEFORE_RELEASE` until Phase 3B.2, Phase 4, Phase 5,
   and sufficient Phase 6 live evidence is accepted.
+
+## 2026-07-04 - Phase 7B: Phase 5 live ASK/DENY accepted
+
+- Claude authentication was refreshed after initial `authentication_failed`
+  streams. Successful live hook-event streams were then collected in disposable
+  F4 enforcement repositories.
+- Phase 5 ASK/DENY evidence is accepted: standard mode produced ASK for E2
+  outside-unit edits, and production diagnosis-readonly produced DENY for E1
+  tracked source edits.
+- The live E1 run exposed Git `safe.directory` ownership behavior in disposable
+  evaluation repositories. `cow-hook.mjs` now uses per-command
+  `safe.directory=<repo>` for read-only Git classification and ignores inherited
+  Git environment/index pollution.
+- Final release remains blocked. Phase 3B.2, Phase 4, and sufficient Phase 6
+  live evidence are still pending, so no `0.5.0` version bump, tag, push,
+  publish, install, or final release claim is made.
 - Current docs phrase live hook activation as deferred until evidence accepts
   it. Older Phase 5 entries that say "deferred to Phase 6" are historical
   records, not permission to activate enforcement now.

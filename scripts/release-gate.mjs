@@ -136,15 +136,20 @@ function validateEvidenceManifest() {
   if (!manifest.gates || typeof manifest.gates !== 'object' || Array.isArray(manifest.gates)) errors.push('manifest gates must be an object');
 
   let accepted = true;
+  const pendingGates = [];
   for (const gate of REQUIRED_GATES) {
     const g = manifest.gates && manifest.gates[gate];
     if (!g || typeof g !== 'object' || Array.isArray(g)) {
       errors.push(`missing required gate: ${gate}`);
       accepted = false;
+      pendingGates.push(gate);
       continue;
     }
     if (!ALLOWED_STATUSES.has(g.status)) errors.push(`${gate}: invalid status ${g.status || '(missing)'}`);
-    if (g.status !== 'accepted') accepted = false;
+    if (g.status !== 'accepted') {
+      accepted = false;
+      pendingGates.push(gate);
+    }
     if (!Array.isArray(g.artifacts)) errors.push(`${gate}: artifacts must be an array`);
     if (g.status === 'accepted' && Array.isArray(g.artifacts) && g.artifacts.length === 0) {
       errors.push(`${gate}: accepted gate must cite at least one committed artifact`);
@@ -174,7 +179,7 @@ function validateEvidenceManifest() {
   }
 
   if (errors.length) return { state: 'invalid', errors };
-  return { state: accepted ? 'accepted' : 'pending', errors: [] };
+  return { state: accepted ? 'accepted' : 'pending', errors: [], pendingGates };
 }
 
 const plugin = readJSON('.claude-plugin/plugin.json');
@@ -203,7 +208,7 @@ if (evidence.state !== 'accepted' && !/LIVE EVIDENCE REQUIRED BEFORE FINAL RELEA
 if (mode === 'final') {
   if (evidence.state !== 'accepted') {
     die('LIVE_EVIDENCE_REQUIRED_BEFORE_RELEASE',
-      'Phase 3B.2, Phase 4, Phase 5, and sufficient Phase 6 live evidence remain pending.');
+      `Pending live evidence gates: ${(evidence.pendingGates || REQUIRED_GATES).join(', ')}.`);
   }
   console.log('PHASE_7B_FINAL_EVIDENCE_GATE_PASSED');
   console.log(JSON.stringify({
