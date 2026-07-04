@@ -930,6 +930,13 @@ check(/never rely on automatic agent selection/i.test(requestingText) || /never 
 // The primary skill keeps the terse tripwire; the full rule lives in the refs.
 check(/review-report\.mjs/.test(executionText) && /adjudicate every finding before any fix is dispatched/i.test(norm(executionText)),
   '3B.2: execution-routing keeps the validate + adjudicate-before-fix tripwire');
+check(/REVIEW_PACKAGE_PATH=<pkg>/.test(executionText) && /REVIEW_REPORT_PATH=<report>/.test(executionText),
+  '3B.2: execution-routing names review package/report dispatch fields literally');
+check(/review-report\.mjs validate <report> --package <pkg>/.test(executionText)
+  && /--accepted-finding-ids <ids>/.test(executionText),
+  '3B.2: execution-routing validates review reports with package and targeted accepted ids');
+check(/omit deferred\/out-of-scope prior findings/i.test(executionText),
+  '3B.2: execution-routing tells targeted re-review to omit deferred findings');
 check(/review-report\.mjs validate.{0,40}before/is.test(reviewPackageRef),
   '3B.2: the report is validated before adjudication (review-package reference)');
 check(/adjudicates each actionable finding before any fix is dispatched/i.test(reviewAdjRef),
