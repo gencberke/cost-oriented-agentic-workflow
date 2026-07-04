@@ -461,6 +461,12 @@ console.log('Running Phase 6 harness tests...');
   const root3 = r3.stdout.trim();
   check(fs.existsSync(path.join(root3, 'src/cart.js')), 'setup F3: src/cart.js created');
   check(fs.existsSync(path.join(root3, 'test/cart.test.mjs')), 'setup F3: test/cart.test.mjs created');
+  check(fs.existsSync(path.join(root3, 'plan.md')), 'setup F3: executable plan.md created');
+  const f3Plan = fs.readFileSync(path.join(root3, 'plan.md'), 'utf8');
+  check(/MODE: standard/.test(f3Plan) && /COMMIT_POLICY: controller-per-unit/.test(f3Plan),
+    'setup F3: plan.md has COW anchor fields');
+  check(/### Task 1: Cart Discount Helper/.test(f3Plan) && /Risk:\*\* high/.test(f3Plan),
+    'setup F3: plan.md defines high-risk Task 1');
   check(fs.existsSync(path.join(root3, 'task.md')), 'setup F3: task.md copied into disposable repo');
   const f3Task = fs.readFileSync(path.join(root3, 'task.md'), 'utf8');
   check(/targeted re-review after the fix/.test(f3Task), 'setup F3: copied task names targeted re-review');
