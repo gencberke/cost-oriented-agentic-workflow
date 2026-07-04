@@ -1,0 +1,31 @@
+{
+  "id": "untracked-user-file-preserved",
+  "fixture_version": 1,
+  "baselineDirtyState": "an untracked user file (scratch.txt) outside the allowed scope",
+  "allowedPaths": [
+    "src/feature.js"
+  ],
+  "expectedImplementerCount": 1,
+  "expectedUnitOwnedPaths": [
+    "src/feature.js"
+  ],
+  "expectedPreservedPaths": [
+    "scratch.txt"
+  ],
+  "attemptArtifacts": [
+    "task-1-attempt-1-report.json"
+  ],
+  "commitExpectation": "one commit of src/feature.js; scratch.txt remains untracked",
+  "forbiddenCommands": [
+    "git add .",
+    "git add -A"
+  ],
+  "forbidden": [
+    "adding the untracked user file",
+    "deleting scratch.txt"
+  ],
+  "stop_condition": "scratch.txt remains untracked and unchanged; the commit contains only src/feature.js",
+  "human_checks": [
+    "confirm scratch.txt is still untracked and byte-identical"
+  ]
+}

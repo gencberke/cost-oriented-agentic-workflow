@@ -1,0 +1,21 @@
+diff --git a/src/main/java/example/security/JwtService.java b/src/main/java/example/security/JwtService.java
+index 1111111..2222222 100644
+--- a/src/main/java/example/security/JwtService.java
++++ b/src/main/java/example/security/JwtService.java
+@@ -20,6 +20,7 @@ public class JwtService {
+         return Jwts.builder()
+                 .subject(user.getUsername())
+                 .issuedAt(new Date())
++                .claim("type", "access")
+                 .expiration(new Date(System.currentTimeMillis() + expirationMs))
+                 .signWith(signingKey)
+                 .compact();
+@@ -34,6 +35,8 @@ public class JwtService {
+     public boolean isTokenValid(String token, UserDetails user) {
+         String subject = extractSubject(token);
++        String type = extractClaim(token, claims -> claims.get("type", String.class));
+         return subject.equals(user.getUsername())
++                && "access".equals(type)
+                 && !isExpired(token);
+     }
+ }

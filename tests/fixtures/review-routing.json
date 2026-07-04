@@ -1,0 +1,10 @@
+{
+  "cases": [
+    { "mode": "standard", "risk": "low", "expected": "none" },
+    { "mode": "standard", "risk": "elevated", "expected": "required-if-non-obvious" },
+    { "mode": "standard", "risk": "high", "expected": "required" },
+    { "mode": "production", "risk": "low", "expected": "required" },
+    { "mode": "production", "risk": "elevated", "expected": "required" },
+    { "mode": "production", "risk": "high", "expected": "required" }
+  ]
+}

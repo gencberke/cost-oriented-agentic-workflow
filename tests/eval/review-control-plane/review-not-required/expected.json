@@ -1,0 +1,17 @@
+{
+  "id": "review-not-required",
+  "fixture_version": 1,
+  "mode": "standard",
+  "risk": "low",
+  "matrixDecision": "none",
+  "primaryReviewScope": "NONE",
+  "expectedReviewerCount": 0,
+  "expectedRemediationWaves": 0,
+  "expectedTargetedRereviews": 0,
+  "expectedWholeWorkReview": true,
+  "expectedAdjudication": "none; no per-task reviewer exists to adjudicate",
+  "commitExpectation": "unit may commit after verification and stage verification",
+  "requiredArtifacts": ["verification summary", "ledger entry"],
+  "forbidden": ["dispatch cow-reviewer for the low-risk unit", "automatic reviewer selection"],
+  "human_checks": ["confirm matrix none-cell was respected", "confirm final whole-work gate remains"]
+}

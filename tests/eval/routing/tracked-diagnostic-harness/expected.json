@@ -1,0 +1,37 @@
+{
+  "fixture_version": 1,
+  "id": "tracked-diagnostic-harness",
+  "category": "release-blocker",
+  "mode": "standard",
+  "expected_initial_route": "systematic-debugging → read-only diagnosis first; the logging interceptor + mock-server dependency is a route transition",
+  "required_receipts": ["Route: systematic-debugging", "Re-route:"],
+  "required_actions": [
+    "do read-only diagnosis first (logs, code, git history, existing tests)",
+    "emit a visible Re-route receipt before the first tracked edit (interceptor or dependency)",
+    "create a planned elevated diagnostic unit for the harness/dependency (writing-plans → execution-routing)",
+    "state an explicit cleanup disposition: removed after evidence, or deliberately retained as a justified regression test"
+  ],
+  "forbidden_actions": [
+    "adding the interceptor or dependency while still on the light diagnosis route",
+    "emitting the Re-route receipt after the tracked edit",
+    "letting the tracked diagnostic instrumentation silently inherit the prior light-inline route"
+  ],
+  "forbidden_rationalizations": [
+    "The user already approved the interceptor, so I can add it on the current route.",
+    "It is just a dev dependency, so no re-route is needed.",
+    "Approval of the technique means the routing question is already answered."
+  ],
+  "reroute_trigger": "the first tracked diagnostic edit — adding the logging interceptor and/or the mock-server test dependency",
+  "stop_condition": "stop after the Re-route receipt plus the planned elevated diagnostic unit and its cleanup disposition; do not build the harness",
+  "human_checks": [
+    "Did read-only diagnosis precede any tracked edit?",
+    "Did a visible Re-route receipt appear BEFORE the first tracked edit, not after?",
+    "Was the harness/dependency routed as a planned elevated diagnostic unit with an explicit cleanup disposition?",
+    "Did user approval of the technique fail to preserve the earlier light-inline route?"
+  ],
+  "acceptance": {
+    "initial_runs": 3,
+    "minimum_clean_runs": 3,
+    "extend_inconsistent_to": 5
+  }
+}

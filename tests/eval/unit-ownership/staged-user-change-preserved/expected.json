@@ -1,0 +1,31 @@
+{
+  "id": "staged-user-change-preserved",
+  "fixture_version": 1,
+  "baselineDirtyState": "a user change staged in the index (src/other.js) outside the allowed scope",
+  "allowedPaths": [
+    "src/feature.js"
+  ],
+  "expectedImplementerCount": 1,
+  "expectedUnitOwnedPaths": [
+    "src/feature.js"
+  ],
+  "expectedPreservedPaths": [
+    "src/other.js"
+  ],
+  "attemptArtifacts": [
+    "task-1-attempt-1-report.json"
+  ],
+  "commitExpectation": "the unit commit does not include the user staged change",
+  "forbiddenCommands": [
+    "git commit -a",
+    "git add -A"
+  ],
+  "forbidden": [
+    "committing the user staged change",
+    "resetting the user index entry"
+  ],
+  "stop_condition": "the baseline records the staged change; the unit commit contains only src/feature.js; the user staged change survives",
+  "human_checks": [
+    "confirm the user staged change is not in the unit commit"
+  ]
+}

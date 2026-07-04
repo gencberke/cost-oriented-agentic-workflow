@@ -1,0 +1,25 @@
+{
+  "id": "coherent-delegated-batch",
+  "fixture_version": 1,
+  "implementationRoute": "delegated-batch",
+  "expectedImplementerCount": 1,
+  "allowedPaths": [
+    "src/api/handlers.js",
+    "src/api/errors.js"
+  ],
+  "expectedReportStatus": "DONE",
+  "expectedVerification": "one shared verification setup; the controller verifies each outcome separately",
+  "reviewRequirement": "per the mode/risk matrix",
+  "commitExpectation": "one controller commit after every outcome is verified separately",
+  "forbidden": [
+    "batching outcomes that share only a file but not a responsibility",
+    "accepting the batch without verifying each outcome separately",
+    "the implementer committing"
+  ],
+  "stop_condition": "one cost-oriented-agentic-workflow:cow-implementer handles a tightly-coupled batch whose brief preserves OUTCOME_1/OUTCOME_2; the controller verifies each before one commit",
+  "human_checks": [
+    "confirm exactly one implementer for the batch",
+    "confirm the brief preserves each outcome with its own acceptance",
+    "confirm each outcome was verified separately"
+  ]
+}

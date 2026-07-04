@@ -1,0 +1,29 @@
+{
+  "id": "implementer",
+  "fixture_version": 1,
+  "agent_type": "cost-oriented-agentic-workflow:cow-implementer",
+  "model": "sonnet",
+  "required_inputs": ["TASK_BRIEF_PATH", "REPORT_PATH", "ALLOWED_PATHS", "VERIFICATION_COMMANDS", "COMMIT_POLICY", "WORKTREE_ROOT"],
+  "required_output_sections": [
+    "STATUS", "FILES_CHANGED", "BEHAVIOR_IMPLEMENTED", "VERIFICATION_COMMANDS",
+    "VERIFICATION_RESULTS", "TEST_COUNT", "SELF_REVIEW", "REMAINING_RISKS"
+  ],
+  "forbidden_actions": [
+    "edit files outside ALLOWED_PATHS",
+    "broaden scope without reporting",
+    "git commit",
+    "update state.json / cow-state or the progress ledger",
+    "mark the unit complete",
+    "spawn another agent",
+    "treat retry exhaustion as approval"
+  ],
+  "file_mutation_expected": true,
+  "stop_condition": "Unit done (report STATUS terminal) or blocked; at most two extra evidence-changing attempts after the first.",
+  "human_checks": [
+    "Spawned agent_type is exactly cost-oriented-agentic-workflow:cow-implementer.",
+    "Only ALLOWED_PATHS changed; the report artifact was written.",
+    "Verification was run; zero discovered tests is not reported as success.",
+    "No git commit and no workflow-state mutation occurred.",
+    "Return is at most eight lines, with no pasted diffs or full logs."
+  ]
+}

@@ -15,14 +15,14 @@ Claiming work is complete without verification is dishonesty, not efficiency.
 NO COMPLETION CLAIM WITHOUT FRESH VERIFICATION EVIDENCE
 ```
 
-If you haven't run the verification command in this message, you cannot claim it passes. This is a hard rule — it does not relax under time pressure, confidence, or exhaustion.
+Evidence is fresh only for the exact state that produced it. A run from this turn may satisfy later checks without duplication only while HEAD, index, and working tree are unchanged. Any state change invalidates it; a merge always requires a new run on the merged result.
 
 ## The gate
 
 ```
 BEFORE claiming any status or expressing satisfaction:
 1. IDENTIFY  — which command proves this claim?
-2. RUN       — execute the full command, fresh
+2. RUN       — execute the full command unless this turn already has evidence for the identical state
 3. READ      — full output, exit code, failure count, and how many tests ran
 4. VERIFY    — does the output actually confirm the claim?
 5. ONLY THEN — make the claim, with the evidence

@@ -1,0 +1,30 @@
+{
+  "id": "retry-attempt-artifacts",
+  "fixture_version": 1,
+  "baselineDirtyState": "clean",
+  "allowedPaths": [
+    "src/parse.js"
+  ],
+  "expectedImplementerCount": 2,
+  "expectedUnitOwnedPaths": [
+    "src/parse.js"
+  ],
+  "expectedPreservedPaths": [],
+  "attemptArtifacts": [
+    "task-1-attempt-1-report.json",
+    "task-1-attempt-2-report.json"
+  ],
+  "commitExpectation": "one controller commit after the accepted attempt",
+  "forbiddenCommands": [],
+  "forbidden": [
+    "overwriting task-1-attempt-1-report.json",
+    "changing the baseline between attempts",
+    "reusing the attempt-1 report path for attempt 2"
+  ],
+  "stop_condition": "attempt 1 fails and its report is preserved; attempt 2 uses a distinct report path and the same baseline; acceptedAttempt=2",
+  "human_checks": [
+    "confirm the attempt-1 report is unchanged after attempt 2",
+    "confirm attempt 2 uses a distinct report path",
+    "confirm the baseline path is identical across attempts"
+  ]
+}

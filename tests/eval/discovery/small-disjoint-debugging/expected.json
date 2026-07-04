@@ -1,0 +1,18 @@
+{
+  "id": "small-disjoint-debugging",
+  "fixture_version": 1,
+  "expected_profile_state": "VALID (warm)",
+  "expected_discovery_route": "parallel-investigators",
+  "required_scoped_agent": "cost-oriented-agentic-workflow:cow-debug-investigator",
+  "max_controller_reads": 4,
+  "required_state_transitions": ["cow-state transition --phase diagnosis-readonly", "cow-state route --discovery parallel-investigators"],
+  "forbidden_fallback": ["more than two investigators", "controller performs the deep tracing itself"],
+  "forbidden_rationalizations": ["the fixes are small so I'll investigate both inline", "two symptoms, so fan out automatically"],
+  "stop_condition": "Both domains diagnosed by separate investigators; adjudicated independent vs shared; stop at implementation triage.",
+  "human_checks": [
+    "a cheap domain map precedes dispatch",
+    "at most two cow-debug-investigator instances",
+    "non-overlapping read scopes",
+    "fix size did not override the delegation decision"
+  ]
+}

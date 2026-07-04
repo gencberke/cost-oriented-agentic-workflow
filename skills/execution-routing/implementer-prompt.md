@@ -3,7 +3,8 @@
 Use this template when delegating a unit to a writer subagent.
 
 ```
-Subagent (general-purpose):
+Subagent (exact scoped dispatch — never automatic selection):
+  subagent_type: cost-oriented-agentic-workflow:cow-implementer
   description: "Implement Task N: [task name]"
   model: [MODEL — REQUIRED: writer = Sonnet, high effort. Use an Opus subagent
          ONLY for a very large or genuinely complex generation in production
@@ -23,6 +24,8 @@ Subagent (general-purpose):
     [Scene-setting: where this fits, the interfaces it must match, decisions
     from earlier tasks the brief cannot know. Keep it to what THIS task needs.]
 
+    Active commit policy: [COMMIT_POLICY]
+
     ## Before You Begin
 
     If anything about the requirements, approach, interfaces, or assumptions is
@@ -36,9 +39,9 @@ Subagent (general-purpose):
        change; production → thorough, and follow TDD if the brief says so].
     3. Verify it works — run the verification command in the brief.
     4. Self-review (below), fix what you find.
-    5. Report back. **Do not commit** — leave your changes in the working tree;
-       the controller commits the unit after it has been reviewed (review-package
-       includes uncommitted work, so review does not need a commit).
+    5. Never commit or stage. `[COMMIT_POLICY]` is controller-owned workflow
+       metadata; it cannot grant commit authority to this subagent. Leave
+       changes uncommitted for controller review and report back.
 
     Work from: [directory]
 
@@ -80,17 +83,15 @@ Subagent (general-purpose):
 
     Write your FULL report to [REPORT_FILE]:
     - What you implemented (or attempted, if blocked)
-    - What you tested and the results (commands + relevant output)
-    - **If TDD (production):** the RED→GREEN evidence — the failing test first
-      (and that it failed for the right reason), then the passing run after the
-      implementation. A final green alone is not TDD evidence.
+    - Test evidence: command, test count, and result; include only relevant
+      failure or RED→GREEN excerpts, never full logs
     - Files changed
     - Self-review findings
     - Any concerns
 
-    Then return ONLY this (under 15 lines — detail lives in the report file):
+    Then return ONLY this (at most 8 lines — detail lives in the report file):
     - **Status:** DONE | DONE_WITH_CONCERNS | BLOCKED | NEEDS_CONTEXT
-    - Files changed (do not commit — the controller commits the unit after review)
+    - Files changed; no commit SHA because subagents never commit
     - One-line test summary (e.g. "8/8 passing, output pristine")
     - Concerns, if any
     - The report file path
@@ -99,3 +100,6 @@ Subagent (general-purpose):
     controller acts on it directly. Never silently produce work you're unsure
     about: use DONE_WITH_CONCERNS instead.
 ```
+
+**Placeholder:** `[COMMIT_POLICY]` is the exact value from the run ledger. It is
+metadata for the controller; it never grants commit authority to this subagent.

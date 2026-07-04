@@ -1,0 +1,33 @@
+{
+  "id": "dirty-outside-scope-preserved",
+  "fixture_version": 1,
+  "baselineDirtyState": "one tracked file (src/other.js) modified outside the allowed scope",
+  "allowedPaths": [
+    "src/feature.js"
+  ],
+  "expectedImplementerCount": 1,
+  "expectedUnitOwnedPaths": [
+    "src/feature.js"
+  ],
+  "expectedPreservedPaths": [
+    "src/other.js"
+  ],
+  "attemptArtifacts": [
+    "task-1-attempt-1-report.json"
+  ],
+  "commitExpectation": "one controller commit of only src/feature.js; src/other.js stays uncommitted",
+  "forbiddenCommands": [
+    "git add .",
+    "git add -A",
+    "git commit -a"
+  ],
+  "forbidden": [
+    "committing src/other.js",
+    "staging the user dirty file"
+  ],
+  "stop_condition": "the unit commits only src/feature.js; the user src/other.js remains byte-identical and uncommitted",
+  "human_checks": [
+    "confirm src/other.js is unchanged and uncommitted",
+    "confirm the commit contains only src/feature.js"
+  ]
+}

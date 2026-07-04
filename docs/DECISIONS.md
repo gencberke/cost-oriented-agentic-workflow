@@ -6,6 +6,160 @@
 
 ---
 
+## 2026-06-30 — Documentation reset and agent onboarding
+
+- Future-facing project documentation is now English-only.
+- `AGENTS.md` is the first-read manifesto for incoming agents: purpose, current
+  state, invariants, verification, docs map, and roadmap.
+- The old v0.5.0 architecture sprawl was aggressively consolidated into a small
+  canonical set under `docs/architecture/v0.5.0/`.
+- Per-phase handoff files and the oversized master handoff were removed from the
+  working tree after their durable facts were folded into `AGENTS.md`,
+  `docs/HANDOFF.md`, and the compact architecture docs.
+- Git history is the archive for exact old handoff text; do not reintroduce long
+  rolling handoff files unless a future release process explicitly requires
+  them.
+
+---
+
+## 2026-06-30 - Superseding correction: master handoff retained
+
+- Correction to the immediately preceding documentation reset entry: the old
+  per-phase handoff files remain removed from the working tree, but a current
+  `docs/architecture/v0.5.0/COW-MASTER-HANDOFF.md` is retained as a deep context
+  recovery document.
+- Git history remains the archive for exact old handoff text. The master handoff
+  is not the first-read surface; `AGENTS.md` and `docs/HANDOFF.md` are.
+
+## 2026-06-30 - v0.5 control-plane decision summary
+
+- State is a validated projection and reconstructable cache. Git, plan, ledger,
+  reports, and review artifacts remain authoritative.
+- Plugin agents are scoped workers. They never update workflow state, never stage,
+  and never commit. `COMMIT_POLICY` is controller-owned metadata and cannot grant
+  commit authority to a plugin agent.
+- Discovery routing and implementation routing are separate axes; task
+  uncertainty can trigger discovery even when repository profile validity is warm.
+- Implementation evidence is attempt-qualified and baseline-relative; retries keep
+  the same unit baseline.
+- Review uses scoped packages, causality classification, targeted re-review after
+  Critical/Important fixes, and a two-wave remediation ceiling.
+- Phase 4 hooks are shadow only: fail-open, bounded observation, no state
+  mutation, no active `hooks/hooks.json`.
+- Phase 5 may enforce only zero-false-positive binary rules. Broad shell parsing
+  and judgment-heavy hook decisions remain rejected.
+- Phase 6 owns repeated behavioral sampling and token/cost calibration. Normal
+  phase work is deterministic-first and live-smoke-minimal.
+- The generated `0.4.2` runtime package is not yet the complete v0.5.0
+  distribution; top-level `agents/**` and active hooks are release-path work.
+- Headroom remains rejected as a baseline dependency. Any compatibility experiment
+  must be optional, lossless for structured evidence, and deferred until after the
+  core control-plane gates.
+
+## 2026-06-30 — Phase 6: deterministic evaluation harness (live evidence deferred)
+
+- Built the Phase 6 evaluation harness as deterministic tooling only. No live
+  Claude runs were executed in this pass; live evidence is partial/deferred.
+- Run-record schema version 1 captures one bounded record per run: identity
+  (runId, datedAt, environmentId, claudeCodeVersion, condition, fixtureId),
+  actual models from result metadata, process exit code, semantic result, token
+  and cost metrics (missing vs zero preserved), tool/dispatch/read accounting,
+  workflow accounting (attempts, waves, commits, changed paths), hook
+  ask/deny counts, analyzer violations, task and preservation assertions, and a
+  retry classification. Sensitive fields (prompts, secrets, transcripts,
+  chain-of-thought) are rejected; records are capped at 20 KiB.
+- Six semantic result classes: `WORKFLOW_COMPLETED`,
+  `WORKFLOW_BLOCKED_EXPECTED`, `WORKFLOW_FAILED`, `HARNESS_FAILURE`,
+  `PROCESS_FAILURE`, `INSUFFICIENT_EVIDENCE`. A clean repo or exit 0 alone is
+  not success.
+- The aggregator compares matched conditions pairwise (VANILLA vs COW_SHADOW,
+  COW_SHADOW vs COW_ENFORCE), refuses comparisons on fixture/model/environment
+  mismatch, distinguishes missing from zero, reports outliers without deleting
+  them, and gates cost-improvement claims on correctness + preservation first.
+  Percentage with a zero baseline reports absolute diff only (null percent).
+- F1–F5 fixtures are prepared now; live runs are deferred. The minimum live
+  matrix is F1 VANILLA → F1 COW_SHADOW → F4 standard ask → F4 production deny,
+  stopping when usage/environment is insufficient.
+- Phase 6H: an optional Headroom experiment specification is recorded. Headroom
+  is not installed, configured, or invoked in Phase 6 core. The spec requires
+  identical fixtures, no COW mutation, no memory/learn, no output shaping, no
+  code compression, exact contract/path/SHA preservation, and separate
+  correctness and token results.
+- No numeric thresholds are set in this pass. Thresholds will be recorded in a
+  dated `DECISIONS.md` entry only after live evidence exists, with
+  insufficient-sample values marked provisional. Historical decision records
+  are not modified.
+- No active `hooks/hooks.json` is created. State schema version, agents,
+  routing, review matrix, runtime packaging, and package version are unchanged.
+
+## 2026-06-30 — Phase 5A: selective static enforcement
+
+- Added an explicit enforcement mode to `cow-hook.mjs` via
+  `--decision-mode=shadow|enforce` (PreToolUse only). Default stays `shadow`;
+  only the exact value `enforce` enables enforcement. Shadow mode is preserved
+  byte-identically so Phase 4 tests are unaffected.
+- Enforcement may emit only `ask` or `deny` (never `allow`/`defer`/`updatedInput`,
+  never exit 2). No match, uncertainty, internal error, and
+  absent/inactive/corrupt state all fail open with exit 0 and empty stdout.
+- Enforced the zero-false-positive binary set E1–E7 (see
+  `docs/architecture/v0.5.0/04-state-machine-and-hook-enforcement.md`). E8
+  destructive Git and the judgment-based R5 wrong-agent rule stay shadow-only.
+- Interpretations pinned: E5 "executable approved plan" = `plan.status ∈
+  {approved,executing,done}` (matches the Phase 4 `isPlanApproved` test); E7 is
+  gated on `phase=implementing` and uses exact token matching so combined flags
+  like `-am` are not treated as `-a`; E6 is restricted to the four structured
+  `cow-*` agents (agent identity from metadata only, never prompt text); E7 is
+  not agent-bound (controllers can also broad-stage).
+- Bash matching supports only simple commands. A single char-class guard
+  rejects compound/redirect/substitution operators, env-prefixed commands,
+  nested `bash -c`, multiline commands, and deceptive substrings. Ambiguous
+  shapes fail open rather than risk false positives.
+- Observation schema is extended additively with `actualDecision`
+  (`none|ask|deny`) and `reasonCode` (bounded `E1..E7` enum). Shadow
+  observations remain byte-identical (schema version 1 unchanged); `reasonCode`
+  appears only in enforce-mode observations, immediately after `actualDecision`.
+- No active `hooks/hooks.json` is created. `hooks/hooks.enforcement.json.example`
+  is an inactive example whose runtime activation is deferred to Phase 6. State
+  schema version, agents, routing, review matrix, runtime packaging, and package
+  version are unchanged.
+- Live ASK/DENY smoke is deferred to Phase 6 (`PHASE_5_LIVE_ASK_DENY_SMOKE_DEFERRED_TO_PHASE_6`).
+  Benign fixture results (0 ask / 0 deny) are fixture evidence, not proof of
+  real-world zero false positives.
+
+## 2026-06-30 - Phase 7A: release-candidate repository preparation
+
+- Phase 7A prepares the repository for a future `0.5.0` release but does not
+  perform the public release, version bump, tag, push, publish, or install.
+- Runtime packaging now targets the v0.5.0 candidate surface: plugin metadata,
+  commands, skills, all four agents, inactive hook examples, README, and license.
+  Tests, docs, scripts, eval fixtures, raw evidence, phase prompts, local
+  worktrees, and active `hooks/hooks.json` remain excluded.
+- Candidate and final gates are intentionally distinct. Candidate validation may
+  pass with live gates pending; final validation fails with
+  `LIVE_EVIDENCE_REQUIRED_BEFORE_RELEASE` until Phase 3B.2, Phase 4, Phase 5,
+  and sufficient Phase 6 live evidence is accepted.
+- Current docs phrase live hook activation as deferred until evidence accepts
+  it. Older Phase 5 entries that say "deferred to Phase 6" are historical
+  records, not permission to activate enforcement now.
+- Version finalization is dry-run only in this phase. Authoritative locations are
+  `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`,
+  `package.json`, the version-neutral README install example, runtime manifest
+  metadata derived from plugin metadata, and the pending `CHANGELOG.md` heading.
+- Runtime package safety rejects personal absolute paths, active hook configs,
+  development-only files, unsafe output roots, duplicate manifest paths, and
+  broken packaged Markdown links.
+- Windows Bash suites now go through a Node wrapper that prefers Git Bash, while
+  the release package test itself is Node-based.
+
+## Legacy decision log note
+
+The sections below preserve the earlier Turkish decision log. Some old pending
+markers were superseded by the v0.5 control-plane decisions above; use the current
+English docs for active project state and treat the old sections as historical
+rationale unless a later dated entry confirms them.
+
+---
+
 ## A. Kimlik & kapsam
 - **A1** 🟡 Ad: `cost-oriented-agentic-workflow` (komut adından çıkarım).
 - **A2** ✅ Aktivasyon: komutla çağrı tercih; ANCAK SessionStart-hook benzeri bir yapı skill kullanımını tüm session boyunca **garanti ediyorsa** o tercih edilir. Skill kullanımı session boyunca **yüksek öncelik**.
@@ -229,4 +383,193 @@ agentic-superpowers'ın 6 tool-izolasyonlu agent'ı (`scoped-implementer`, `spec
 - Ek ripple düzeltmeleri (bu turda yakalandı): `preparing-subagent-prompts`'ta return "commits"→"files changed" (A2) + "verbatim copy"→brief-carries (Q4).
 - Doğrulama: `npm test` (75 + 11) yeşil; "do NOT flag" anti-pattern guard'lı; causality iki reviewer prompt'unda. Sürüm **0.3.1 → 0.3.2**.
 
-**Kalan: C (pivot)** — prose'u bırak, ölç: behavioral eval (discovery/confirmation) + maliyet telemetrisi → sonra 5-8 dogfood ile eşik/maliyet ölç.
+**C, v0.4.0 ile uygulandı; aşağıdaki release kaydına bak.**
+
+### 2026-06-22 — v0.4.0: hardening, bounded review ve ölçüm altyapısı
+
+**Kaynak sınırı:** Otoriter repo Desktop’taki git kaynağıdır. Claude cache’i
+kurulu çıktıdır; hiçbir fazda elle patchlenmedi. Değişiklikler baseline + altı
+faz commit’i olarak ilerletildi.
+
+**Superpowers’tan alınan workspace çözümü:** Official 6.0.3’teki yazılabilir
+çalışma alanı fikri benimsendi, fakat cost’un worktree/ledger ihtiyaçlarına göre
+daraltıldı. Artifact’lar `.git` altına değil, her checkout’un
+`<repo-root>/.cost-oriented-agentic-workflow/run/` alanına yazılır; alan kendini
+ignore eder, `git add -A` içine giremez ve linked worktree’ler paylaşmaz. Legacy
+`<git-dir>/cow/progress.md` kopyalanır ama silinmez. `git clean -fdx` kaybına
+karşı plan + `git log` fallback’i korunur.
+
+**Review scope ve repository-state kararı:** `review-package` task modunda
+committed/staged/unstaged/untracked içeriği yalnız izinli repo-relative yollar
+için üretir; traversal/absolute path reddedilir, binary yalnız metadata verir.
+Whole-work mod committed range ile sınırlıdır ve güncel dirty tree’de exit 4
+verir. Default planlı yürütme temiz tree ile başlar.
+
+**Mode-aware review ve bounded remediation:** Standard-low self-review + final
+whole-work review ile ucuz kalır; standard-high ve production’daki her planlı
+task bağımsız Sonnet review alır. Accepted Critical/Important fix taze targeted
+re-review ister. Her task/final review en fazla iki autonomous remediation wave
+alır; aynı bulgu için ikinci kör fix yoktur ve `budget exhausted != approved`.
+
+**Resume/base/commit sözleşmesi:** Ledger `PLAN_FILE`, `MODE`, `COMMIT_POLICY`,
+`BASE_BRANCH`, `MERGE_BASE_SHA` değerlerini Task 1’den önce bir kez pinler. Final
+review ve finishing aynı immutable merge-base’i kullanır; feature upstream base
+sanılmaz; detached HEAD local merge göstermez. `COW_ENTRY_INJECTED` compaction’da
+duplicate entry load’u önler. Default commit policy `controller-per-unit` kalır;
+implementer yalnız açık `implementer` politikasında commit atar.
+
+**Output ve verification bütçesi:** Implementer dönüşü sekiz satırla, log yerine
+komut/test sayısı/sonuç ve ilgili RED-GREEN parçalarıyla sınırlıdır. Reviewer tüm
+Critical/Important bulguları korur, en fazla üç Minor döndürür. Finishing final
+verification’ın sahibidir; aynı-state kanıtı tekrar kullanılabilir, merge daima
+yeniden test edilir. Runtime prose hard ceiling 86.000 byte; beş sıcak dosya
+v0.3.2 boyutunun %110’unu geçemez.
+
+**C pivot kapandı:** Offline analyzer gerçek Claude Code ana oturumu + subagent
+JSONL’lerinden input/output/cache/message kırılımı üretir, malformed satırları
+atlayıp sayar ve fiyat verilmedikçe dolar iddiası yapmaz. Altı hidden-ground-truth
+fixture discovery/confirmation, recall, precision, severity, causality, scope
+discipline ve valid finding başına token ölçümünü tanımlar.
+
+**Bilinçli ayrışmalar:** Standard-low task’lara zorunlu reviewer veya standard
+moda zorunlu worktree eklenmedi; default implementer-commit yapılmadı; `-U10`
+ölçümsüz düşürülmedi; prompt-file indirection, wholesale SDD metni, full
+Drill/session-driver ve named-agent bağımlılığı alınmadı. Amaç minimum maliyette
+stabil ve güvenilir kişisel-ölçek çözüm olarak kaldı.
+
+**Doğrulama:** Runtime prose 86.000 byte altında; workspace/review helper’ları
+gerçek temp git repo ve linked worktree üzerinde; token analyzer sentetik ve
+gerçek session ile; altı fixture geçerli unified diff olarak doğrulandı. Release
+sürümü davranışsal değişiklikler nedeniyle `0.4.0`.
+
+### 2026-06-23 — v0.4.1: routing kaçış yollarının kapatılması + reproducible release
+
+**Provenans:** v0.4.0 gerçek bir Flutter hata-ayıklama görevinde dogfood edildi.
+Debugging *kalitesi* geçti (kök-neden disiplini, doğru teşhisler), ama routing
+*ekonomisi* üç noktada sızdırdı. Bu **patch** yama yalnız o üç deliği kapatır ve
+release artefaktını sağlamlaştırır; mimari (Opus controller / Sonnet writer /
+risk maliyeti ezer / bağımsız review / bounded retry-remediation / kanıt-temelli
+verification / sıfır runtime bağımlılık) değişmez — 0.5.0 değildir.
+
+**Neden debugging geçti ama routing ekonomisi başarısız oldu:** Model kök-nedeni
+doğru buluyor; ama "judgment" gördüğü her yerde maliyet lehine kapıyı kırpma
+sistemik teması (v0.3'te review/bağımsızlık kırpma) burada *routing/delegasyon*
+kırpmaya kaydı. Teşhis doğru, fakat token-ağır işi controller'da tutma
+rasyonalizasyonu üç biçimde çıktı:
+
+1. **"Küçük oldukları için inline incelerim."** Ucuz domain map disjoint problem
+   alanlarını doğru ayırdı, sonra "fix'ler küçük" diye bağımsız investigator'lara
+   devretmek yerine controller-led derin trace yaptı. Düzeltme: disjoint-domain
+   teşhis delegasyonu **eventual fix boyutundan bağımsız** karar verilir;
+   görünür küçüklük token-ağır araştırmayı controller'da tutamaz; küçüklük yalnız
+   teşhis SONRASI implementation routing'i etkiler. Shared kök-neden makulse
+   sıralı (tek) teşhis hâlâ geçerli — tetik semptom sayısı değil, kanıtlanmış
+   disjoint-domain haritasıdır. (Otoriter: `systematic-debugging`; kısa referans:
+   `dispatching-parallel-agents` + entry skill.)
+
+2. **Tracked diagnostic instrumentation eski route'u sessizce devraldı.** Logging
+   interceptor / mock-server dependency / harness eklemek "hâlâ teşhis" sanılıp
+   light route'ta kaldı. Düzeltme: read-only teşhis **ilk tracked diagnostic
+   edit'te biter**. Edit'ten ÖNCE görünür `Re-route:` receipt (sonra değil);
+   triage'a dönüş; dependency/harness/config/schema **planlı elevated diagnostic
+   unit** olur (writing-plans → execution-routing). Kullanıcının tekniği
+   onaylaması "bu yöntemi kullanabilir miyiz?"i cevaplar, "bu genişlemiş iş nasıl
+   yürütülür?"ü değil — eski light-inline route'u korumaz. Geçici instrumentation
+   açık bir cleanup disposition taşır: kanıt sonrası kaldır, ya da gerekçeli
+   regression test olarak bilinçli tut. (Otoriter: `systematic-debugging` +
+   launcher.)
+
+3. **Aynı dosya bağımsız outcome'ları birleştirdi.** İki bağımsız kullanıcı-görünür
+   outcome aynı dosyada diye tek light-inline değişikliğe çökertildi. Düzeltme:
+   birim sınırı **outcome + sorumluluk + doğrulama seam'i**; dosya kümesi değil,
+   sahiplik/sıralama bilgisidir. İki bağımsız outcome → ayrı sıralı unit'ler VEYA
+   her outcome için ayrı acceptance + ayrı regression taşıyan tek delegated batch;
+   asla tek light-inline. "Aynı dosya + her fix küçük" light yol lisansı değildir.
+   Mevcut "same-file ≠ same-unit" ilkesi korunur (overlap sıralanır, asla
+   paralelleştirilmez), enforcement'ı güçlendirilir. (Otoriter: `writing-plans`;
+   `execution-routing` + entry skill ile hizalı.)
+
+**Merkezîleştirme, şişirme değil:** Her kural tek otoriter skill'de yaşar, ötekiler
+kısa referans verir. Prose 86.000 byte tavanı altında kalır: entry skill'deki
+`writing-plans` ile birebir kopyalanmış anchor bloğu referansa indirgendi →
+85.432/86.000. Tavan testle korunur.
+
+**Neden 0.5.0 mimarisi ertelendi:** repository-intake skill, repo-snapshot helper,
+`agents/` tanımları, makine-okunur workflow state engine, aktif `PreToolUse`
+enforcement hook, tam discovery/implementation dual-routing state machine,
+otomatik runtime cost feedback ve session driver kapsam **dışı**. Gerekçe: bunlar
+mimari değişiklik; patch yalnız ölçülmüş üç deliği kapatmalı, yeni bağımlılık/
+review tier/retry-remediation bütçesi getirmemeli. Teşhis routing'i ile sonraki
+implementation routing'ini ayıran küçük kelime netleştirmeleri yapıldı ama tam
+dual-routing mimarisine dönüştürülmedi.
+
+**Yeni gate'ler:** 12 yapısal invariant (`validate-structure.mjs`); altı route-only
+pressure-test fixture (`tests/eval/routing/` — üç release-blocker + üç regression
+control) + şema validator (`RoutingFixtureContractTests`); canlı route-only dogfood
+protokolü (`DOGFOOD.md`). Validator artık ignored workspace/`dist`'i taramaz →
+deterministik check (üretilen artefakt bir check ekleyemez/düşüremez).
+
+**Release sağlamlaştırma:** `hooks/session-start` git index exec bit (100644 →
+100755 — helper testi ve SessionStart onu doğrudan çalıştırır); reproducible
+`scripts/build-release.sh` (git archive: `.git`/`node_modules`/`dist`/workspace
+hariç, exec bit korunur, deterministik `dist/<ad>-<sürüm>.zip`); bağımsız
+`tests/release-artifact.test.sh`; eval runner artık Python 3'ü **çalıştırarak**
+seçer (Windows "App execution alias" PATH'te çözülüp çalışmıyordu) + `py`
+launcher; `dist/` gitignore; `release:build`/`test:release`/`verify:all`.
+
+**Canlı dogfood (Opus controller, standart mod, `claude --plugin-dir <kaynak>`):**
+route-only dry-run; her run route receipt + ilk routing aksiyonu + gereken
+`Re-route:`te durur, implement etmez. Sonuç: üç release-blocker (small-disjoint-
+diagnosis, tracked-diagnostic-harness, same-file-independent-outcomes) **3/3
+temiz**; üç regression-control (unknown-repo-disjoint-domains, warm-repo-trivial-
+edit, dirty-working-tree-preservation) **1/1 temiz**. İlk dry-run harness'i
+"subagent dispatch etme" kısıtıyla A/D'yi confound etmişti (investigator dispatch'i
+bastırdı); harness "dispatch'i tarif et, yürütme" diye düzeltilip yeniden koşuldu
+(değişen-bağlam rerun, sonuç-seçme değil). Kanıt ignored
+`.cost-oriented-agentic-workflow/eval/` altında, commit'lenmez.
+
+**Doğrulama ve sürüm:** structural (187) + helper (40) + eval (9) + bash syntax +
+prose budget (85.432) + strict manifest validation + release-artifact testi
+yeşil; canlı blocker dogfood 3/3×3 + control 1/1×3. Tüm pre-release gate'ler
+geçtiği için sürüm **0.4.0 → 0.4.1** (`plugin.json` + `marketplace.json` +
+`package.json` birlikte).
+
+### 2026-06-24 — v0.4.2: kaynak repo / runtime paket ayrımı (cleanup)
+
+**Kapsam:** yalnız temizlik + paketleme. Routing, davranış, mimari, review/
+remediation, standard/production semantiği değişmez. 0.4.1 dogfood'unda görüldü
+ki dizinden kurulum (directory-marketplace) çalışma ağacının TAMAMINI cache'e
+kopyalıyor — `tests/`, `docs/`, `scripts/` ve hatta ignored dogfood evidence
+dahil. Çözüm: kaynak repoyu (geliştirme ağacı) minimal runtime paketinden ayır.
+
+**Kararlar:**
+- **Geliştirme reposu eksiksiz kalır.** `tests/`, `docs/`, `scripts/`, eval
+  fixture'ları, `CHANGELOG.md`, `.git` geçmişi korunur — geçerli geliştirme
+  varlıkları; yalnız runtime pakete girmezler.
+- **Runtime dağıtımı elle değil, üretilir.** `scripts/build-runtime-package.mjs`
+  git-tracked içerikten deterministik bir runtime dizini + ZIP + SHA-256 +
+  manifest üretir. Elle dosya kopyalama reddedildi: kaynak değişince paket
+  bayatlar ve allowlist insan elinde drift eder.
+- **Allowlist, denylist-only kopyalamadan güvenlidir.** Paket explicit bir
+  allowlist'ten kurulur (`.claude-plugin`, `commands`, `skills`, opt-in `hooks`,
+  `README.md`, `LICENSE`) ve ayrıca denylist ile çapraz denetlenir. İleride
+  eklenen bir geliştirme dosyası sessizce pakete sızamaz — allowlist dışındaysa
+  hariç kalır.
+- **Runtime çıktısı repo DIŞINDA.** Varsayılan `../cost-oriented-agentic-
+  workflow-runtime/`. Repo içinde üretmek dizinden-kurulumda cache'i yeniden
+  kirletirdi; dışarıda tutmak marketplace/cache kontaminasyonunu kökten önler.
+  Builder repo-içi veya `.git`/`skills`/`commands` output path'lerini reddeder
+  ve yalnız kendi versiyonlu çıktı klasörünü/ZIP'ini değiştirir; rastgele dizini
+  asla recursive temizlemez.
+- **Yalnız git-tracked içerik.** Paket çalışma ağacından recursive kopyalanmaz;
+  `git show HEAD:<path>` / `git archive` kullanılır → `skills/` veya `hooks/`
+  içine bırakılmış untracked dosyalar sızamaz. Exec bitleri (`session-start`,
+  üç `execution-routing/scripts/*`, `run-hook.cmd`) korunur.
+- **Güvenli temizlik.** `scripts/clean-generated.mjs` yalnız hardcoded bir
+  allowlist'i (`dist/`, `.cost-oriented-agentic-workflow/eval/`) siler; `git
+  clean -fdx` kullanılmaz (o, ignored workspace'i ve recovery state'i de
+  silerdi). `.cost-oriented-agentic-workflow/run/` korunur.
+
+Sürüm **0.4.1 → 0.4.2** (cleanup/packaging; davranış değişikliği yok). Testler
+ve dogfood bu cleanup-only yamada bilinçli olarak yeniden koşulmadı; kurulum/
+rollout yapılmadı. Sonraki mimari faz: **0.5.0**.

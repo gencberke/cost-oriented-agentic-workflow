@@ -16,9 +16,10 @@ This block is the compaction lifeline. Keep it current; it is the cheap artifact
 ```markdown
 > **Cost-oriented workflow — anchor. Re-read this block each loop.**
 > MODE: standard | production
+> COMMIT_POLICY: controller-per-unit | implementer | user-owned | none
 > ROUTING: brainstorm-gate → this plan/contract → delegate-by-contract-cost (inline when the contract would cost more than the code) → review-per-risk-matrix → verify-before-done
 > CADENCE: continuous — run planned tasks without pausing; STOP only on: blocked · decision ambiguity · plan/code conflict · scope or risk escalation · external/irreversible action · retry budget exhausted · new credential or permission · failed baseline/verification · human asked to checkpoint
-> ON RESUME/COMPACTION: re-invoke cost-oriented-agentic-workflow:using-cost-oriented-workflow, then trust this file + the ledger (<git-dir>/cow/progress.md) + git log over memory.
+> ON RESUME/COMPACTION: if `COW_ENTRY_INJECTED` is absent, invoke cost-oriented-agentic-workflow:using-cost-oriented-workflow exactly once; if present, do not reload it. In both cases trust this plan + the per-worktree ledger + git log over memory.
 
 # [Feature] Plan
 
@@ -35,7 +36,7 @@ implicitly includes this section; the reviewer reads it as its attention lens.]
 
 ## Decomposition (C3 — mandatory, granularity scales with complexity)
 
-Before tasks, map which files each task creates/modifies and its one responsibility. Files that change together live together; split by responsibility, not by technical layer. A **task** is the smallest unit that carries its own verification and is worth a fresh reviewer's gate — fold setup/scaffolding/docs into the task whose deliverable needs them. Simple work → few tasks; complex work → more, smaller tasks. Merge two items into one task only when they share the **same responsibility and the same seam** (e.g. two edits to one method); items that touch the *same file* but different responsibilities stay **separate and sequential** — same-file ≠ same-unit, and overlapping edits are sequenced, never parallelized.
+Before tasks, map which files each task creates/modifies and its one responsibility. Files that change together live together; split by responsibility, not by technical layer. A **task** is the smallest unit that carries its own verification and is worth a fresh reviewer's gate — its boundary is **outcome + responsibility + verification seam**, not the file set; files are ownership and sequencing information, not the unit boundary. Fold setup/scaffolding/docs into the task whose deliverable needs them. Simple work → few tasks; complex work → more, smaller tasks. Merge two items into one task only when they share the **same responsibility and the same seam** (e.g. two edits to one method); items that touch the *same file* but deliver different outcomes stay **separate and sequential** — same-file ≠ same-unit, and overlapping edits are sequenced, never parallelized. Two independent outcomes in one file are either separate sequential units or one self-contained delegated batch that keeps separate acceptance criteria and separate regression verification per outcome — never collapsed into one unit.
 
 ## Task structure
 
@@ -54,11 +55,14 @@ Use `### Task N:` headings exactly (the `task-brief` script extracts by "Task N"
   this task, so this is how neighbors learn its surface]
 
 **Risk:** elevated | high — [one-line reason]   ← omit this line when low (low is the default)
+**Route hint:** inline | delegate — [one observable contract-cost reason; advisory]
 **Acceptance:** [observable criteria — what "done" means for this task]
 **Verify:** `exact command` → expected result
 ````
 
 Set **Risk** by the hard-exclusion list + blast-radius principle in using-cost-oriented-workflow (auth, migrations, money, privacy, shared state, public API, dependencies, prod/CI config, irreversible side effects → elevated or high regardless of size). It drives review depth downstream, so a task that touches those gets its level recorded even when its diff is tiny. For **elevated/high** tasks, write **behavioral** Acceptance and a Verify that exercises it — the observable behaviors the change must exhibit (e.g. "expired token → 401, not 500"), not "compiles".
+
+Set **Route hint** once from the planned task boundary: `inline` when the implementation is one small, tightly coupled edit; `delegate` when the contract is cheaper than the self-contained multi-file or substantial implementation. The hint is advisory, not a model-tier field or authority over runtime evidence.
 
 - **standard mode:** pin the interface, acceptance, and the verify command; leave the interior to the implementer. You need not pre-write every line of code.
 - **production mode:** also write bite-sized steps with the actual test and implementation code (TDD), exact commands, and expected output — see test-driven-development.

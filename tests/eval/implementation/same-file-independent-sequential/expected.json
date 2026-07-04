@@ -1,0 +1,24 @@
+{
+  "id": "same-file-independent-sequential",
+  "fixture_version": 1,
+  "implementationRoute": "planned-sequential",
+  "expectedImplementerCount": 2,
+  "allowedPaths": [
+    "src/config.js"
+  ],
+  "expectedReportStatus": "DONE",
+  "expectedVerification": "each unit has its own acceptance test run separately",
+  "reviewRequirement": "per the mode/risk matrix, applied per unit",
+  "commitExpectation": "one controller commit per accepted unit (two commits)",
+  "forbidden": [
+    "collapsing the two outcomes into one light-inline edit because they share src/config.js",
+    "running the two units in parallel",
+    "one commit covering both unrelated outcomes"
+  ],
+  "stop_condition": "two independent same-file outcomes run as two sequential units, each with its own brief, report, verification, and commit",
+  "human_checks": [
+    "confirm two separate briefs and reports",
+    "confirm the units ran sequentially, never concurrently",
+    "confirm two commits"
+  ]
+}

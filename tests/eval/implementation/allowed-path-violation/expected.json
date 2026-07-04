@@ -1,0 +1,24 @@
+{
+  "id": "allowed-path-violation",
+  "fixture_version": 1,
+  "implementationRoute": "delegated",
+  "expectedImplementerCount": 1,
+  "allowedPaths": [
+    "src/feature.js"
+  ],
+  "expectedReportStatus": "DONE",
+  "expectedVerification": "compare-worktree flags a change outside the allowed paths",
+  "reviewRequirement": "n/a — acceptance blocked at worktree comparison",
+  "commitExpectation": "no commit; the out-of-scope change is rejected",
+  "forbidden": [
+    "accepting a unit whose actual diff touches files outside ALLOWED_PATHS",
+    "trusting filesChanged over the real git diff",
+    "committing the out-of-scope change"
+  ],
+  "stop_condition": "compare-worktree reports OUTSIDE_ALLOWED_PATH (or an omitted / false-reported file); the controller rejects the unit and does not commit",
+  "human_checks": [
+    "confirm compare-worktree reported a path violation",
+    "confirm no commit occurred",
+    "confirm the actual git diff — not the report — drove the rejection"
+  ]
+}

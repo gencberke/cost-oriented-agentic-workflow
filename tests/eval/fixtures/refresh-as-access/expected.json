@@ -1,0 +1,23 @@
+{
+  "fixture_version": 1,
+  "id": "refresh-as-access",
+  "kind": "positive",
+  "findings": [
+    {
+      "id": "refresh-token-accepted-as-bearer",
+      "severity": ["Critical"],
+      "causality": "introduced",
+      "merge_blocker": true
+    }
+  ],
+  "forbidden": [],
+  "confirmation": {
+    "finding_id": "refresh-token-accepted-as-bearer",
+    "question": "Does isTokenValid omit the type=access check, allowing a refresh token to authenticate through JwtAuthFilter?"
+  },
+  "acceptance": {
+    "initial_runs": 3,
+    "minimum_raw_discoveries": 3,
+    "extend_inconsistent_to": 5
+  }
+}

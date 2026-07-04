@@ -1,0 +1,27 @@
+diff --git a/src/main/java/example/security/SecurityConfig.java b/src/main/java/example/security/SecurityConfig.java
+index 1111111..2222222 100644
+--- a/src/main/java/example/security/SecurityConfig.java
++++ b/src/main/java/example/security/SecurityConfig.java
+@@ -24,8 +24,11 @@ public class SecurityConfig {
+         http
+             .csrf(AbstractHttpConfigurer::disable)
+             .authorizeHttpRequests(auth -> auth
+-                .requestMatchers("/api/auth/**").permitAll()
++                .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
+                 .anyRequest().authenticated())
++            .exceptionHandling(errors -> errors.authenticationEntryPoint(
++                (request, response, exception) ->
++                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED)))
+             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+         return http.build();
+     }
+diff --git a/src/main/java/example/auth/AuthController.java b/src/main/java/example/auth/AuthController.java
+index 3333333..4444444 100644
+--- a/src/main/java/example/auth/AuthController.java
++++ b/src/main/java/example/auth/AuthController.java
+@@ -31,4 +31,4 @@ public class AuthController {
+-    @PutMapping("/reset")
++    @PutMapping("/reset-password")
+     public ResponseEntity<Void> resetPassword(@RequestBody ResetPasswordRequest request) {
+         User user = (User) SecurityContextHolder.getContext()
+                 .getAuthentication().getPrincipal();

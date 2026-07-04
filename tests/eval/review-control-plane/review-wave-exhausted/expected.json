@@ -1,0 +1,17 @@
+{
+  "id": "review-wave-exhausted",
+  "fixture_version": 1,
+  "mode": "production",
+  "risk": "high",
+  "matrixDecision": "required",
+  "primaryReviewScope": "TARGETED_REREVIEW",
+  "expectedReviewerCount": 1,
+  "expectedRemediationWaves": 2,
+  "expectedTargetedRereviews": 2,
+  "expectedWholeWorkReview": true,
+  "expectedAdjudication": "accepted blocking finding remains NOT_RESOLVED after wave 2",
+  "commitExpectation": "blocked; no approval or completion",
+  "requiredArtifacts": ["two wave ledger entries", "targeted re-review report", "blocked artifact"],
+  "forbidden": ["treat budget exhaustion as approval", "start third remediation wave"],
+  "human_checks": ["confirm cow-state block remediation-exhausted", "confirm open finding evidence is preserved"]
+}

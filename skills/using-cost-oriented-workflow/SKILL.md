@@ -7,6 +7,8 @@ description: Use when starting or resuming work under the cost-oriented agentic 
 If you were dispatched as a subagent to execute a specific task, skip this skill. Do the task you were given.
 </SUBAGENT-STOP>
 
+**Entry sentinel:** `COW_ENTRY_INJECTED`. Once this skill is loaded, treat the sentinel as present and do not invoke the entry skill again in this session.
+
 # Using the Cost-Oriented Workflow
 
 ## Core economy
@@ -22,42 +24,38 @@ This is not "do less." It is "spend where it changes the outcome." A skipped rev
 
 Mode is recorded in the **anchor header** at the top of the plan/task file. If no mode is recorded, you are in standard. Mode is not changed mid-session.
 
-## The flow
+## The flow: process first, then size
 
-Before any process machinery, **size the task**. This triage is the first and cheapest decision, and it decides whether you pay for the planning ceremony at all — spending it on a three-line fix is the waste this workflow exists to remove.
+Before the first repository action, choose the **process lane**. Show one short receipt using observable facts, not hidden chain-of-thought:
+
+```text
+Route: lane=debug; repository=warm; discovery=controller-map; implementation=pending; risk=low
+Route: lane=light-inline; repository=warm; discovery=controller-map; implementation=pending; risk=low
+```
+
+Say nothing more about routing while it stays unchanged. If evidence changes it, show exactly one `Re-route: reason=<code>; discovery=<new-route>; implementation=pending` line before the next tracked edit.
+
+**Repository readiness precedes broad exploration.** On activation: state → snapshot → profile → intake-if-not-warm → discovery route, *before* reading source. `VALID` profile = warm path; else dispatch the exact `cost-oriented-agentic-workflow:cow-repo-investigator` (never auto-select) and accept its draft via `repo-profile.mjs`. Discovery route is separate from the implementation route, which stays **`pending`** here. A dirty tree alone never authorizes intake (`PROFILE_DRAFT`) — a warm repo stays warm; deeper mapping of a dirty repo is `TASK_DISCOVERY`, never profile regeneration. Detail: references/repository-readiness.md, references/discovery-routing.md.
 
 ```dot
 digraph flow {
-    "Task arrives" [shape=box];
-    "Triage: size + risk + ambiguity (free, do first)" [shape=diamond];
-    "Trivial, tightly-coupled, clear, AND Risk: low?" [shape=diamond];
-    "Light path: state intent in one line, write inline, verify" [shape=box];
-    "Ambiguous / messy?" [shape=diamond];
-    "brainstorming (intensity scaled)" [shape=box];
-    "writing-plans: contract + anchor header + task list" [shape=box];
-    "execution-routing: route per unit; review per risk matrix; final whole-work review; integrate" [shape=box];
-    "verification-before-completion (evidence)" [shape=doublecircle];
-
-    "Task arrives" -> "Triage: size + risk + ambiguity (free, do first)";
-    "Triage: size + risk + ambiguity (free, do first)" -> "Trivial, tightly-coupled, clear, AND Risk: low?";
-    "Trivial, tightly-coupled, clear, AND Risk: low?" -> "Light path: state intent in one line, write inline, verify" [label="yes"];
-    "Trivial, tightly-coupled, clear, AND Risk: low?" -> "Ambiguous / messy?" [label="no"];
-    "Ambiguous / messy?" -> "brainstorming (intensity scaled)" [label="yes"];
-    "Ambiguous / messy?" -> "writing-plans: contract + anchor header + task list" [label="no — clear but multi-step"];
-    "brainstorming (intensity scaled)" -> "writing-plans: contract + anchor header + task list";
-    "writing-plans: contract + anchor header + task list" -> "execution-routing: route per unit; review per risk matrix; final whole-work review; integrate";
-    "execution-routing: route per unit; review per risk matrix; final whole-work review; integrate" -> "verification-before-completion (evidence)";
-    "Light path: state intent in one line, write inline, verify" -> "verification-before-completion (evidence)";
+    "Task arrives" -> "Bug, test failure, or unexpected behavior?";
+    "Bug, test failure, or unexpected behavior?" -> "invoke systematic-debugging before repo inspection" [label="yes"];
+    "invoke systematic-debugging before repo inspection" -> "read-only diagnosis";
+    "read-only diagnosis" -> "implementation triage after evidenced root cause";
+    "Bug, test failure, or unexpected behavior?" -> "implementation triage" [label="no"];
+    "implementation triage after evidenced root cause" -> "implementation triage";
+    "implementation triage" -> "light-inline + verify" [label="one trivial, clear, low-risk change"];
+    "implementation triage" -> "brainstorming → writing-plans" [label="ambiguous/messy new behavior"];
+    "implementation triage" -> "writing-plans → execution-routing" [label="clear multi-step work"];
 }
 ```
 
-**The triage (in your head — it costs nothing):**
+**Positive route cues** (priors, not automatic decisions) live in references/routing-cues.md. For a light path the receipt is the agreed approach (no plan file). For ambiguous new behavior use brainstorming; for clear multi-step work go to writing-plans. Size controls cost, while risk can still veto light-inline. **Two independent user-visible outcomes are never one light-inline change** — even when both edits land in the same file, route them as separate sequential units or one delegated batch with separate acceptance and regression per outcome (writing-plans). "Same file, each fix small" does not license light-inline.
 
-- **Trivial, tightly-coupled, clear, AND Risk: low** — a single small change you'd write yourself anyway (the same bar execution-routing uses for inline: one small edit, ~<40-60 lines, coupled to context you already hold) that is **not** in the risk hard-exclusion list below. Take the **light path**: state in one line what you're about to do — a quick confirm only if it changes behavior the human cares about — then write it inline and verify. No plan file, no decomposition, no design-approval gate. The agreement is that one line, held in the conversation.
-- **Ambiguous or messy** — you can't yet state the change cleanly. Go to **brainstorming**, intensity scaled to the mess.
-- **Clear but multi-step / multi-file** — you know what to build and it's more than one small unit. Skip brainstorming; go straight to **writing-plans**.
+### Light-path escape hatch
 
-Putting size first is the whole point: it keeps the brainstorm-gate and the plan file for work that earns them, and lets a small change stay small. But size only governs **cost** — risk can veto the light path even for a one-liner (next).
+The original light-path decision expires when evidence changes. **Before a tracked edit**, re-run size/risk triage if a second independent outcome or subsystem appears; a dependency, test harness, schema, migration, or config becomes necessary; the hypothesis fails or the bug cannot be reproduced; the work exceeds one small edit; or scope/risk rises. These triggers do not choose the new route — they invalidate the old one. Emit one `Re-route:` receipt, then plan, delegate, ask, or continue inline as the new evidence warrants.
 
 ## Risk classification (the routing spine)
 
@@ -77,14 +75,15 @@ Size decides *cost*; **risk decides how much process is non-negotiable.** Every 
 
 **The principle (for what the list doesn't name):** small code is not the same as low risk. If a change is hard to reverse, has a wide or invisible blast radius, moves a trust boundary, or fails in a way you'd notice late — it is **not** low risk. Don't let "it's only a few lines" rationalize skipping the gate.
 
-| Risk | Light path? | Per-task independent review | Final whole-work review |
-|---|---|---|---|
-| **low** | eligible (if also small + tightly-coupled) | not needed — self-review | required for planned multi-task work |
-| **elevated** | no | judgment — independent reviewer when the change is non-obvious | required |
-| **high** | no | **required** (independent reviewer; security-lensed if the risk is security) | required + security lens where it applies |
-| **Critical/Important fix** | — | **required** targeted re-review (fresh instance) | final verdict must reflect the fixed state |
+| Mode / unit | Independent per-task review |
+|---|---|
+| `standard / low` | `none` — self-review + final whole-work gate |
+| `standard / elevated` | `required-if-non-obvious` |
+| `standard / high` | `required` — add the security lens where applicable |
+| `production / any planned task` | `required` |
+| `Critical/Important fix` | `required:fresh-targeted` |
 
-Review *depth* scales with cost; the cells this table marks **required** do not. Risk is the one dimension cost may never compress. execution-routing and requesting-review both read this table.
+These per-task rows apply to planned units; the trivial light path remains inline + verify. Every per-task reviewer is an independent Sonnet instance, including production. Final whole-work review remains standard → Sonnet, production → Opus; production always takes it. In standard, it is required for multi-task plans, and a single planned unit may skip it only if that unit already had independent review. Review *depth* may scale with cost; every `required` cell is non-negotiable. execution-routing and requesting-review both read this table.
 
 **Tests follow risk too.** For elevated/high work, acceptance is *behavioral* — name the observable behaviors the change must exhibit (e.g. "expired token → 401, not 500") and make the verify command exercise them; compile-only is not acceptance for high-risk work. A fixed Critical/Important behavior bug does not close without a regression test that reproduces it. No test infra in the repo → that is a **surfaced decision** (add it, or record the risk acceptance), never a silent skip.
 
@@ -101,36 +100,24 @@ These are binary and catastrophic if skipped. They are the spine.
 
 ## Judgment calls (calibrate — do not ritualize)
 
-These are continuous cost-benefit trade-offs. There is no fixed answer; weigh the task.
+Continuous cost-benefit trade-offs; weigh the task — no fixed answer.
 
-- **Process weight (the triage)** — size the task before anything else. A trivial, tightly-coupled change takes the light path (inline, verify, no plan file); only real multi-step or ambiguous work earns brainstorming and a plan. Don't ceremonialize a small change.
-- **Delegate vs inline** — the contract-cost rule (execution-routing). Writing the subagent contract should cost less than writing the code yourself, or do it inline.
-- **Contract thickness** — pin the seams, free the interior (execution-routing). Thin in standard, thicker in production.
-- **Review depth** — *how deep* a review goes scales with risk and diff size. *Whether* a review happens is set by the risk matrix above, not by cost: the cells it marks required (whole-work review on planned work, independent review on high-risk, re-review after a Critical/Important fix) are not negotiable.
-- **Tests** — in standard, only what genuinely protects the change; in production, thorough.
-- **Brainstorming intensity** — scales with how ambiguous or messy the request is. A clear request gets a short gate; a vague one gets real exploration.
-- **Exploration breadth** — none for a repo you already hold in context; scaled Explore agents for a new/unknown repo, sized to it.
+- **Process weight** — select the process skill first, then size the work; a trivial tightly-coupled change takes the light path, only multi-step or ambiguous work earns a plan.
+- **Delegate vs inline** — contract-cost rule (execution-routing): contract costs more than the code → write it inline.
+- **Contract thickness** — pin the seams, free the interior (execution-routing); thin in standard, thicker in production.
+- **Review depth** — *how deep* scales with risk/diff size; *whether* follows the matrix above.
+- **Tests** — standard: only what genuinely protects the change; production: thorough.
+- **Brainstorming intensity** — scales with ambiguity: a clear request gets a short gate; a vague one gets real exploration.
+- **Exploration breadth** — none for a repo you already hold; otherwise establish repository readiness, then route discovery (references/repository-readiness.md, references/discovery-routing.md), independent of fix size.
 
 ## Anti-drift is structure, not stern wording
 
-Long sessions drift when there is no cheap artifact to re-anchor against. That artifact is the **persistent task list + the anchor header** at the top of the plan/task file. Re-read the header each loop. Do not rely on forceful language to hold the line — rely on re-reading the small, durable record.
-
-**Anchor header** (writing-plans creates it; keep it current). It holds, in a few lines:
-
-```
-MODE: standard | production
-ROUTING: brainstorm-gate → plan/contract → delegate-by-contract-cost → review-per-risk-matrix → verify-before-done
-CADENCE: continuous — run planned tasks without pausing; STOP only on: blocked · decision ambiguity · plan/code conflict · scope or risk escalation · external/irreversible action · retry budget exhausted · new credential or permission · failed baseline/verification · human asked to checkpoint
-ON RESUME/COMPACTION: re-invoke cost-oriented-agentic-workflow:using-cost-oriented-workflow, then trust this file + the ledger + git over memory.
-```
-
-After a compaction or resume, the header and the progress ledger (and `git log`) are ground truth — trust them over your recollection.
+Long sessions drift without a cheap artifact to re-anchor against: the **persistent task list + the anchor header** at the top of the plan/task file. Re-read it each loop — rely on the small, durable record, not forceful language. writing-plans creates and owns the anchor (`MODE`, `COMMIT_POLICY`, the `ROUTING` chain, a `CADENCE`/STOP line, and the `ON RESUME/COMPACTION` rule). After compaction/resume, plan + progress ledger + `git log` are ground truth.
 
 ## Token-economy posture
 
-- Controller reads summaries and verification results; bulk artifacts (diffs, briefs, reports) move as **files**, not pasted text.
-- Do not re-explore a repo you already have context for.
-- Specify the model explicitly on every subagent dispatch — an omitted model silently inherits your expensive controller model.
+- Specify the model on every subagent dispatch — an omitted model inherits your expensive controller model.
+- Move bulk artifacts (diffs, briefs, reports) as **files**, not pasted text; don't re-explore a repo you already hold.
 
 ## Instruction priority
 
@@ -142,13 +129,13 @@ If the human says skip a step, skip it. Instructions say WHAT; they do not by th
 
 ## Where to go next
 
-Invoke these by their full id `cost-oriented-agentic-workflow:<name>` — these names also exist in other skill libraries, so qualify them or the wrong one may load.
+Invoke by full id `cost-oriented-agentic-workflow:<name>` — names collide across libraries, so qualify or the wrong one loads.
 
-- A new task → start with the **triage** above (light path vs brainstorm vs plan); spend process only where size earns it.
+- A new non-bug task → start with implementation triage (light path vs brainstorm vs plan).
 - Designing something new (ambiguous/messy) → **brainstorming**
 - Turning a design into ordered steps + the anchor → **writing-plans**
 - Implementing (delegate vs inline, dispatch, return protocol) → **execution-routing**
-- A bug, test failure, or unexpected behavior → **systematic-debugging** (find root cause before any fix — guessing is the most expensive loop)
+- A bug, test failure, or unexpected behavior → invoke **systematic-debugging before repository inspection**; diagnose, then return here for implementation triage.
 - Checking finished work → **requesting-review**
 - Acting on review feedback → **receiving-code-review** (adjudicate, don't auto-apply)
 - About to claim something works → **verification-before-completion**

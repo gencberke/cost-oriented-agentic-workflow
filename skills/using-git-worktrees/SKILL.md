@@ -62,4 +62,4 @@ git worktree prune                         # clear any stale registration
 git branch -d <feature>                    # once merged
 ```
 
-Only remove worktrees you created (those under `.worktrees/`); leave a harness-owned workspace to the harness. Stale worktrees confuse later sessions. (For the full merge/PR/keep/discard decision, this is where finishing-a-development-branch belongs once it ships.)
+Only remove worktrees you created (those under `.worktrees/`); leave a harness-owned workspace to the harness. Stale worktrees confuse later sessions. (For the full merge/PR/keep/discard decision, hand off to finishing-a-development-branch.)

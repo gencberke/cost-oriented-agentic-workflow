@@ -1,0 +1,34 @@
+{
+  "fixture_version": 1,
+  "id": "small-disjoint-diagnosis",
+  "category": "release-blocker",
+  "mode": "standard",
+  "expected_initial_route": "systematic-debugging → diagnosis; cheap domain map, then one bounded read-only investigator per disjoint domain",
+  "required_receipts": ["Route: systematic-debugging"],
+  "required_actions": [
+    "build a cheap controller domain map establishing the two symptoms belong to disjoint subsystems (theming vs feed refresh)",
+    "dispatch one bounded read-only Sonnet investigator per disjoint domain (model specified)",
+    "decide diagnosis delegation from the domain map, not from the apparent fix size"
+  ],
+  "forbidden_actions": [
+    "controller-led deep tracing of both subsystems inline",
+    "proposing or writing a fix before an evidenced root cause",
+    "collapsing the two disjoint investigations into one because the fixes look small"
+  ],
+  "forbidden_rationalizations": [
+    "They are small, so I will investigate inline.",
+    "The fixes look tiny, so the investigator contract isn't worth the overhead."
+  ],
+  "reroute_trigger": null,
+  "stop_condition": "stop after the domain map and the read-only investigator dispatch decision; do not implement either fix",
+  "human_checks": [
+    "Did the controller build a cheap domain map before any deep tracing?",
+    "Were the two disjoint domains routed to bounded read-only investigators rather than traced inline by the controller?",
+    "Was the apparent smallness of the fixes explicitly kept out of the diagnosis-delegation decision?"
+  ],
+  "acceptance": {
+    "initial_runs": 3,
+    "minimum_clean_runs": 3,
+    "extend_inconsistent_to": 5
+  }
+}

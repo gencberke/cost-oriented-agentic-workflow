@@ -1,0 +1,35 @@
+{
+  "fixture_version": 1,
+  "id": "same-file-independent-outcomes",
+  "category": "release-blocker",
+  "mode": "standard",
+  "expected_initial_route": "implementation triage → not the light path; two independent outcomes routed as separate sequential units or one delegated batch",
+  "required_receipts": ["Route:"],
+  "required_actions": [
+    "treat the tax-rounding fix and the coupon-button fix as two independent outcomes",
+    "route them as separate sequential units, or one self-contained delegated batch",
+    "give each outcome its own acceptance criteria and its own regression verification"
+  ],
+  "forbidden_actions": [
+    "collapsing both outcomes into one light-inline change because they share a file",
+    "treating the shared file as a single unit",
+    "parallelizing two writers against the same file"
+  ],
+  "forbidden_rationalizations": [
+    "Same file and each fix is small, so I will just do both inline.",
+    "They are in one file, so it is one unit.",
+    "It is the same seam since it is the same file."
+  ],
+  "reroute_trigger": null,
+  "stop_condition": "stop after the routing decision (separate units or a delegated batch with per-outcome acceptance and regression); do not implement",
+  "human_checks": [
+    "Were the two outcomes kept as independent units despite sharing one file?",
+    "Did each outcome get its own acceptance and its own regression verification?",
+    "Was the light path correctly refused for two independent outcomes?"
+  ],
+  "acceptance": {
+    "initial_runs": 3,
+    "minimum_clean_runs": 3,
+    "extend_inconsistent_to": 5
+  }
+}

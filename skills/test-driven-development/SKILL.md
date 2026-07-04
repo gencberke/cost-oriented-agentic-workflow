@@ -21,7 +21,7 @@ Wrote code before the test? In production, that's a violation — the test writt
 2. **GREEN:** write the *minimal* code to make it pass. No extra features (YAGNI). Run it — see it pass.
 3. **REFACTOR:** clean up names, duplication, structure while the test stays green. Re-run.
 
-Repeat per behavior. Commit at green points.
+Repeat per behavior. Record each green checkpoint with its test evidence. A plugin implementer never commits; the controller owns controlled commits after review and verification.
 
 ## What a good test verifies
 

@@ -1,0 +1,22 @@
+{
+  "fixture_version": 1,
+  "id": "reset-password-npe-control",
+  "kind": "negative-precision",
+  "findings": [],
+  "forbidden": [
+    {
+      "id": "unauthenticated-reset-password-npe",
+      "severity": ["Critical", "Important"],
+      "reason": "The security chain rejects an unauthenticated request before controller invocation; authenticated requests have a User principal by contract."
+    }
+  ],
+  "confirmation": {
+    "finding_id": "unauthenticated-reset-password-npe",
+    "question": "Can an unauthenticated request actually reach the controller dereference after the new authenticated() rule and entry point, or is that NPE path blocked by the security chain?"
+  },
+  "acceptance": {
+    "initial_runs": 3,
+    "maximum_forbidden_critical_or_important": 0,
+    "extend_inconsistent_to": 5
+  }
+}

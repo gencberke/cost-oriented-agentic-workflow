@@ -1,0 +1,14 @@
+{
+  "id": "controller-map-budget",
+  "fixture_version": 1,
+  "repositoryProfileState": "VALID",
+  "repoInvestigatorPurpose": "NONE",
+  "discoveryRoute": "controller-map",
+  "controllerReadBudget": { "targetReadsBefore": 3, "broadQueriesBefore": 1, "targetReadsAfter": 1, "broadQueriesAfter": 0 },
+  "expectations": [
+    "at most 3 TARGET_SOURCE_OR_CONFIG_READ and at most 1 BROAD_QUERY before any dispatch",
+    "control-plane and instruction reads do not consume the 3-read allowance",
+    "if the budget is insufficient, escalate to an investigator instead of broad inline reading"
+  ],
+  "forbidden": ["more than 3 target source/config reads before dispatch", "more than 1 broad query before dispatch", "broad inline discovery justified by an expected-small fix"]
+}

@@ -1,0 +1,10 @@
+{
+  "id": "controller-edit-during-triage",
+  "description": "Controller edits a tracked file during triage. Not diagnosis-readonly and not implementing -> no E1/E2/E3.",
+  "stateOverrides": {
+    "phase": "triage"
+  },
+  "setupFiles": { "README.md": "seed\n" },
+  "payload": { "tool_name": "Edit", "tool_input": { "file_path": "README.md" } },
+  "expectDecision": "none"
+}

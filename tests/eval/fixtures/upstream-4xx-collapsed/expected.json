@@ -1,0 +1,23 @@
+{
+  "fixture_version": 1,
+  "id": "upstream-4xx-collapsed",
+  "kind": "positive",
+  "findings": [
+    {
+      "id": "all-upstream-4xx-become-404",
+      "severity": ["Important"],
+      "causality": "introduced",
+      "merge_blocker": true
+    }
+  ],
+  "forbidden": [],
+  "confirmation": {
+    "finding_id": "all-upstream-4xx-become-404",
+    "question": "Does is4xxClientError collapse upstream 400, 401, 403, and 429 into a misleading public 404 instead of mapping only the unknown-city response?"
+  },
+  "acceptance": {
+    "initial_runs": 3,
+    "minimum_raw_discoveries": 2,
+    "extend_inconsistent_to": 5
+  }
+}

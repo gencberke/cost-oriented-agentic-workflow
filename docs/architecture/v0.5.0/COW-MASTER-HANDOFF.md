@@ -1,0 +1,101 @@
+# COW Master Handoff
+
+This is the deep context recovery document for the v0.5.0 control-plane series.
+It is not the first-read document; start with [`../../../AGENTS.md`](../../../AGENTS.md)
+and [`../../HANDOFF.md`](../../HANDOFF.md). Use this file when an incoming agent
+needs more continuity than the compact handoff provides.
+
+## Repository Snapshot
+
+- Source root: the current checkout or worktree containing this file.
+- Package version: `0.4.2`.
+- Runtime dependencies: zero.
+- Active hook file: none. `hooks/hooks.json` is intentionally absent.
+- Current architecture docs are compact and canonical. Old per-phase handoffs
+  were removed from the working tree; Git history is the exact text archive.
+
+## Product Intent
+
+COW is a token-economy Claude Code workflow. The controller owns expensive
+judgment: planning, routing, adjudication, verification, and commits. Scoped
+agents perform bounded investigation, implementation, and review through files.
+The system spends where correctness changes, not by ritual.
+
+## Load-Bearing Invariants
+
+1. Preserve user-owned work.
+2. Never reset, clean, checkout, stash, or overwrite unrelated changes without
+   explicit user request.
+3. Agents never update workflow state.
+4. Agents never commit or stage; controlled commits are controller-owned.
+5. Review feedback is adjudicated, never blindly applied.
+6. Root cause precedes fixes.
+7. Discovery and implementation routing are separate axes.
+8. Same-file overlap does not make one unit; unit boundaries are outcome,
+   responsibility, and verification seam.
+9. Reports and review packages never replace Git evidence.
+10. Exhausted retry or remediation budgets never imply approval.
+11. Runtime dependencies stay zero.
+12. Static and live evidence are reported separately.
+
+## Delivered Control Plane
+
+- Phase 1: workflow state helper, state schema, reconstruction, repository
+  snapshot/profile foundation.
+- Phase 2: four scoped plugin agents with static contracts.
+- Phase 3A: repository readiness and discovery routing.
+- Phase 3B.1: implementation routing, implementer dispatch, validated reports,
+  and controller-owned verification.
+- Phase 3B.1.1: per-unit baselines, dirty-overlap protection, immutable attempt
+  reports, and baseline-relative compare.
+- Phase 3B.2: scoped review control, causality-aware findings, targeted
+  re-review, whole-work review, and two-wave remediation ceiling.
+- Phase 4: lean SessionStart pointer, PreToolUse/PreCompact shadow observation,
+  bounded hook logs, and fail-open hook behavior. No enforcement yet.
+- Phase 5A: selective static enforcement. `--decision-mode=enforce` PreToolUse
+  path emits only `ask`/`deny` for E1-E7 zero-false-positive binary rules;
+  shadow mode is preserved byte-identically; no active `hooks/hooks.json`.
+  Live ASK/DENY behavior is deferred until live evidence accepts it.
+- Phase 6 (harness-ready): deterministic evaluation harness — run-schema
+  validator, matched-condition aggregator with outlier reporting, F1–F5 fixtures,
+  and the Phase 6H optional Headroom experiment spec. Live evidence is
+  partial/deferred; no live Claude runs were executed in this pass.
+
+## Evidence Map
+
+- Structural gate: `npm.cmd run check`.
+- Hook gate: `npm.cmd run test:hooks`.
+- State/intake: `npm run test:foundation`.
+- Agent contracts: `npm run test:agents`.
+- Discovery/implementation/review stream analyzers: `tests/*-stream.test.mjs`.
+- Eval fixtures and token tooling: `tests/eval/`.
+- Behavioral dogfood policy: [`../../DOGFOOD.md`](../../DOGFOOD.md).
+- Current phase ledger: [`PHASES.md`](PHASES.md).
+
+## Runtime Packaging Status
+
+The Phase 7A runtime package surface includes the v0.5.0 control-plane substrate:
+plugin metadata, commands, skills, all four `agents/**` definitions, inactive
+hook examples, README, and license. It still intentionally excludes active
+`hooks/hooks.json`, tests, docs, scripts, raw evidence, phase prompts, and local
+worktrees. Source dogfood with `claude --plugin-dir <repo>` must still be
+reported separately from installed-runtime evidence.
+
+## Remaining Roadmap
+
+- Phase 6: run the live minimum matrix (F1 VANILLA/COW_SHADOW, F4 ask/deny;
+  F2/F3/F5 when budget allows), collect token/cost/latency evidence, accept or
+  reject live enforcement behavior, and record conservative thresholds only
+  from measured evidence.
+- Phase 7B: accept live evidence, bump versions to `0.5.0`, rebuild/inspect the
+  runtime package, and run the final release gate.
+
+## Incoming-Agent Procedure
+
+1. Read `AGENTS.md`, `docs/HANDOFF.md`, this file, and `PHASES.md`.
+2. Check branch, HEAD, status, and package version yourself.
+3. Classify dirty/untracked work before acting; preserve unrelated changes.
+4. Use deterministic checks first.
+5. Do not run live smokes unless the phase requires evidence that static tests
+   cannot provide.
+6. Do not activate hooks or bump versions before the final live-evidence gate.

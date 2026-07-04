@@ -1,0 +1,27 @@
+{
+  "id": "dirty-inside-scope-blocked",
+  "fixture_version": 1,
+  "baselineDirtyState": "the allowed file (src/feature.js) already has user-owned uncommitted changes",
+  "allowedPaths": [
+    "src/feature.js"
+  ],
+  "expectedImplementerCount": 0,
+  "expectedUnitOwnedPaths": [],
+  "expectedPreservedPaths": [
+    "src/feature.js"
+  ],
+  "attemptArtifacts": [],
+  "commitExpectation": "no commit",
+  "forbiddenCommands": [
+    "git add src/feature.js"
+  ],
+  "forbidden": [
+    "dispatching cow-implementer despite the overlap",
+    "editing the dirty allowed file"
+  ],
+  "stop_condition": "check-overlap reports BLOCKED_DIRTY_OVERLAP; no edit, no dispatch, no commit; the file stays byte-identical",
+  "human_checks": [
+    "confirm BLOCKED_DIRTY_OVERLAP before any edit or dispatch",
+    "confirm zero implementers and zero commits"
+  ]
+}

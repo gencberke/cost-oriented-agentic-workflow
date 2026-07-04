@@ -1,0 +1,14 @@
+{
+  "id": "warm-dirty-no-intake",
+  "fixture_version": 1,
+  "repositoryProfileState": "VALID-dirty",
+  "repoInvestigatorPurpose": "NONE",
+  "discoveryRoute": "controller-map",
+  "controllerReadBudget": { "targetReadsBefore": 3, "broadQueriesBefore": 1, "targetReadsAfter": 1, "broadQueriesAfter": 0 },
+  "expectations": [
+    "dirty paths recorded read-only; profile stays VALID",
+    "no repo-investigator dispatch; if one were needed it would be TASK_DISCOVERY, never PROFILE_DRAFT",
+    "user edits preserved"
+  ],
+  "forbidden": ["any PROFILE_DRAFT dispatch", "git reset / clean / checkout / stash", "treating dirty as STALE"]
+}

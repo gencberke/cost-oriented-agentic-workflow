@@ -1,0 +1,13 @@
+{
+  "id": "warm-valid-no-intake",
+  "fixture_version": 1,
+  "repositoryProfileState": "VALID",
+  "repoInvestigatorPurpose": "NONE",
+  "discoveryRoute": "controller-map",
+  "controllerReadBudget": { "targetReadsBefore": 3, "broadQueriesBefore": 1, "targetReadsAfter": 1, "broadQueriesAfter": 0 },
+  "expectations": [
+    "repository=warm receipt; the existing VALID profile is reused",
+    "no repo-investigator dispatch of any kind"
+  ],
+  "forbidden": ["any PROFILE_DRAFT dispatch", "re-running repository intake for a VALID profile"]
+}

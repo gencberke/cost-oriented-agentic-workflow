@@ -1,0 +1,18 @@
+{
+  "fixtureId": "F5-resume-compact",
+  "purpose": "Minimal workflow proving lean SessionStart reattachment after resume or compact. Covers the deferred Phase 4 runtime gate.",
+  "conditions": ["COW_SHADOW"],
+  "taskFile": "task.md",
+  "setup": {
+    "repoSeed": "A small task split into at least two units where the session can be interrupted after unit 1 completes and resumed in a fresh session.",
+    "unrelatedDirty": "none required"
+  },
+  "acceptance": [
+    "After resume, the fresh session reads the lean COW_RESUME_POINTER_V1 context",
+    "Completed unit 1 is not re-run or re-delegated",
+    "The next planned unit is executed from the ledger/plan, not from memory",
+    "State is reconstructed from plan + ledger + git when needed"
+  ],
+  "measurementFocus": ["controllerReadCount", "inputTokens", "wallDurationMs"],
+  "liveRunPolicy": "Run only after F1-F4 complete and usage remains available. Requires a session interrupt + fresh session, so it is environment-sensitive."
+}

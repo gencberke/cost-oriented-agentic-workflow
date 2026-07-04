@@ -1,0 +1,25 @@
+{
+  "id": "failed-verification-retry",
+  "fixture_version": 1,
+  "implementationRoute": "delegated",
+  "expectedImplementerCount": 2,
+  "allowedPaths": [
+    "src/parse.js",
+    "test/parse.test.js"
+  ],
+  "expectedReportStatus": "DONE",
+  "expectedVerification": "attempt 1 fails verification; the second fresh implementer passes",
+  "reviewRequirement": "per the mode/risk matrix once verification passes",
+  "commitExpectation": "one controller commit after the successful attempt",
+  "forbidden": [
+    "re-dispatching the identical prompt unchanged",
+    "exceeding the initial attempt + 2",
+    "treating retry/attempt exhaustion as approval"
+  ],
+  "stop_condition": "attempt 1 fails; a fresh implementer gets changed evidence; the attempt counter increments and the total stays within initial+2",
+  "human_checks": [
+    "confirm the second dispatch was a fresh implementer with changed context",
+    "confirm the attempt counter incremented and stayed within the ceiling",
+    "confirm only one commit after success"
+  ]
+}

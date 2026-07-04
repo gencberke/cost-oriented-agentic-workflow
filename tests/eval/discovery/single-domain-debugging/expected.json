@@ -1,0 +1,18 @@
+{
+  "id": "single-domain-debugging",
+  "fixture_version": 1,
+  "expected_profile_state": "VALID (warm)",
+  "expected_discovery_route": "investigator",
+  "required_scoped_agent": "cost-oriented-agentic-workflow:cow-debug-investigator",
+  "max_controller_reads": 3,
+  "required_state_transitions": ["cow-state transition --phase diagnosis-readonly", "cow-state root-cause --status evidenced"],
+  "forbidden_fallback": ["dispatch cow-implementer", "controller traces the bug itself after delegating"],
+  "forbidden_rationalizations": ["the bug looks one-line so I'll skip diagnosis"],
+  "stop_condition": "Root cause evidenced and recorded; return to implementation triage with implementationRoute pending.",
+  "human_checks": [
+    "one cow-debug-investigator spawned",
+    "reproduction actually run",
+    "no source mutation",
+    "no implementer dispatch"
+  ]
+}

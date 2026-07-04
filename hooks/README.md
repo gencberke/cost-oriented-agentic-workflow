@@ -1,7 +1,8 @@
 # Optional always-on hook
 
 By default this plugin activates via the launcher command
-(`/cost-oriented-agentic-workflow` or `/cost-oriented-agentic-workflow:production`).
+(`/cost-oriented-agentic-workflow:cost-oriented-agentic-workflow` or
+`/cost-oriented-agentic-workflow:production`).
 The workflow is **not** forced onto every session.
 
 If you instead want the workflow loaded automatically in **every** session
@@ -10,9 +11,28 @@ If you instead want the workflow loaded automatically in **every** session
 1. Copy `hooks.json.example` to `hooks.json` in this directory.
 2. Reinstall / re-enable the plugin so Claude Code picks up the hook.
 
-The hook (`session-start`) injects the `using-cost-oriented-workflow` entry
-skill at session start on `startup | clear | compact`. `run-hook.cmd` is a
-polyglot wrapper that runs the bash script on Windows (via Git Bash) and Unix
-alike. With the hook enabled, standard mode is the default; switch a given
-session to production by running the `:production` command, which writes
-`MODE: production` into the plan/task file's anchor header.
+The SessionStart hook (`cow-hook.mjs session-start`) emits a compact
+`COW_RESUME_POINTER_V1` pointer on `startup | resume | clear | compact`. The
+pointer names the entry skill and tells the session to re-anchor from Git, the
+plan, the ledger, and workflow state. Both example configs invoke the Node
+hook script directly — no shell wrapper is needed on Windows or Unix. With the
+hook enabled, standard mode is the default; switch a given session to
+production by running `/cost-oriented-agentic-workflow:production`, which
+writes `MODE: production` into the plan/task file's anchor header.
+
+## Shadow vs. enforcement mode
+
+`hooks.json.example` runs `cow-hook.mjs` in **shadow** mode (the default):
+hooks observe rule matches, write bounded observations, and never block. This
+is the Phase 4 behavior and the only mode an active `hooks.json` should ship
+today.
+
+`hooks.enforcement.json.example` is an **inactive** example that adds
+`--decision-mode=enforce` to the PreToolUse hook. In enforcement mode the hook
+may emit `ask` or `deny` for the zero-false-positive binary rules E1–E7 (never
+`allow`/`defer`), and fails open on no-match, uncertainty, internal error, and
+absent/inactive/corrupt state. SessionStart and PreCompact ignore the flag.
+
+**Runtime activation of enforcement is deferred until live evidence accepts it.**
+Do not copy `hooks.enforcement.json.example` to `hooks.json` until the live
+behavioral gate accepts enforcement. The shadow example must remain the default.

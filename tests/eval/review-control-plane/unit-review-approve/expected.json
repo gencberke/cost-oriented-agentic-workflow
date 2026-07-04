@@ -1,0 +1,17 @@
+{
+  "id": "unit-review-approve",
+  "fixture_version": 1,
+  "mode": "standard",
+  "risk": "elevated",
+  "matrixDecision": "required-if-non-obvious",
+  "primaryReviewScope": "UNIT_REVIEW",
+  "expectedReviewerCount": 1,
+  "expectedRemediationWaves": 0,
+  "expectedTargetedRereviews": 0,
+  "expectedWholeWorkReview": true,
+  "expectedAdjudication": "controller records no accepted blocking findings after validating review-report",
+  "commitExpectation": "one unit commit after review validation, adjudication, verification, and verify-stage",
+  "requiredArtifacts": ["review package", "review-report.json", "review-report validation", "adjudication artifact"],
+  "forbidden": ["generic reviewer", "commit before review-report validation", "skip adjudication"],
+  "human_checks": ["confirm cow-reviewer scoped dispatch", "confirm reviewer model sonnet"]
+}

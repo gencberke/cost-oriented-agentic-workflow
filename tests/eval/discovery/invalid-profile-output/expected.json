@@ -1,0 +1,17 @@
+{
+  "id": "invalid-profile-output",
+  "fixture_version": 1,
+  "expected_profile_state": "MISSING -> INVALID draft -> one corrected redispatch",
+  "expected_discovery_route": "investigator",
+  "required_scoped_agent": "cost-oriented-agentic-workflow:cow-repo-investigator",
+  "max_controller_reads": 4,
+  "required_state_transitions": ["cow-state init", "cow-state profile --status absent"],
+  "forbidden_fallback": ["accepting the invalid profile by hand", "promoting a PARTIAL or INVALID draft to VALID"],
+  "forbidden_rationalizations": ["the JSON is close enough, accept it"],
+  "stop_condition": "repo-profile.mjs rejects the draft; one corrected redispatch using the validation errors; a second failure blocks intake.",
+  "human_checks": [
+    "validate-agent-output rejected the bad envelope",
+    "at most one corrected redispatch",
+    "no unvalidated profile was trusted"
+  ]
+}

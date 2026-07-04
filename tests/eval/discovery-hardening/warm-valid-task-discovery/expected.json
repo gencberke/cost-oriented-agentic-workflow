@@ -1,0 +1,14 @@
+{
+  "id": "warm-valid-task-discovery",
+  "fixture_version": 1,
+  "repositoryProfileState": "VALID",
+  "repoInvestigatorPurpose": "TASK_DISCOVERY",
+  "discoveryRoute": "investigator",
+  "controllerReadBudget": { "targetReadsBefore": 3, "broadQueriesBefore": 1, "targetReadsAfter": 1, "broadQueriesAfter": 0 },
+  "expectations": [
+    "exactly one cow-repo-investigator with OUTPUT_FORMAT=TASK_DISCOVERY",
+    "the profile fingerprint is unchanged (no regeneration)",
+    "no controller reinvestigation after the agent report"
+  ],
+  "forbidden": ["any PROFILE_DRAFT dispatch", "profile regeneration", "a broad query after delegation"]
+}

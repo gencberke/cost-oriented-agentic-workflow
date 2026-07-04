@@ -1,0 +1,23 @@
+{
+  "id": "trivial-inline",
+  "fixture_version": 1,
+  "implementationRoute": "inline",
+  "expectedImplementerCount": 0,
+  "allowedPaths": [
+    "src/format.js"
+  ],
+  "expectedReportStatus": "NONE",
+  "expectedVerification": "run the existing unit test for the changed function",
+  "reviewRequirement": "standard/low: self-review + final whole-work review (no per-task reviewer)",
+  "commitExpectation": "one controller commit after fresh verification",
+  "forbidden": [
+    "dispatching cost-oriented-agentic-workflow:cow-implementer for a one-line change",
+    "skipping verification",
+    "starting non-trivial work on main without confirmation"
+  ],
+  "stop_condition": "the controller edits inline, verifies, applies the matrix, and commits with no implementer dispatch",
+  "human_checks": [
+    "confirm zero cow-implementer dispatches in the stream",
+    "confirm exactly one controller commit"
+  ]
+}

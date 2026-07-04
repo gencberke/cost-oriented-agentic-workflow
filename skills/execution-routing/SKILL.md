@@ -1,157 +1,125 @@
 ---
 name: execution-routing
-description: Use when implementing a planned change under the cost-oriented workflow — decides per unit whether to write it inline or delegate to a Sonnet subagent, and runs the delegate/review/verify loop while keeping the controller lean.
+description: Use when implementing a planned change under the cost-oriented workflow - selects the implementation route (inline vs the scoped cow-implementer), validates the report against the real diff, and runs the review/verify/commit loop while keeping the controller lean.
 ---
 
 # Execution Routing
 
-Turn a plan into working code while spending the controller's expensive tokens only where they change the outcome. For each unit of work you make one decision first — **write it yourself (inline) or delegate it to a Sonnet subagent** — then run the loop for whichever you chose.
+Turn a plan into working code while spending Opus only where it changes the outcome. Per unit you route, validate, review, verify, and commit; the scoped Sonnet `cow-implementer` writes bounded interiors. Bulk artifacts move as files, never pasted code bodies.
 
-**Core economy:** You (Opus) route and review. A Sonnet subagent (high effort) does the token-heavy reasoning and writing. Bulk artifacts move as files; the controller reads summaries and verification, never pasted code bodies.
+## Plan Pre-Flight
 
-## Pre-flight: scan the plan once (a real step, not a vibe)
+Before Task 1, scan once for Global-Constraint/task conflicts, Acceptance/interface contradictions, and plan-mandated defects. Emit `Pre-flight scan: clean.` or one batched question; do not proceed on ambiguity. A single trivial unit skips this scan.
 
-Before routing the first unit, run this checklist over the plan and **emit its result** — do not skip it as "looks fine":
+## Repository State
 
-1. **Constraint vs task** — does any task contradict the Global Constraints?
-2. **Acceptance vs interface/logic** — does any task's Acceptance contradict its own Interfaces or stated logic? (e.g. a field the constraints say to *keep* but an acceptance calls "ignored"; a heuristic that triggers on `A or B present` but whose acceptance says `only B`.) A real dogfooded plan shipped with exactly these — they hide in mid-flight edits that touch one section but not the others.
-3. **Plan-mandated defects** — anything the plan mandates that a reviewer would flag (a test that asserts nothing, a duplicated logic block)?
+Before Task 1, require `git status --porcelain` empty for planned/delegated work. If dirty, stop for human classification; never absorb unknown changes. Default `controller-per-unit` must be clean again after each reviewed commit.
 
-Emit one of exactly two outputs: a single **batched** question to the human (each finding beside the plan text that mandates it, asking which governs) — or the line `Pre-flight scan: clean.` Never proceed without one of them. (A single trivial unit skips this; it earns its keep on a real multi-task plan.) The per-unit review loop still catches conflicts that only surface during implementation.
+Resume exception for `user-owned`/`none`: allow dirty paths only when every path is inside completed ledger `files=` scopes.
 
-## The routing gate: contract cost (decide per unit)
+## Run Identity
 
-Delegating is not free — you pay to write the contract, dispatch, and review the return. Delegation only wins when the code you'd save outweighs that overhead.
+`SKILL_DIR` is the exact **Base directory for this skill** supplied at load. Before artifact access, run absolute `"$SKILL_DIR/scripts/cow-workspace"`. Repo-relative `scripts/...` and suppressed helper failures (`2>/dev/null`, `||`) are forbidden. After artifact writes and at the final gate, `git status --short -- .cost-oriented-agentic-workflow/` **must be empty**.
 
-**Compare:** the cost of writing a self-contained contract (scope + interfaces + acceptance criteria + verification command) against the cost of just writing the code yourself.
+Before Task 1, create/read the workspace `progress.md` header:
 
-```dot
-digraph route {
-    "Unit of work" [shape=box];
-    "Single small edit, <~40-60 lines, tightly coupled to context you already hold?" [shape=diamond];
-    "INLINE: you write it" [shape=box];
-    ">=2 files OR >=~80-100 lines, self-specifiable?" [shape=diamond];
-    "DELEGATE: Sonnet subagent" [shape=box];
-    "Many small related files?" [shape=diamond];
-    "BATCH then delegate" [shape=box];
-
-    "Unit of work" -> "Single small edit, <~40-60 lines, tightly coupled to context you already hold?";
-    "Single small edit, <~40-60 lines, tightly coupled to context you already hold?" -> "INLINE: you write it" [label="yes"];
-    "Single small edit, <~40-60 lines, tightly coupled to context you already hold?" -> ">=2 files OR >=~80-100 lines, self-specifiable?" [label="no"];
-    ">=2 files OR >=~80-100 lines, self-specifiable?" -> "DELEGATE: Sonnet subagent" [label="yes"];
-    ">=2 files OR >=~80-100 lines, self-specifiable?" -> "Many small related files?" [label="borderline"];
-    "Many small related files?" -> "BATCH then delegate" [label="yes"];
-    "Many small related files?" -> "INLINE: you write it" [label="no"];
-}
+```text
+PLAN_FILE:
+MODE:
+COMMIT_POLICY:
+BASE_BRANCH:
+MERGE_BASE_SHA:
 ```
 
-The thresholds are guides, not law — the real test is "does the contract cost less than the code." When the contract would be nearly as much work as the code (the change is tightly coupled to context only you hold), write it inline.
+For a new run, set plan path, mode, and commit policy. Resolve the base from an explicit decision or one credible repo-default/`main`/`master`/`develop` candidate; never mistake the feature branch's upstream for its base. Ask if ambiguous. Record `MERGE_BASE_SHA = git merge-base HEAD "$BASE_BRANCH"` once. Never recompute mid-run; resume reads the ledger.
 
-## Risk gate (overrides the size gate)
+## Implementation Route
 
-Contract-cost decides *cost*; it does not decide *safety*. A unit in the hard-exclusion list (using-cost-oriented-workflow → Risk classification — auth, secrets, migrations, money, privacy, shared state, public API, dependencies, prod/CI config, irreversible side effects) is **never** light-path and **never** "inline with only your own seam check," however few lines it is. You may still write it inline, but it then takes an **independent review** per the risk matrix. Carry the task's recorded **Risk** level into every dispatch so the reviewer applies the right lens.
+Discovery routing decided *how you learned*; implementation routing decides *how you change code*, independent of discovery. Select exactly one per unit: `inline | delegated | planned-sequential | delegated-batch`. Definitions, receipt, and `UNIT_EXECUTION` live in [references/implementation-routing.md](references/implementation-routing.md).
 
-## Model selection (pin it explicitly)
+Emit one receipt only when a field changed; if only implementation changes on stable code, emit `Re-route: reason=stable-code; implementation=<new-route>`. Record it with `cow-state.mjs route --implementation <value>`; never overwrite discovery.
 
-**Always specify the model on every dispatch.** An omitted model inherits your expensive controller model and silently defeats the economy.
+**The routing gate is contract cost.** Start from the plan's non-binding `Route hint`; runtime evidence still governs. If scope, coupling, or risk changes the route, emit `Re-route: <route> - <observable trigger>` before editing. Record only the actual `route=` in the ledger. Small, low-risk, single-outcome edits go inline; the rest delegate. **Never dispatch cow-implementer on a true inline route.**
 
-- **Writer (implementer):** Sonnet, high effort. A focused contract is enough for it to reason and write well.
-- **Reviewer:** Sonnet, a *different instance* from the writer (independence). Scale effort to diff risk.
-- **Controller:** you (Opus) — routing, contracts, seam-level review.
-- **production only:** for a very large or genuinely complex generation, dispatch an Opus subagent as the writer; reviewer still independent.
+## Risk And Models
 
-## Pin the seams, free the interior
+Contract cost never overrides safety. Classify with using-cost-oriented-workflow's hard exclusions; those units never take the light path. Review follows the mode/risk matrix. Carry mode + risk into every dispatch.
 
-The contract pins only **between-unit** facts: file names, function/type signatures, data shapes, how it integrates with existing code, acceptance criteria, and the exact verification command. It leaves the **within-unit** implementation to the subagent — "the interior is yours."
+**Always specify the model on every dispatch.** Writer = scoped `cow-implementer` Sonnet; reviewer = a different Sonnet instance unless production whole-work uses the Opus override; controller = Opus.
 
-Drift then lands in the cheap, easy-to-catch interior, while the expensive between-unit seams stay locked. Mode sets thickness: **standard** pins the interface only (accept interior variance); **production** also pins key behaviors and required tests.
+Pin only between-unit facts: files, signatures, data shapes, integration points, acceptance, and verification. Leave within-unit interiors to the implementer. Standard is thin; production pins key behaviors/tests.
 
-## The delegate loop
+## Delegated Dispatch And Validation
 
-```dot
-digraph loop {
-    "Prepare contract (preparing-subagent-prompts): task-brief file + report path + interfaces + verification cmd" [shape=box];
-    "Record BASE commit; dispatch implementer (Sonnet) — implementer-prompt.md" [shape=box];
-    "Status?" [shape=diamond];
-    "Answer / give context / re-dispatch" [shape=box];
-    "Independent review (requesting-review)" [shape=box];
-    "Approved?" [shape=diamond];
-    "Dispatch fix subagent (Critical/Important)" [shape=box];
-    "Mark complete in ledger" [shape=box];
+**Capture a unit baseline first** (`unit-worktree.mjs capture`) and run `check-overlap` before any edit or dispatch: a pre-existing dirty path inside `ALLOWED_PATHS` **blocks** (`BLOCKED_DIRTY_OVERLAP`).
 
-    "Prepare contract (preparing-subagent-prompts): task-brief file + report path + interfaces + verification cmd" -> "Record BASE commit; dispatch implementer (Sonnet) — implementer-prompt.md";
-    "Record BASE commit; dispatch implementer (Sonnet) — implementer-prompt.md" -> "Status?";
-    "Status?" -> "Answer / give context / re-dispatch" [label="QUESTIONS/NEEDS_CONTEXT/BLOCKED"];
-    "Answer / give context / re-dispatch" -> "Record BASE commit; dispatch implementer (Sonnet) — implementer-prompt.md";
-    "Status?" -> "Independent review (requesting-review)" [label="DONE"];
-    "Independent review (requesting-review)" -> "Approved?";
-    "Approved?" -> "Dispatch fix subagent (Critical/Important)" [label="no"];
-    "Dispatch fix subagent (Critical/Important)" -> "Independent review (requesting-review)" [label="re-review"];
-    "Approved?" -> "Mark complete in ledger" [label="yes"];
-}
+Dispatch the exact `cost-oriented-agentic-workflow:cow-implementer` (never automatic selection) with every input named: `TASK_BRIEF_PATH, REPORT_PATH, ALLOWED_PATHS, VERIFICATION_COMMANDS, COMMIT_POLICY=controller, WORKTREE_ROOT, UNIT_ID, ATTEMPT_NUMBER, BASELINE_PATH`. It writes `task-<N>-attempt-<K>-report.json` and returns <=8 lines; it never commits, stages, updates state, or spawns an agent.
+
+The report is **evidence, not truth.** Before accepting: `implementation-report.mjs validate <report> --brief <brief> --attempt K --baseline <baseline>`, then `compare-worktree <report> --baseline <baseline>`. The actual git diff is authoritative over `filesChanged`; the **unit baseline** separates pre-existing dirty user paths from unit-owned changes. Run fresh controller verification; stage **only** the unit-owned paths, run `verify-stage`, and commit - never `git add .`/`-A`/`commit -a`. Details: [delegated-execution.md](references/delegated-execution.md), [implementation-report.md](references/implementation-report.md).
+
+## Execute And Review Each Unit
+
+When a unit reaches `DONE` and the real diff is validated, branch on the central mode/risk matrix: **Mode/risk matrix requires independent task review?** - no -> verify; yes -> independent review -> adjudicate -> bounded remediation gate -> verify. Then the controller commits after review and writes the ledger. Standard/low uses self-review + final whole-work review; production sends every planned task to an independent reviewer; high risk is always independently reviewed.
+
+**Independent review uses the exact scoped `cost-oriented-agentic-workflow:cow-reviewer`** (`REVIEW_SCOPE=UNIT_REVIEW`, read-only; never automatic selection). Persist its JSON, validate with `review-report.mjs`, then **adjudicate every finding before any fix is dispatched**. Only accepted introduced/worsened Critical/Important findings start a wave, each confirmed by a fresh `TARGETED_REREVIEW`. Details: [review-routing.md](references/review-routing.md), [review-package.md](references/review-package.md), [review-adjudication.md](references/review-adjudication.md), [remediation-and-rereview.md](references/remediation-and-rereview.md).
+
+## File Handoffs
+
+Code bodies, full diffs, and full reports stay in files. Workspace: `cow-workspace`; brief: `task-brief`; report: validated JSON; task diff: `"$SKILL_DIR/scripts/review-package" UNIT_BASE HEAD -- PATH...`; whole-work diff: `"$SKILL_DIR/scripts/review-package" MERGE_BASE HEAD`. Use `UNIT_BASE`, never `HEAD~1`.
+
+## Commit Policy
+
+Default: **controller-per-unit.** Writers leave changes uncommitted; **the controller commits after review.** Persist `UNIT_BASE = HEAD`; record `commit=UNIT_BASE..new_HEAD` - never substitute `MERGE_BASE_SHA`. Confirm a clean tree before the next unit.
+
+Override only by repo/user preference in the anchor: `implementer`, `user-owned`, or `none`. A trivial light-path edit does not force a commit.
+
+## Implementer Status
+
+- **DONE** - validate + compare, then review.
+- **DONE_WITH_CONCERNS** - resolve correctness/scope concerns first.
+- **NEEDS_CONTEXT** - provide missing context, re-dispatch.
+- **BLOCKED / BLOCKED_INPUT** - assess context, model, split, root cause, or plan error.
+
+**Retry budget (D8):** initial attempt + at most **2 extra**, each changed and fresh; never resend the same prompt. For bugs/failing tests, find root cause first (systematic-debugging).
+
+## Bounded Remediation Gate
+
+Allow at most **2 remediation waves** per task or final whole-work review. A wave = one fresh fixer for all accepted introduced/worsened Critical/Important findings + tests, then targeted re-review. False positives, deferred pre-existing findings, and plan conflicts use no wave. After wave 2, open Critical/Important stops with evidence. **Budget exhausted ≠ approved.** Implementation attempts are separate; never merge counters. Detail: [remediation-and-rereview.md](references/remediation-and-rereview.md).
+
+## Batching And Parallelism
+
+- **Batch** one coherent seam into `delegated-batch`; verify each outcome separately.
+- **Parallel** only strict non-overlapping file ownership; same-file chunks are sequenced.
+
+## Durable Progress
+
+Write every completed unit to `<repo-root>/.cost-oriented-agentic-workflow/run/progress.md`:
+
+```text
+Unit N | route=<inline|delegate> | risk=<low|elevated|high> | files=<paths>
+review=<none|required:clean> | waves=<0..2> | verify=<result>
+commit=<base..head>
 ```
 
-**Inline path:** when you chose inline, write it, run its verification, and record the unit in the ledger (commit per the Commit policy below). No dispatch and no review subagent for a few low-risk lines — your own seam check suffices. But reach for the review subagent when the inline change is non-trivial, and a **hard-exclusion-risk** change always gets an independent review even when you wrote it inline (risk gate).
+Never mark a unit complete with open Critical/Important findings. Record final-review state too; before surfacing exhaustion, persist `waves=2` + open findings as blocked so resume cannot reset the budget. On resume trust ledger + `git log`; git remains the fallback.
 
-## Return protocol (keep the controller lean)
+## When All Units Are Done
 
-The implementer writes its full report to a **report file** and returns only: **Status**, files changed, a one-line test summary, concerns, and the report path — it does **not** commit (see Commit policy). The reviewer reads the diff from a **package file** (`scripts/review-package BASE HEAD`, which also includes uncommitted working-tree changes) and returns a verdict + findings. Code bodies and full diffs stay in files — they never re-enter your context.
+The per-unit loop gates each task in isolation; it does not catch cross-unit problems.
 
-Hand work over as files, not pasted text:
-- **Brief:** `scripts/task-brief PLAN_FILE N` extracts the task into `task-N-brief.md`; the dispatch points to it as the source of requirements.
-- **Report:** name it `task-N-report.md`; the implementer writes there.
-- **Diff:** `scripts/review-package BASE HEAD` writes the package file; pass its path to the reviewer. Use the BASE you recorded before dispatching — never `HEAD~1`.
+1. **One independent whole-work review** - read ledger `MERGE_BASE_SHA`, build the package, and dispatch fresh `cost-oriented-agentic-workflow:cow-reviewer` with `REVIEW_SCOPE=WHOLE_WORK_REVIEW`: standard -> Sonnet, production -> per-invocation `model: opus` override (not a fifth agent). This is never controller self-review. Validate, adjudicate, remediate. Standard may skip only for one unit already independently reviewed; production never skips.
+2. **Integrate** - hand off to **finishing-a-development-branch**.
 
-## Commit policy
+## Red Flags
 
-Default: **controller-per-unit.** The delegated implementer and the inline writer leave changes in the working tree; **you (the controller) commit each unit after it passes review**, so git history holds reviewed commits, not pre-review snapshots. Record BASE = HEAD before the unit; the working tree carries the diff and `review-package` includes it, so the unit is fully reviewable before it is committed. Each committed unit is a ledger/recovery boundary.
+- cow-implementer on true inline; automatic agent selection; any subagent without a model.
+- Trusting reports without validation; pasting full text/diffs/code into context.
+- Self-review replacing required independent review; committing with open Critical/Important findings.
 
-Override only by repo or user preference, and note it in the anchor when non-default:
-- `implementer` — the delegated worker commits its own unit (then the dispatch and return protocol ask for commit SHAs instead of "files changed").
-- `user-owned` — leave units uncommitted for the human to commit.
-- `none` — throwaway/experimental; no commits.
+## Templates And References
 
-A trivial light-path edit does not force a commit under any policy.
+- [implementation-routing.md](references/implementation-routing.md), [delegated-execution.md](references/delegated-execution.md), [implementation-report.md](references/implementation-report.md)
+- [review-routing.md](references/review-routing.md), [review-package.md](references/review-package.md), [review-adjudication.md](references/review-adjudication.md), [remediation-and-rereview.md](references/remediation-and-rereview.md)
+- [implementer-prompt.md](implementer-prompt.md) (the cow-implementer dispatch prompt body)
 
-## Handling implementer status
-
-- **DONE** — generate the review package and go to review.
-- **DONE_WITH_CONCERNS** — read the concerns first; if they touch correctness or scope, resolve before review.
-- **NEEDS_CONTEXT** — provide what was missing, re-dispatch.
-- **BLOCKED** — assess: more context? more capable model? task too large to split? a bug to root-cause (systematic-debugging)? plan wrong (escalate to human)?
-
-**Retry budget (D8):** a subagent gets at most **2 extra attempts**, and only with something changed (more context, a more capable model, or a smaller scope). If it still fails, stop and bring it back to yourself — never loop the same model on the same prompt.
-
-**When the failure is a bug or a failing test** (not missing context or a too-large task), find the root cause first — **systematic-debugging** — and dispatch the fix *with* that cause stated, not "make the test pass." A retry spent on a guess is the exact loop this workflow exists to avoid; root-cause-first is cheaper than thrashing.
-
-## Batching and parallelism
-
-- **Batch** a coherent cluster — interdependent files or one subsystem — into a single delegated package so the contract overhead is amortized once.
-- **Parallel:** independent chunks can run as separate subagents at the same time — see **dispatching-parallel-agents**. Enforce **strict non-overlapping file ownership** (each subagent owns a disjoint file set). **Chunks that would touch the same file are not parallelizable — sequence them.** A worktree isolates checkouts; it does not make two concurrent edits to one file merge cleanly. Use a worktree only for production isolation, never as permission to parallelize overlapping work.
-
-## Durable progress (anti-drift)
-
-Conversation memory does not survive compaction. Track completed units in a **ledger file** (e.g. `<git-dir>/cow/progress.md`), one line per finished unit: `Unit N: complete (commits <base7>..<head7>, review clean)`. On resume or after compaction, units marked complete there are DONE — do not re-dispatch them. Trust the ledger and `git log` over recollection.
-
-## When all units are done
-
-The per-unit loop gates each task in isolation; it does not catch problems that only appear where units meet. After the last unit, before claiming the branch is finished:
-
-1. **One whole-work review** — dispatch the broad reviewer (requesting-review, whole-work scope) over the full branch diff: `scripts/review-package MERGE_BASE HEAD`, where `MERGE_BASE = git merge-base main HEAD`. It reads integration and architecture, not one task. Resolve Critical/Important as in the per-unit loop. (A single trivial unit doesn't need this second pass — its own review sufficed.)
-2. **Integrate** — hand off to **finishing-a-development-branch**: verify tests, then merge / PR / keep / discard, then clean up.
-
-## Red flags
-
-- Dispatching a subagent without specifying its model (inherits Opus — expensive).
-- Pasting a task's full text, a diff, or a subagent's code back into your own context.
-- Delegating a three-line change (contract costs more than the code) — write it inline.
-- Letting the writer's self-review replace an independent review on a risky change.
-- Re-dispatching a unit the ledger already marks complete.
-- Moving on with open Critical/Important findings.
-
-## Templates
-
-- [implementer-prompt.md](implementer-prompt.md) — dispatch the writer
-- [task-reviewer-prompt.md](task-reviewer-prompt.md) — dispatch the independent reviewer
-
-**Related:** preparing-subagent-prompts (contract packaging) · requesting-review (review depth by mode) · receiving-code-review (adjudicate findings before fixing) · verification-before-completion (evidence) · systematic-debugging (root-cause a failed/blocked unit before re-dispatching) · dispatching-parallel-agents (parallel + file ownership) · finishing-a-development-branch (integrate when all units are done).
+**Related:** preparing-subagent-prompts (contract packaging) | requesting-review (review depth by mode) | receiving-code-review (adjudicate findings before fixing) | verification-before-completion (evidence) | systematic-debugging (root-cause before re-dispatch) | dispatching-parallel-agents (parallel + file ownership) | finishing-a-development-branch (integrate).

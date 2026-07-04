@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "fingerprint": "REPLACE-WITH-repo-snapshot.mjs-fingerprint-64-hex",
+  "status": "ready",
+  "generatedAtCommit": "REPLACE-WITH-HEAD-sha-or-null",
+  "instructionSources": ["CLAUDE.md"],
+  "languages": [
+    { "name": "TypeScript", "ext": ".ts" }
+  ],
+  "buildCommands": [
+    { "command": "npm run build", "confidence": "inferred" }
+  ],
+  "testCommands": [
+    { "command": "npm test", "confidence": "inferred" }
+  ],
+  "subsystems": [
+    {
+      "name": "example-subsystem",
+      "paths": ["src/example/**"],
+      "status": "mapped",
+      "confidence": "inferred",
+      "notes": "one-line observable note, no source bodies"
+    },
+    {
+      "name": "legacy",
+      "paths": ["src/legacy/**"],
+      "status": "unmapped",
+      "confidence": "unknown",
+      "notes": "not yet read; deep-read backlog"
+    }
+  ],
+  "conventions": [
+    "tests colocated as *.test.ts",
+    "dependency injection via constructor"
+  ],
+  "riskHotspots": ["src/auth/**", "migrations/**"],
+  "unmapped": ["src/legacy/**"],
+  "uncertainty": [
+    "DI framework inferred from imports, not confirmed"
+  ],
+  "updatedAt": "REPLACE-ISO8601"
+}

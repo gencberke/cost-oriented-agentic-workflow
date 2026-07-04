@@ -1,0 +1,23 @@
+{
+  "fixture_version": 1,
+  "id": "legacy-access-type-rollout",
+  "kind": "positive",
+  "findings": [
+    {
+      "id": "legacy-access-tokens-invalidated",
+      "severity": ["Important"],
+      "causality": "introduced",
+      "merge_blocker": true
+    }
+  ],
+  "forbidden": [],
+  "confirmation": {
+    "finding_id": "legacy-access-tokens-invalidated",
+    "question": "Will requiring type=access immediately reject still-valid tokens issued before this claim existed, contrary to the no-forced-login rollout constraint?"
+  },
+  "acceptance": {
+    "initial_runs": 3,
+    "minimum_raw_discoveries": 2,
+    "extend_inconsistent_to": 5
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "_comment": "INACTIVE EXAMPLE — do not copy to hooks.json. Runtime activation of enforcement is deferred until live evidence accepts it. This file only demonstrates the --decision-mode=enforce PreToolUse invocation. Shadow mode (hooks.json.example) remains the default and is unchanged.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/skills/execution-routing/scripts/cow-hook.mjs",
+              "session-start"
+            ],
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/skills/execution-routing/scripts/cow-hook.mjs",
+              "pre-tool-use",
+              "--decision-mode=enforce"
+            ],
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PLUGIN_ROOT}/skills/execution-routing/scripts/cow-hook.mjs",
+              "pre-compact"
+            ],
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
