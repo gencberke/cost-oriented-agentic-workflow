@@ -37,6 +37,16 @@ const FIX = {
     untracked: {},
     gitignore: '.cost-oriented-agentic-workflow/\ntmp/\n',
   }),
+  'F3-review-remediation': () => ({
+    files: {
+      'src/cart.js': 'export function addItem(cart, item) {\n  if (!Array.isArray(cart)) throw new TypeError("cart must be an array");\n  if (!item || typeof item.sku !== "string" || item.sku.trim() === "") throw new TypeError("sku is required");\n  if (!Number.isInteger(item.cents) || item.cents < 0) throw new TypeError("cents must be a non-negative integer");\n  if (!Number.isInteger(item.qty) || item.qty <= 0) throw new TypeError("qty must be a positive integer");\n  return [...cart, { sku: item.sku.trim(), cents: item.cents, qty: item.qty }];\n}\n\nexport function totalCents(cart) {\n  if (!Array.isArray(cart)) throw new TypeError("cart must be an array");\n  return cart.reduce((sum, item) => sum + item.cents * item.qty, 0);\n}\n',
+      'test/cart.test.mjs': 'import { test } from "node:test";\nimport assert from "node:assert/strict";\nimport { addItem, totalCents } from "../src/cart.js";\n\ntest("addItem appends a normalized item", () => {\n  assert.deepEqual(addItem([], { sku: " ABC ", cents: 250, qty: 2 }), [\n    { sku: "ABC", cents: 250, qty: 2 },\n  ]);\n});\n\ntest("addItem rejects invalid quantities", () => {\n  assert.throws(() => addItem([], { sku: "ABC", cents: 250, qty: 0 }), /qty/);\n});\n\ntest("totalCents multiplies cents by quantity", () => {\n  const cart = addItem([], { sku: "ABC", cents: 250, qty: 2 });\n  assert.equal(totalCents(cart), 500);\n});\n',
+      'package.json': '{ "type": "module", "scripts": { "test": "node --test test/*.test.mjs" } }\n',
+      'task.md': fs.readFileSync(path.join(here, 'F3-review-remediation', 'task.md'), 'utf8'),
+    },
+    untracked: {},
+    gitignore: '.cost-oriented-agentic-workflow/\ntmp/\n',
+  }),
   'F4-enforcement': (repoDir) => {
     const setup = {
       files: {

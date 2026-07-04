@@ -409,7 +409,7 @@ console.log('Running Phase 6 harness tests...');
   check(rec.semanticResult === 'WORKFLOW_COMPLETED', 'stream-to-run: clean completed stream -> WORKFLOW_COMPLETED');
 }
 
-// ── 26. Fixtures reproducible via setup.mjs (F1, F2, F4) ────────────────────
+// ── 26. Fixtures reproducible via setup.mjs (F1, F2, F3, F4) ────────────────
 {
   const setup = path.resolve(PHASE6_DIR, 'fixtures', 'setup.mjs');
   check(fs.existsSync(setup), 'fixture setup.mjs exists');
@@ -453,6 +453,19 @@ console.log('Running Phase 6 harness tests...');
   check(/AssertionError|expected 'abc' to equal|AssertionError/i.test(t2out) || /failing/i.test(t2out),
     'setup F2: failure is the intended normalize assertion failure');
   check(!/SyntaxError|ERR_REQUIRE_ESM|require\(/i.test(t2out), 'setup F2: no ESM/CJS import SyntaxError');
+
+  // F3
+  const d3 = fs.mkdtempSync(path.join(os.tmpdir(), 'p6f3-')); tmps.push(d3);
+  const r3 = runCLI(['node', setup, 'F3-review-remediation', d3]);
+  check(r3.status === 0, 'setup F3: exits 0');
+  const root3 = r3.stdout.trim();
+  check(fs.existsSync(path.join(root3, 'src/cart.js')), 'setup F3: src/cart.js created');
+  check(fs.existsSync(path.join(root3, 'test/cart.test.mjs')), 'setup F3: test/cart.test.mjs created');
+  check(fs.existsSync(path.join(root3, 'task.md')), 'setup F3: task.md copied into disposable repo');
+  const f3Task = fs.readFileSync(path.join(root3, 'task.md'), 'utf8');
+  check(/targeted re-review after the fix/.test(f3Task), 'setup F3: copied task names targeted re-review');
+  const t3 = runCLI(['node', '--test', path.join(root3, 'test/cart.test.mjs')]);
+  check(t3.status === 0, 'setup F3: baseline cart tests pass');
 
   // F4
   const d4 = fs.mkdtempSync(path.join(os.tmpdir(), 'p6f4-')); tmps.push(d4);

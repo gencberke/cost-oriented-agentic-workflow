@@ -205,8 +205,8 @@ check(streamText.includes('parseStream') && streamText.includes('hookAskCount') 
 check(streamText.includes('FORBIDDEN_INPUT_KEYS') || streamText.includes('sensitive'),
   'Phase 6: stream-to-run rejects sensitive content in summary records');
 const setupText = fs.existsSync(path.join(phase6FixtureRoot, 'setup.mjs')) ? read(path.join(phase6FixtureRoot, 'setup.mjs')) : '';
-check(setupText.includes('F1-bounded-implementation') && setupText.includes('F4-enforcement'),
-  'Phase 6: setup.mjs builds F1 and F4 reproducible repos');
+check(setupText.includes('F1-bounded-implementation') && setupText.includes('F3-review-remediation') && setupText.includes('F4-enforcement'),
+  'Phase 6: setup.mjs builds F1, F3, and F4 reproducible repos');
 check(/refusing to create a fixture repo inside the COW source tree/.test(setupText),
   'Phase 6: setup.mjs refuses to operate inside the COW source tree');
 check(setupText.includes('--decision-mode=enforce'),
