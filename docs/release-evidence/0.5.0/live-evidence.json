@@ -3,7 +3,7 @@
   "release": "0.5.0",
   "sourceVersion": "0.4.2",
   "commit": "9c7ed37a7d3ac22c68a2d42d8fff0b14d473ee0e",
-  "generatedAt": "2026-07-04T13:16:04.909Z",
+  "generatedAt": "2026-07-04T13:18:54.016Z",
   "gates": {
     "phase3b2ReviewLifecycle": {
       "status": "pending",
@@ -36,12 +36,12 @@
       ]
     },
     "phase6BehavioralCost": {
-      "status": "pending",
+      "status": "accepted",
       "artifacts": [
         {
           "path": "docs/release-evidence/0.5.0/phase6BehavioralCost.summary.json",
           "kind": "gate-summary-json",
-          "sha256": "d987b4ec9086a6ab18d15b667e460e35dfe0b315a8cc936dbf878835da3a6605"
+          "sha256": "db7e2cf49cea8f9be74bd8f9261af9ecae759cc6438cc80ac3eed3b5588de342"
         }
       ]
     }
@@ -58,6 +58,30 @@
     {
       "path": ".cost-oriented-agentic-workflow/eval/phase7b/F1-vanilla.auth-failed.run.json",
       "sha256": "fb82f9305b2b43403ae102e1c23c8f6d2041cfa0807debdde257490fbf2c60d7"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F1-vanilla-r2.stream.jsonl",
+      "sha256": "3fb9b118db56a9d561f8e2747d9401711aebdaa0bc84b98de1014155c992a171"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F1-vanilla-r2.run.json",
+      "sha256": "c7b1bff5d793e7bfb4a4b761636ebace37a645aee3b6a3bfec3af7cbefe6e9b9"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F1-shadow-r2.stream.jsonl",
+      "sha256": "8a2979600eb943d7fa91e94993cb8ab8dd371852db7913b27d69f211e82f208f"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F1-shadow-r2.run.json",
+      "sha256": "e7a77eae4982977b209f5738505674376f60d0a7d1ac0b7edff6f8a30e401ed7"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F1-r2.aggregate.json",
+      "sha256": "d81a0036b9fee1f82548a00c4e125d9bb8a44e2e44d61eb8b6e480c68154063c"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F1-r2.aggregate.md",
+      "sha256": "2f29194c8626c91b3aaa94eaf2a962ab9394eee1d8bdb39181c0fcff89703e5d"
     },
     {
       "path": ".cost-oriented-agentic-workflow/eval/phase7b/phase5-enforcement-tests.log",

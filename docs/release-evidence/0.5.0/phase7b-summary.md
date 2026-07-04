@@ -1,8 +1,8 @@
 # Phase 7B Live Evidence Summary
 
 Status: final release remains blocked. Claude authentication was refreshed and
-Phase 4 resume/compact plus Phase 5 ASK/DENY live hook evidence is accepted,
-but Phase 3B.2 and sufficient Phase 6 evidence remain pending.
+Phase 4 resume/compact, Phase 5 ASK/DENY, and conservative Phase 6
+behavioral/cost evidence are accepted, but Phase 3B.2 remains pending.
 
 ## Baseline
 
@@ -23,6 +23,9 @@ but Phase 3B.2 and sufficient Phase 6 evidence remain pending.
 - F5 startup/resume/compact live streams completed and showed
   `COW_RESUME_POINTER_V1`, resumed plan/progress re-anchoring, manual compact,
   and PreCompact observation.
+- F1 VANILLA vs COW_SHADOW was aggregated with 2 valid runs and 0 invalid runs.
+  The aggregate rejects any cost-improvement claim because preservation
+  assertions are absent.
 - Earlier auth-failed streams remain raw provenance only and are not accepted as
   successful gate evidence.
 
@@ -52,12 +55,22 @@ but Phase 3B.2 and sufficient Phase 6 evidence remain pending.
   repositories; `cow-hook.mjs` now uses per-command safe.directory for read-only
   Git classification.
 
+## Phase 6 Evidence
+
+- Accepted F1 aggregate JSON:
+  `.cost-oriented-agentic-workflow/eval/phase7b/F1-r2.aggregate.json`.
+- Accepted F1 aggregate Markdown:
+  `.cost-oriented-agentic-workflow/eval/phase7b/F1-r2.aggregate.md`.
+- Conservative accepted threshold: small Phase 7B smoke runs should budget at
+  least `0.15` USD per run on this local Windows environment.
+- No cost-improvement claim is accepted for this release evidence set.
+
 ## Gate Decisions
 
 - `phase3b2ReviewLifecycle`: pending.
 - `phase4ResumeCompact`: accepted.
 - `phase5AskDeny`: accepted.
-- `phase6BehavioralCost`: pending; F1 live data exists, but sufficient measured
-  thresholds are not accepted yet.
+- `phase6BehavioralCost`: accepted with conservative measured thresholds and no
+  cost-improvement claim.
 
 No version bump, tag, push, publish, install, or final release claim was made.

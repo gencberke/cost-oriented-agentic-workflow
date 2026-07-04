@@ -167,6 +167,19 @@
   after the run.
 - Final release remains blocked by Phase 3B.2 review lifecycle and sufficient
   Phase 6 behavioral/cost evidence.
+
+## 2026-07-04 - Phase 7B: Phase 6 conservative cost evidence accepted
+
+- F1 VANILLA and F1 COW_SHADOW live streams completed and were converted to
+  schema-valid run records, then aggregated with 2 valid runs and 0 invalid
+  runs.
+- The aggregate explicitly rejects any cost-improvement claim because
+  preservation assertions are absent. This is the accepted conservative result:
+  no savings claim is made for the release.
+- The measured maximum successful small-smoke cost in this evidence set is
+  0.1241289 USD, so the recorded local smoke budget threshold is 0.15 USD per
+  run for this environment.
+- Final release remains blocked only by Phase 3B.2 review lifecycle evidence.
 - Current docs phrase live hook activation as deferred until evidence accepts
   it. Older Phase 5 entries that say "deferred to Phase 6" are historical
   records, not permission to activate enforcement now.

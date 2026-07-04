@@ -2,16 +2,42 @@
   "schemaVersion": 1,
   "evidenceKind": "phase7b-gate-summary",
   "gate": "phase6BehavioralCost",
-  "status": "pending",
-  "decision": "Behavioral/token/cost evidence could not be accepted because the first live F1 VANILLA run failed at Claude Code authentication before model execution.",
+  "status": "accepted",
+  "decision": "Live behavioral/token/cost evidence accepted with conservative measured thresholds and no cost-improvement claim.",
   "observations": [
-    "F1 VANILLA stream was captured and converted with stream-to-run.mjs.",
-    "validate-run.mjs accepted the resulting run record as schema-valid.",
-    "The run record is classified as PROCESS_FAILURE with retryClassification AUTH.",
-    "The stream reported zero input tokens, zero output tokens, and zero total cost because no model inference completed."
+    "F1 VANILLA and F1 COW_SHADOW live streams completed and converted to schema-valid run records.",
+    "aggregate-runs.mjs produced a valid matched comparison with 2 valid runs and 0 invalid runs.",
+    "Both F1 conditions completed the task, but preservation assertions were not present in the run records, so the aggregate correctly rejects any cost-improvement claim.",
+    "Measured F1 cost was 0.0651658 USD for VANILLA and 0.1241289 USD for COW_SHADOW; the accepted release threshold is therefore only a conservative small-smoke budget ceiling, not a savings claim.",
+    "Phase 5 and Phase 4 accepted live streams add measured hook/resume behavior coverage, but no numeric cost win is claimed from them."
   ],
-  "blocker": {
-    "code": "AUTH",
-    "runRecord": ".cost-oriented-agentic-workflow/eval/phase7b/F1-vanilla.auth-failed.run.json"
+  "acceptedThresholds": {
+    "costImprovementClaimAllowed": false,
+    "maxObservedSuccessfulSmallSmokeCostUsd": 0.1241289,
+    "recommendedPerSmokeBudgetUsd": 0.15,
+    "minimumAcceptedRunCount": 2,
+    "thresholdScope": "Phase 7B local Windows disposable live smokes only; not a product cost-reduction guarantee."
+  },
+  "acceptedRuns": [
+    {
+      "label": "F1 VANILLA",
+      "stream": ".cost-oriented-agentic-workflow/eval/phase7b/F1-vanilla-r2.stream.jsonl",
+      "streamSha256": "3fb9b118db56a9d561f8e2747d9401711aebdaa0bc84b98de1014155c992a171",
+      "runRecord": ".cost-oriented-agentic-workflow/eval/phase7b/F1-vanilla-r2.run.json",
+      "runRecordSha256": "c7b1bff5d793e7bfb4a4b761636ebace37a645aee3b6a3bfec3af7cbefe6e9b9"
+    },
+    {
+      "label": "F1 COW_SHADOW",
+      "stream": ".cost-oriented-agentic-workflow/eval/phase7b/F1-shadow-r2.stream.jsonl",
+      "streamSha256": "8a2979600eb943d7fa91e94993cb8ab8dd371852db7913b27d69f211e82f208f",
+      "runRecord": ".cost-oriented-agentic-workflow/eval/phase7b/F1-shadow-r2.run.json",
+      "runRecordSha256": "e7a77eae4982977b209f5738505674376f60d0a7d1ac0b7edff6f8a30e401ed7"
+    }
+  ],
+  "aggregate": {
+    "json": ".cost-oriented-agentic-workflow/eval/phase7b/F1-r2.aggregate.json",
+    "jsonSha256": "d81a0036b9fee1f82548a00c4e125d9bb8a44e2e44d61eb8b6e480c68154063c",
+    "markdown": ".cost-oriented-agentic-workflow/eval/phase7b/F1-r2.aggregate.md",
+    "markdownSha256": "2f29194c8626c91b3aaa94eaf2a962ab9394eee1d8bdb39181c0fcff89703e5d"
   }
 }
