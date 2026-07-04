@@ -154,6 +154,19 @@
 - Final release remains blocked. Phase 3B.2, Phase 4, and sufficient Phase 6
   live evidence are still pending, so no `0.5.0` version bump, tag, push,
   publish, install, or final release claim is made.
+
+## 2026-07-04 - Phase 7B: Phase 4 resume/compact accepted
+
+- A disposable F5 resume fixture exercised live Claude Code startup, resume, and
+  compact lifecycle behavior with the COW hook configuration.
+- SessionStart emitted `COW_RESUME_POINTER_V1` on startup, resume, and compact.
+  The resumed session re-read `plan.md` and `progress.md`, reported Unit 2 only,
+  and did not re-run Unit 1.
+- `/compact` produced a compact boundary and the PreCompact hook recorded a
+  bounded manual compact trigger. The disposable fixture had no tracked diff
+  after the run.
+- Final release remains blocked by Phase 3B.2 review lifecycle and sufficient
+  Phase 6 behavioral/cost evidence.
 - Current docs phrase live hook activation as deferred until evidence accepts
   it. Older Phase 5 entries that say "deferred to Phase 6" are historical
   records, not permission to activate enforcement now.

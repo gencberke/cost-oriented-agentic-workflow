@@ -2,14 +2,36 @@
   "schemaVersion": 1,
   "evidenceKind": "phase7b-gate-summary",
   "gate": "phase4ResumeCompact",
-  "status": "pending",
-  "decision": "Live resume/compact evidence could not be accepted because Claude Code API calls returned authentication_failed before a real session lifecycle could run.",
+  "status": "accepted",
+  "decision": "Live Claude Code SessionStart startup/resume/compact and PreCompact behavior accepted from a disposable F5 resume fixture.",
   "observations": [
-    "No real SessionStart/resume/compact session was completed.",
-    "COW_RESUME_POINTER_V1 remains statically implemented, but live resume behavior was not accepted in this run."
+    "SessionStart:startup emitted COW_RESUME_POINTER_V1 with active unit=2 context.",
+    "A resumed session emitted SessionStart:resume, re-read plan.md and progress.md, and reported Unit 2 only.",
+    "The resumed session did not re-run Unit 1 and did not edit tracked files.",
+    "The /compact command emitted SessionStart:compact and a compact_boundary event.",
+    "PreCompact executed successfully and hook observations recorded a bounded manual compact trigger without transcript content."
   ],
-  "blocker": {
-    "code": "AUTH",
-    "stream": ".cost-oriented-agentic-workflow/eval/phase7b/auth-default-smoke.stream.jsonl"
-  }
+  "acceptedRuns": [
+    {
+      "label": "startup",
+      "stream": ".cost-oriented-agentic-workflow/eval/phase7b/F5-resume-startup-r2.stream.jsonl",
+      "streamSha256": "a8ab0e280288f4e98c78d36e2160d2e3699d2f595ad04efe69fc886f80a9e66b",
+      "runRecord": ".cost-oriented-agentic-workflow/eval/phase7b/F5-resume-startup-r2.run.json",
+      "runRecordSha256": "5a79cd12467af91dba5bfc40edeab97b12cde1e093f277434387443755fbb84e"
+    },
+    {
+      "label": "resume",
+      "stream": ".cost-oriented-agentic-workflow/eval/phase7b/F5-resume-resumed-r2.stream.jsonl",
+      "streamSha256": "9646fb7020d94b0bf22e49a96bfb98a76c5e598a90a92c9ebe72fdf20668aa65",
+      "runRecord": ".cost-oriented-agentic-workflow/eval/phase7b/F5-resume-resumed-r2.run.json",
+      "runRecordSha256": "1482297269f0e60fe6eab39d75e38c5541eafac985485065c2f83a8e0f299694"
+    },
+    {
+      "label": "compact",
+      "stream": ".cost-oriented-agentic-workflow/eval/phase7b/F5-resume-compact-r2.stream.jsonl",
+      "streamSha256": "74e0532cb013fd9bcc5b99895963717e84f04d8da6f7c40a8d5c9c068e93398a",
+      "runRecord": ".cost-oriented-agentic-workflow/eval/phase7b/F5-resume-compact-r2.run.json",
+      "runRecordSha256": "cfce2e9d9d290f1684f1fcdd32e1a274e77d1ac4fe2dc9608d4ca9e739856f07"
+    }
+  ]
 }

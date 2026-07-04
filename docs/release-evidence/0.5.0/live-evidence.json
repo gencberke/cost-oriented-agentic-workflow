@@ -3,7 +3,7 @@
   "release": "0.5.0",
   "sourceVersion": "0.4.2",
   "commit": "9c7ed37a7d3ac22c68a2d42d8fff0b14d473ee0e",
-  "generatedAt": "2026-07-04T13:04:32.236Z",
+  "generatedAt": "2026-07-04T13:16:04.909Z",
   "gates": {
     "phase3b2ReviewLifecycle": {
       "status": "pending",
@@ -16,12 +16,12 @@
       ]
     },
     "phase4ResumeCompact": {
-      "status": "pending",
+      "status": "accepted",
       "artifacts": [
         {
           "path": "docs/release-evidence/0.5.0/phase4ResumeCompact.summary.json",
           "kind": "gate-summary-json",
-          "sha256": "625297477c7002fa37ffa69d2fd9ff7bd22c0052af225736cfb17582d6148ed7"
+          "sha256": "bbe590b6cf0a9847cb7a2def66780c49e60638d58ae34e0a695e9116bb0e29d7"
         }
       ]
     },
@@ -78,6 +78,30 @@
     {
       "path": ".cost-oriented-agentic-workflow/eval/phase7b/F4-production-deny-safe-r2.run.json",
       "sha256": "e01d33e3dc82c72e293589cbcd3fa8fb07cfe7f9e447b5bc713487775fd069ad"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F5-resume-startup-r2.stream.jsonl",
+      "sha256": "a8ab0e280288f4e98c78d36e2160d2e3699d2f595ad04efe69fc886f80a9e66b"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F5-resume-startup-r2.run.json",
+      "sha256": "5a79cd12467af91dba5bfc40edeab97b12cde1e093f277434387443755fbb84e"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F5-resume-resumed-r2.stream.jsonl",
+      "sha256": "9646fb7020d94b0bf22e49a96bfb98a76c5e598a90a92c9ebe72fdf20668aa65"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F5-resume-resumed-r2.run.json",
+      "sha256": "1482297269f0e60fe6eab39d75e38c5541eafac985485065c2f83a8e0f299694"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F5-resume-compact-r2.stream.jsonl",
+      "sha256": "74e0532cb013fd9bcc5b99895963717e84f04d8da6f7c40a8d5c9c068e93398a"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F5-resume-compact-r2.run.json",
+      "sha256": "cfce2e9d9d290f1684f1fcdd32e1a274e77d1ac4fe2dc9608d4ca9e739856f07"
     }
   ]
 }
