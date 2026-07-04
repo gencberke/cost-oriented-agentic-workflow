@@ -259,8 +259,9 @@ check(/PHASE_7B_FINAL_EVIDENCE_GATE_PASSED/.test(releaseGateText)
   'Phase 7B: release gate validates final evidence manifest and raw provenance shape');
 const versionDryPath = path.join(root, 'scripts/version-finalize.mjs');
 const versionDryText = fs.existsSync(versionDryPath) ? read(versionDryPath) : '';
-check(/dry-run only/.test(versionDryText) && /CHANGELOG\.md must contain a pending/.test(versionDryText),
-  'Phase 7A: version finalization is dry-run only and requires the pending changelog heading');
+check(/dry-run only/.test(versionDryText) && /CHANGELOG\.md must contain a pending/.test(versionDryText)
+  && /CHANGELOG\.md must contain a finalized/.test(versionDryText),
+  'Phase 7B: version finalization dry-run handles pending and finalized changelog states');
 check(/README\.md must keep the runtime install example version-neutral/.test(versionDryText),
   'Phase 7A: version dry-run guards README install docs against stale versioned paths');
 check(fs.existsSync(path.join(root, 'docs/RELEASE_0.5.0.md')), 'Phase 7A: concise release handoff exists');
@@ -973,11 +974,11 @@ check(/at most 2 remediation waves/i.test(remediationRef)
 check(/TARGETED_REREVIEW/.test(remediationRef) && /fresh `?cow-reviewer`?/i.test(remediationRef),
   '3B.2: targeted re-review uses a fresh cow-reviewer');
 
-// exactly four agents; the version is untouched by this phase
+// exactly four agents; final release version is consistent
 const agentCount = isDir(agentsDir) ? fs.readdirSync(agentsDir).filter((f) => f.endsWith('.md')).length : 0;
 check(agentCount === 4, `3B.2: exactly four agents remain (no fifth reviewer) (${agentCount})`);
-check(plugin && plugin.version === '0.4.2' && packageMeta && packageMeta.version === '0.4.2',
-  '3B.2: the package version remains 0.4.2 (no bump this phase)');
+check(plugin && plugin.version === '0.5.0' && packageMeta && packageMeta.version === '0.5.0',
+  'final release: the package version is finalized at 0.5.0');
 
 // ── Summary ─────────────────────────────────────────────────────────────────
 console.log(`\n${passes} checks passed, ${failures} failed.`);

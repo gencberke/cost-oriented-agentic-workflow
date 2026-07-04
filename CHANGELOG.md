@@ -3,11 +3,11 @@
 All notable changes to the cost-oriented-agentic-workflow plugin are documented
 here. This project adheres to [Semantic Versioning](https://semver.org/).
 
-## [0.5.0] - Pending
+## [0.5.0] - 2026-07-05
 
 Release-candidate preparation for the v0.5.0 control-plane series. Repository
-versions intentionally remain `0.4.2` during Phase 7A; the final version bump is
-prepared but not performed.
+versions remained `0.4.2` during Phase 7A and were finalized at `0.5.0` only
+after Phase 7B live evidence was accepted.
 
 ### Added
 
@@ -31,15 +31,14 @@ prepared but not performed.
 - Runtime documentation now distinguishes source-repository commands from
   installed runtime usage and avoids personal absolute paths.
 
-### Deferred
+### Evidence
 
-- Phase 3B.2 live review lifecycle evidence.
-- Phase 4 live resume/compact evidence.
-- Phase 5 live ASK/DENY evidence.
-- Sufficient Phase 6 behavioral, token, and cost evidence.
-- A 2026-07-04 live attempt remains pending because Claude Code API calls
-  returned `authentication_failed` before model execution. No final-release
-  claim or version bump was made from that attempt.
+- Phase 3B.2 live review lifecycle evidence accepted from the R7 F3
+  review-remediation stream.
+- Phase 4 live resume/compact evidence accepted.
+- Phase 5 live ASK/DENY evidence accepted from disposable enforcement fixtures.
+- Conservative Phase 6 behavioral, token, and cost evidence accepted with no
+  broad token-savings claim.
 
 ## [0.4.2] - 2026-06-24
 
