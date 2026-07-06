@@ -985,6 +985,10 @@ check(rawDiscovery.includes('at most one reroute per symptom'),
   'v0.5.1: discovery-routing bounds the reroute cycle');
 check(executionText.includes('The only reroute edge is'),
   'v0.5.1: execution-routing names the reroute edge');
+check(read(path.join(skillsDir, 'dispatching-parallel-agents', 'SKILL.md')).includes('at most 3 concurrent subagent dispatches'),
+  'v0.5.1: parallel dispatch has a default width cap');
+check(remediationRef.includes('never one fixer per finding'),
+  'v0.5.1: remediation forbids per-finding fix fan-out');
 
 // ── Summary ─────────────────────────────────────────────────────────────────
 console.log(`\n${passes} checks passed, ${failures} failed.`);
