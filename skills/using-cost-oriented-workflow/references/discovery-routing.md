@@ -77,3 +77,8 @@ enum `none|investigating|evidenced|failed`; the investigator's `PARTIAL` maps to
 `investigating`, `BLOCKED` to `failed`, and `REQUIRES_REROUTE` re-routes via
 `transition --phase triage --reroute`), plus the tracked-instrumentation
 re-route, are owned by `cost-oriented-agentic-workflow:systematic-debugging`.
+
+**A reroute is spent the moment it fires: at most one reroute per symptom.** If
+a second `REQUIRES_REROUTE` comes back for the same symptom without materially
+new evidence, do not dispatch again — record a block and surface the impasse
+to the user.

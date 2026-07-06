@@ -980,6 +980,12 @@ check(agentCount === 4, `3B.2: exactly four agents remain (no fifth reviewer) ($
 check(plugin && plugin.version === '0.5.0' && packageMeta && packageMeta.version === '0.5.0',
   'final release: the package version is finalized at 0.5.0');
 
+// ── v0.5.1: cost-guard prose safeguards ───────────────────────────────
+check(rawDiscovery.includes('at most one reroute per symptom'),
+  'v0.5.1: discovery-routing bounds the reroute cycle');
+check(executionText.includes('The only reroute edge is'),
+  'v0.5.1: execution-routing names the reroute edge');
+
 // ── Summary ─────────────────────────────────────────────────────────────────
 console.log(`\n${passes} checks passed, ${failures} failed.`);
 if (failures > 0) process.exit(1);
