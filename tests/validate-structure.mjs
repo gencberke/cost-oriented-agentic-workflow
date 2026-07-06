@@ -989,6 +989,8 @@ check(read(path.join(skillsDir, 'dispatching-parallel-agents', 'SKILL.md')).incl
   'v0.5.1: parallel dispatch has a default width cap');
 check(remediationRef.includes('never one fixer per finding'),
   'v0.5.1: remediation forbids per-finding fix fan-out');
+check(entryText.includes('Cost red flags'),
+  'v0.5.1: entry skill carries the cost red-flags block');
 
 // ── Summary ─────────────────────────────────────────────────────────────────
 console.log(`\n${passes} checks passed, ${failures} failed.`);
