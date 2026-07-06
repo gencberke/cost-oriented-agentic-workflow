@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // Dry-run the final 0.5.0 version finalization locations.
 //
-// Phase 7A must not bump versions. This script proves the authoritative fields
-// are known and synchronized so the final release can be performed atomically.
+// This script is dry-run only. Before the final bump it proves the authoritative
+// fields are known; after the bump it proves the repository is finalized
+// consistently without mutating anything.
 
 import fs from 'fs';
 import path from 'path';
@@ -23,7 +24,7 @@ for (let i = 0; i < argv.length; i++) {
   else if (argv[i] === '--dry-run') dryRun = true;
   else die(`unknown argument: ${argv[i]}`);
 }
-if (!dryRun) die('Phase 7A supports dry-run only; do not mutate versions in this phase.');
+if (!dryRun) die('version finalization script is dry-run only; do not mutate versions from this helper.');
 if (!/^\d+\.\d+\.\d+$/.test(target)) die(`target must be a semver x.y.z value (got ${target}).`);
 
 function readJSON(rel) {
@@ -43,11 +44,15 @@ const current = {
 if (new Set(Object.values(current)).size !== 1) {
   die(`current versions are not synchronized: ${JSON.stringify(current)}`);
 }
-if (current.plugin === target) die(`target ${target} is already current; Phase 7A should not bump.`);
+const alreadyCurrent = current.plugin === target;
 
 const changelog = fs.readFileSync(path.join(root, 'CHANGELOG.md'), 'utf8');
-if (!new RegExp(`## \\[${target.replace(/\./g, '\\.')}\\] - Pending`).test(changelog)) {
+const escapedTarget = target.replace(/\./g, '\\.');
+if (!alreadyCurrent && !new RegExp(`## \\[${escapedTarget}\\] - Pending`).test(changelog)) {
   die(`CHANGELOG.md must contain a pending ${target} section.`);
+}
+if (alreadyCurrent && !new RegExp(`## \\[${escapedTarget}\\] - \\d{4}-\\d{2}-\\d{2}`).test(changelog)) {
+  die(`CHANGELOG.md must contain a finalized ${target} section.`);
 }
 const readme = fs.readFileSync(path.join(root, 'README.md'), 'utf8');
 if (!/\/plugin marketplace add <runtime-package-dir>/.test(readme)) {
@@ -81,6 +86,7 @@ const locations = [
 
 console.log(JSON.stringify({
   dryRun: true,
+  alreadyCurrent,
   currentVersion: current.plugin,
   targetVersion: target,
   locations,

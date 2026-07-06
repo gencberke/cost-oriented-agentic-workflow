@@ -138,9 +138,68 @@
   pass with live gates pending; final validation fails with
   `LIVE_EVIDENCE_REQUIRED_BEFORE_RELEASE` until Phase 3B.2, Phase 4, Phase 5,
   and sufficient Phase 6 live evidence is accepted.
+
+## 2026-07-04 - Phase 7B: Phase 5 live ASK/DENY accepted
+
+- Claude authentication was refreshed after initial `authentication_failed`
+  streams. Successful live hook-event streams were then collected in disposable
+  F4 enforcement repositories.
+- Phase 5 ASK/DENY evidence is accepted: standard mode produced ASK for E2
+  outside-unit edits, and production diagnosis-readonly produced DENY for E1
+  tracked source edits.
+- The live E1 run exposed Git `safe.directory` ownership behavior in disposable
+  evaluation repositories. `cow-hook.mjs` now uses per-command
+  `safe.directory=<repo>` for read-only Git classification and ignores inherited
+  Git environment/index pollution.
+- Final release remains blocked. Phase 3B.2, Phase 4, and sufficient Phase 6
+  live evidence are still pending, so no `0.5.0` version bump, tag, push,
+  publish, install, or final release claim is made.
+
+## 2026-07-04 - Phase 7B: Phase 4 resume/compact accepted
+
+- A disposable F5 resume fixture exercised live Claude Code startup, resume, and
+  compact lifecycle behavior with the COW hook configuration.
+- SessionStart emitted `COW_RESUME_POINTER_V1` on startup, resume, and compact.
+  The resumed session re-read `plan.md` and `progress.md`, reported Unit 2 only,
+  and did not re-run Unit 1.
+- `/compact` produced a compact boundary and the PreCompact hook recorded a
+  bounded manual compact trigger. The disposable fixture had no tracked diff
+  after the run.
+- Final release remains blocked by Phase 3B.2 review lifecycle and sufficient
+  Phase 6 behavioral/cost evidence.
+
+## 2026-07-04 - Phase 7B: Phase 6 conservative cost evidence accepted
+
+- F1 VANILLA and F1 COW_SHADOW live streams completed and were converted to
+  schema-valid run records, then aggregated with 2 valid runs and 0 invalid
+  runs.
+- The aggregate explicitly rejects any cost-improvement claim because
+  preservation assertions are absent. This is the accepted conservative result:
+  no savings claim is made for the release.
+- The measured maximum successful small-smoke cost in this evidence set is
+  0.1241289 USD, so the recorded local smoke budget threshold is 0.15 USD per
+  run for this environment.
+- Final release remains blocked only by Phase 3B.2 review lifecycle evidence.
 - Current docs phrase live hook activation as deferred until evidence accepts
   it. Older Phase 5 entries that say "deferred to Phase 6" are historical
   records, not permission to activate enforcement now.
+
+## 2026-07-04 - Phase 7B: Phase 3B.2 review evidence remains pending
+
+- Authentication was refreshed and F3 review/remediation smokes reached live
+  model execution.
+- R5 completed the intended review/remediation behavior but is rejected as final
+  evidence because it used the raw diff as `REVIEW_PACKAGE` instead of literal
+  `REVIEW_PACKAGE_PATH`/`REVIEW_REPORT_PATH`, and its targeted re-review report
+  fails validation when checked with accepted finding ids.
+- `execution-routing` now makes the review package descriptor fields and
+  targeted accepted-id validation literal in the main skill, with structure
+  checks covering those tripwires.
+- R6 showed the hardened UNIT_REVIEW path with package/report fields and zero
+  analyzer violations, but hit the Claude session limit before targeted
+  re-review and final commit completion.
+- Final release remains blocked; Phase 3B.2 stays pending until a complete
+  hardened F3 lifecycle stream is accepted.
 - Version finalization is dry-run only in this phase. Authoritative locations are
   `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`,
   `package.json`, the version-neutral README install example, runtime manifest
@@ -150,6 +209,35 @@
   broken packaged Markdown links.
 - Windows Bash suites now go through a Node wrapper that prefers Git Bash, while
   the release package test itself is Node-based.
+
+## 2026-07-04 - Phase 7B live evidence attempt: final release remains blocked
+
+- Baseline matched the Phase 7B expectation: `npm.cmd run check` passed with
+  467 checks, `npm.cmd run release:check:candidate` passed, and
+  `npm.cmd run release:check:final` failed with
+  `LIVE_EVIDENCE_REQUIRED_BEFORE_RELEASE`.
+- Live Claude Code model evidence could not be accepted. The F1 VANILLA smoke
+  and a minimal auth confirmation smoke both reached Claude Code stream-json
+  output but stopped before model execution with `authentication_failed`.
+  Token and completed-model cost numbers were zero.
+- The F1 auth-failed stream was converted with
+  `tests/eval/phase6/stream-to-run.mjs` and the resulting run record validated
+  with `tests/eval/phase6/validate-run.mjs`. The record is
+  `PROCESS_FAILURE` with retry classification `AUTH`, not behavioral evidence.
+- Phase 5 deterministic enforcement was re-run with
+  `npm.cmd run test:enforcement`: 130 checks passed, 0 failed. This remains
+  partial support only; the live ASK/DENY hook-event stream was not accepted.
+- The Phase 7B evidence manifest is recorded at
+  `docs/release-evidence/0.5.0/live-evidence.json`. It intentionally keeps all
+  four required final gates pending: Phase 3B.2 review lifecycle, Phase 4
+  resume/compact, Phase 5 ASK/DENY, and Phase 6 behavioral/token/cost.
+- Raw stream provenance is repo-relative only and lives under the ignored
+  `.cost-oriented-agentic-workflow/eval/phase7b/` workspace. The final release
+  gate treats those raw paths and SHA-256 values as provenance metadata; it
+  validates only committed evidence artifacts under `docs/release-evidence/`.
+- Final release remains blocked. No `0.5.0` version bump, tag, push, publish,
+  install, runtime activation, or token-savings/behavior claim is permitted from
+  this run.
 
 ## Legacy decision log note
 
@@ -573,3 +661,31 @@ dahil. Çözüm: kaynak repoyu (geliştirme ağacı) minimal runtime paketinden 
 Sürüm **0.4.1 → 0.4.2** (cleanup/packaging; davranış değişikliği yok). Testler
 ve dogfood bu cleanup-only yamada bilinçli olarak yeniden koşulmadı; kurulum/
 rollout yapılmadı. Sonraki mimari faz: **0.5.0**.
+
+### 2026-07-05 - Phase 7B live evidence: Phase 3B.2 accepted
+
+**Decision:** accept Phase 3B.2 review lifecycle evidence for the `0.5.0`
+final release gate.
+
+**Evidence:** R7 ran in a disposable F3 review-remediation fixture with the
+source checkout loaded as plugin input only. The accepted normalized stream is
+`.cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r7.utf8.stream.jsonl`
+and the canonical run record is
+`.cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r7.run.json`.
+The original PowerShell-captured stream is retained as encoded provenance at
+`.cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r7.stream.jsonl`.
+
+**Observed lifecycle:** the stream records UNIT_REVIEW and TARGETED_REREVIEW
+dispatches to `cost-oriented-agentic-workflow:cow-reviewer` with literal
+`REVIEW_PACKAGE_PATH` and `REVIEW_REPORT_PATH` fields. The unit report
+validated with `review-report.mjs validate --package`. The controller accepted
+F-001, rejected F-002 as a process-timing artifact of controller-owned final
+commit, and treated F-003 as non-blocking. One remediation wave fixed F-001,
+targeted re-review validated with accepted finding id F-001, fresh verification
+passed 11/11, and the disposable fixture committed locally as `3947c75`.
+
+**Release impact:** `phase3b2ReviewLifecycle` is now accepted in
+`docs/release-evidence/0.5.0/live-evidence.json`. Together with the already
+accepted Phase 4, Phase 5, and conservative Phase 6 summaries, final release
+evidence is complete. This does not itself perform the `0.5.0` version bump,
+push, tag, publish, install, or GitHub release.

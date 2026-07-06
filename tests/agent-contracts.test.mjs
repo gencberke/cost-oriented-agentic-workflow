@@ -144,16 +144,16 @@ for (const file of files.sort()) {
 // aggregate body budget
 check(totalBody <= 20000, `all four agent bodies within 20000 bytes total (${totalBody})`);
 
-// version unchanged by this phase
+// final release version is consistent across plugin metadata
 for (const [f, vpath] of [
   ['.claude-plugin/plugin.json', 'version'],
   ['package.json', 'version'],
 ]) {
   const v = JSON.parse(fs.readFileSync(path.join(root, f), 'utf8'))[vpath];
-  check(v === '0.4.2', `${f} version remains 0.4.2 (${v})`);
+  check(v === '0.5.0', `${f} version is finalized at 0.5.0 (${v})`);
 }
 const market = JSON.parse(fs.readFileSync(path.join(root, '.claude-plugin/marketplace.json'), 'utf8'));
-check((market.plugins || []).every((pl) => pl.version === '0.4.2'), 'marketplace version remains 0.4.2');
+check((market.plugins || []).every((pl) => pl.version === '0.5.0'), 'marketplace version is finalized at 0.5.0');
 
 console.log(`\nagent-contracts: ${passes} checks passed, ${fails} failed.`);
 if (fails > 0) process.exit(1);

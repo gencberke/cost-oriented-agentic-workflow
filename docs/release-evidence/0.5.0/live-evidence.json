@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 1,
+  "release": "0.5.0",
+  "sourceVersion": "0.4.2",
+  "commit": "0f34c3f9e0598e12d643386eb4c3995e4fc05e55",
+  "generatedAt": "2026-07-04T23:47:53.296Z",
+  "gates": {
+    "phase3b2ReviewLifecycle": {
+      "status": "accepted",
+      "artifacts": [
+        {
+          "path": "docs/release-evidence/0.5.0/phase3b2ReviewLifecycle.summary.json",
+          "kind": "gate-summary-json",
+          "sha256": "eadeb1fc57a5111d22b564f0a153f2d0ef8c1d65ba8ea1c48f23dd0c400dea4d"
+        }
+      ]
+    },
+    "phase4ResumeCompact": {
+      "status": "accepted",
+      "artifacts": [
+        {
+          "path": "docs/release-evidence/0.5.0/phase4ResumeCompact.summary.json",
+          "kind": "gate-summary-json",
+          "sha256": "bbe590b6cf0a9847cb7a2def66780c49e60638d58ae34e0a695e9116bb0e29d7"
+        }
+      ]
+    },
+    "phase5AskDeny": {
+      "status": "accepted",
+      "artifacts": [
+        {
+          "path": "docs/release-evidence/0.5.0/phase5AskDeny.summary.json",
+          "kind": "gate-summary-json",
+          "sha256": "5be82f5c12d4f65a77505e03030ac2a35c21d30710e56eb47e1334ccfd22509e"
+        }
+      ]
+    },
+    "phase6BehavioralCost": {
+      "status": "accepted",
+      "artifacts": [
+        {
+          "path": "docs/release-evidence/0.5.0/phase6BehavioralCost.summary.json",
+          "kind": "gate-summary-json",
+          "sha256": "db7e2cf49cea8f9be74bd8f9261af9ecae759cc6438cc80ac3eed3b5588de342"
+        }
+      ]
+    }
+  },
+  "rawProvenance": [
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F1-vanilla.stream.jsonl",
+      "sha256": "c0b6843ff8a4111fb15c916a089c91609a6b0a21f5c2c97cca5ffe3d22b08582"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/auth-default-smoke.stream.jsonl",
+      "sha256": "ff32966901d2baaf54b74292a8fcce9ecd55e6116881d2b841ceb013fb7252e3"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F1-vanilla.auth-failed.run.json",
+      "sha256": "fb82f9305b2b43403ae102e1c23c8f6d2041cfa0807debdde257490fbf2c60d7"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r3.stream.jsonl",
+      "sha256": "00d8efa7942a4b4dcc0a8e6dd5d08783e2eafbb1ffcef6b3ca836265dac80ba5"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r4.stream.jsonl",
+      "sha256": "80de15b709ab199320809a06a142df34e33afad6eea2bd766b67bb9b2c8f843d"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r5.stream.jsonl",
+      "sha256": "e693c6bcbb13a87a4ad2d4d9925eb2dbdf816de5e0f0ea24d2b7eed0aa737a05"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r6.stream.jsonl",
+      "sha256": "d20d421549b7d3569f611a6d86c3c43340849d1c1b562c58407011df4e084544"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r7.stream.jsonl",
+      "sha256": "6ad6d97a0680b55c701c561f93920aa8a29d0005249854f687d3111275425ea5"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r7.utf8.stream.jsonl",
+      "sha256": "7144df14dfc3f8e72dcc9b84ad0b9440d35456d814402c69e54426ef7deb265d"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r7.run.json",
+      "sha256": "e6a5a02c4a8acfeffc8798751cb39341d833bc01d071cb3a3449a20ff1c0d146"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r7.review-analysis.json",
+      "sha256": "4c42db005d9b44c7232e2c5e3e89d6e983854534598b0af54b0f5e24dd9d746f"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F1-vanilla-r2.stream.jsonl",
+      "sha256": "3fb9b118db56a9d561f8e2747d9401711aebdaa0bc84b98de1014155c992a171"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F1-vanilla-r2.run.json",
+      "sha256": "c7b1bff5d793e7bfb4a4b761636ebace37a645aee3b6a3bfec3af7cbefe6e9b9"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F1-shadow-r2.stream.jsonl",
+      "sha256": "8a2979600eb943d7fa91e94993cb8ab8dd371852db7913b27d69f211e82f208f"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F1-shadow-r2.run.json",
+      "sha256": "e7a77eae4982977b209f5738505674376f60d0a7d1ac0b7edff6f8a30e401ed7"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F1-r2.aggregate.json",
+      "sha256": "d81a0036b9fee1f82548a00c4e125d9bb8a44e2e44d61eb8b6e480c68154063c"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F1-r2.aggregate.md",
+      "sha256": "2f29194c8626c91b3aaa94eaf2a962ab9394eee1d8bdb39181c0fcff89703e5d"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/phase5-enforcement-tests.log",
+      "sha256": "cd59356d6a5e659a6a702217a227629bcd760e5476b4f0714e61caa97060686a"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F4-standard-ask-r2.stream.jsonl",
+      "sha256": "7126c75ea0c6180ba854c8f491e2742c8ae1a51ef62cc0dd3e25916adb0f5079"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F4-standard-ask-r2.run.json",
+      "sha256": "dcf8035bf70e050da0e69b1ff951cd1ae79b191d5a46c3345a1cb41f0df2facd"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F4-production-deny-safe-r2.stream.jsonl",
+      "sha256": "4f06058bf31cfca3c14b6e3cd3aca93d1e3c9baeb00925462bbf8db45d987f43"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F4-production-deny-safe-r2.run.json",
+      "sha256": "e01d33e3dc82c72e293589cbcd3fa8fb07cfe7f9e447b5bc713487775fd069ad"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F5-resume-startup-r2.stream.jsonl",
+      "sha256": "a8ab0e280288f4e98c78d36e2160d2e3699d2f595ad04efe69fc886f80a9e66b"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F5-resume-startup-r2.run.json",
+      "sha256": "5a79cd12467af91dba5bfc40edeab97b12cde1e093f277434387443755fbb84e"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F5-resume-resumed-r2.stream.jsonl",
+      "sha256": "9646fb7020d94b0bf22e49a96bfb98a76c5e598a90a92c9ebe72fdf20668aa65"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F5-resume-resumed-r2.run.json",
+      "sha256": "1482297269f0e60fe6eab39d75e38c5541eafac985485065c2f83a8e0f299694"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F5-resume-compact-r2.stream.jsonl",
+      "sha256": "74e0532cb013fd9bcc5b99895963717e84f04d8da6f7c40a8d5c9c068e93398a"
+    },
+    {
+      "path": ".cost-oriented-agentic-workflow/eval/phase7b/F5-resume-compact-r2.run.json",
+      "sha256": "cfce2e9d9d290f1684f1fcdd32e1a274e77d1ac4fe2dc9608d4ca9e739856f07"
+    }
+  ]
+}

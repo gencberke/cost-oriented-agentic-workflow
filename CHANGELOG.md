@@ -3,11 +3,11 @@
 All notable changes to the cost-oriented-agentic-workflow plugin are documented
 here. This project adheres to [Semantic Versioning](https://semver.org/).
 
-## [0.5.0] - Pending
+## [0.5.0] - 2026-07-05
 
 Release-candidate preparation for the v0.5.0 control-plane series. Repository
-versions intentionally remain `0.4.2` during Phase 7A; the final version bump is
-prepared but not performed.
+versions remained `0.4.2` during Phase 7A and were finalized at `0.5.0` only
+after Phase 7B live evidence was accepted.
 
 ### Added
 
@@ -17,6 +17,9 @@ prepared but not performed.
 - Candidate/final release gates. Candidate validation may pass with live gates
   pending; final validation refuses release with
   `LIVE_EVIDENCE_REQUIRED_BEFORE_RELEASE`.
+- Phase 7B final-evidence manifest validation. Final release can pass only from
+  committed evidence under `docs/release-evidence/0.5.0/`; ignored raw stream
+  paths are provenance metadata only.
 - Deterministic runtime package inspection, final-version dry-run, and Node
   release artifact tests covering allowlists, SHA-256 checksums, reproducible
   manifests, inactive hook status, and package safety.
@@ -28,12 +31,14 @@ prepared but not performed.
 - Runtime documentation now distinguishes source-repository commands from
   installed runtime usage and avoids personal absolute paths.
 
-### Deferred
+### Evidence
 
-- Phase 3B.2 live review lifecycle evidence.
-- Phase 4 live resume/compact evidence.
-- Phase 5 live ASK/DENY evidence.
-- Sufficient Phase 6 behavioral, token, and cost evidence.
+- Phase 3B.2 live review lifecycle evidence accepted from the R7 F3
+  review-remediation stream.
+- Phase 4 live resume/compact evidence accepted.
+- Phase 5 live ASK/DENY evidence accepted from disposable enforcement fixtures.
+- Conservative Phase 6 behavioral, token, and cost evidence accepted with no
+  broad token-savings claim.
 
 ## [0.4.2] - 2026-06-24
 

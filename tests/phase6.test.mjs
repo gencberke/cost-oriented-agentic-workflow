@@ -335,6 +335,34 @@ console.log('Running Phase 6 harness tests...');
   check(!JSON.stringify(rec).includes('SECRET PROMPT TEXT'), 'stream-to-run: rejects raw prompts from summary record');
 }
 
+// ── 23b. stream-to-run: top-level result cost extraction ───────────────────
+{
+  const streamLines = [
+    JSON.stringify({ type: 'assistant', message: { role: 'assistant', model: 'claude-sonnet-actual', usage: { input_tokens: 3, output_tokens: 1 }, content: [] } }),
+    JSON.stringify({ type: 'result', subtype: 'success', result: 'OK', total_cost_usd: 0.045, duration_ms: 1200, duration_api_ms: 900 }),
+  ];
+  const { parseStream } = await import(pathToFileURL(path.resolve(PHASE6_DIR, 'stream-to-run.mjs')).href);
+  const rec = parseStream(streamLines.join('\n'), { runId: 'rs-cost', condition: 'VANILLA', fixtureId: 'F1', environmentId: 'env-1', claudeCodeVersion: '1.0.0' });
+  check(validateRun(rec).length === 0, 'stream-to-run: top-level result cost record validates');
+  check(rec.estimatedCostUsd === 0.045, 'stream-to-run: top-level total_cost_usd extracted');
+  check(rec.apiDurationMs === 900, 'stream-to-run: top-level duration_api_ms extracted');
+}
+
+// ── 23c. stream-to-run: live hook_response output parsing ──────────────────
+{
+  const askOutput = JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'ask', permissionDecisionReason: 'COW E2' } });
+  const denyOutput = JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'deny', permissionDecisionReason: 'COW E1' } });
+  const streamLines = [
+    JSON.stringify({ type: 'system', subtype: 'hook_response', hook_event: 'PreToolUse', output: askOutput, stdout: '' }),
+    JSON.stringify({ type: 'system', subtype: 'hook_response', hook_event: 'PreToolUse', output: '', stdout: denyOutput }),
+    JSON.stringify({ type: 'result', subtype: 'success', result: 'OK', total_cost_usd: 0.01, duration_ms: 100, duration_api_ms: 90 }),
+  ];
+  const { parseStream } = await import(pathToFileURL(path.resolve(PHASE6_DIR, 'stream-to-run.mjs')).href);
+  const rec = parseStream(streamLines.join('\n'), { runId: 'rs-hook-response', condition: 'COW_ENFORCE', fixtureId: 'F4-enforcement', environmentId: 'env-1', claudeCodeVersion: '1.0.0' });
+  check(validateRun(rec).length === 0, 'stream-to-run: hook_response output record validates');
+  check(rec.hookAskCount === 1 && rec.hookDenyCount === 1, 'stream-to-run: live hook_response output ask/deny counted');
+}
+
 // ── 24. stream-to-run: malformed JSONL + missing final result ──────────────
 {
   const streamLines = [
@@ -381,7 +409,7 @@ console.log('Running Phase 6 harness tests...');
   check(rec.semanticResult === 'WORKFLOW_COMPLETED', 'stream-to-run: clean completed stream -> WORKFLOW_COMPLETED');
 }
 
-// ── 26. Fixtures reproducible via setup.mjs (F1, F2, F4) ────────────────────
+// ── 26. Fixtures reproducible via setup.mjs (F1, F2, F3, F4) ────────────────
 {
   const setup = path.resolve(PHASE6_DIR, 'fixtures', 'setup.mjs');
   check(fs.existsSync(setup), 'fixture setup.mjs exists');
@@ -425,6 +453,25 @@ console.log('Running Phase 6 harness tests...');
   check(/AssertionError|expected 'abc' to equal|AssertionError/i.test(t2out) || /failing/i.test(t2out),
     'setup F2: failure is the intended normalize assertion failure');
   check(!/SyntaxError|ERR_REQUIRE_ESM|require\(/i.test(t2out), 'setup F2: no ESM/CJS import SyntaxError');
+
+  // F3
+  const d3 = fs.mkdtempSync(path.join(os.tmpdir(), 'p6f3-')); tmps.push(d3);
+  const r3 = runCLI(['node', setup, 'F3-review-remediation', d3]);
+  check(r3.status === 0, 'setup F3: exits 0');
+  const root3 = r3.stdout.trim();
+  check(fs.existsSync(path.join(root3, 'src/cart.js')), 'setup F3: src/cart.js created');
+  check(fs.existsSync(path.join(root3, 'test/cart.test.mjs')), 'setup F3: test/cart.test.mjs created');
+  check(fs.existsSync(path.join(root3, 'plan.md')), 'setup F3: executable plan.md created');
+  const f3Plan = fs.readFileSync(path.join(root3, 'plan.md'), 'utf8');
+  check(/MODE: standard/.test(f3Plan) && /COMMIT_POLICY: controller-per-unit/.test(f3Plan),
+    'setup F3: plan.md has COW anchor fields');
+  check(/### Task 1: Cart Discount Helper/.test(f3Plan) && /Risk:\*\* high/.test(f3Plan),
+    'setup F3: plan.md defines high-risk Task 1');
+  check(fs.existsSync(path.join(root3, 'task.md')), 'setup F3: task.md copied into disposable repo');
+  const f3Task = fs.readFileSync(path.join(root3, 'task.md'), 'utf8');
+  check(/targeted re-review after the fix/.test(f3Task), 'setup F3: copied task names targeted re-review');
+  const t3 = runCLI(['node', '--test', path.join(root3, 'test/cart.test.mjs')]);
+  check(t3.status === 0, 'setup F3: baseline cart tests pass');
 
   // F4
   const d4 = fs.mkdtempSync(path.join(os.tmpdir(), 'p6f4-')); tmps.push(d4);

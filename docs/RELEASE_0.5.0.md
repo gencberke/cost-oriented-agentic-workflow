@@ -1,7 +1,9 @@
 # v0.5.0 Release Candidate Handoff
 
 Status: `0.5.0 RELEASE CANDIDATE REPOSITORY READY` after deterministic checks
-pass. `LIVE EVIDENCE REQUIRED BEFORE FINAL RELEASE`.
+pass. Phase 7B live evidence is accepted in
+`docs/release-evidence/0.5.0/live-evidence.json`; final release still requires
+the separate `0.5.0` version bump and final verification.
 
 ## Completed Release Preparation
 
@@ -13,6 +15,9 @@ pass. `LIVE EVIDENCE REQUIRED BEFORE FINAL RELEASE`.
 - Final release validation intentionally fails with
   `LIVE_EVIDENCE_REQUIRED_BEFORE_RELEASE`.
 - Version finalization is dry-run only in Phase 7A and targets `0.5.0`.
+- Phase 7B added a committed evidence manifest and deterministic final-evidence
+  validator. The deferred live gates are now accepted by committed summaries
+  under `docs/release-evidence/0.5.0/`; raw streams remain ignored provenance.
 
 ## Runtime Package Inventory
 
@@ -60,6 +65,10 @@ npm.cmd run release:check:final
 Expected Phase 7A result: fail with
 `LIVE_EVIDENCE_REQUIRED_BEFORE_RELEASE`.
 
+Current Phase 7B result: pass only when
+`docs/release-evidence/0.5.0/live-evidence.json` contains accepted committed
+evidence for all required gates.
+
 Final version dry-run:
 
 ```text
@@ -69,26 +78,30 @@ npm.cmd run release:version:dry
 Expected result: report all authoritative version locations for the future
 `0.5.0` bump without modifying files.
 
-## Deferred Live Gates
+## Accepted Live Gates
 
 - Phase 3B.2 live review lifecycle evidence.
 - Phase 4 live resume/compact evidence.
 - Phase 5 live ASK/DENY evidence.
 - Sufficient Phase 6 behavioral, token, and cost evidence.
 
-No token savings, behavioral guarantees, or enforcement activation may be
-advertised until these gates are accepted.
+No broad token-savings claim is accepted for this evidence set. Enforcement
+activation remains opt-in/deferred; Phase 5 proves ASK/DENY behavior in
+disposable evaluation fixtures only.
+
+The 2026-07-04 Phase 7B attempt is recorded in
+`docs/release-evidence/0.5.0/phase7b-summary.md` and `docs/DECISIONS.md`.
+It is the release evidence index for accepted and rejected live attempts.
 
 ## Final Release Procedure
 
-1. Run the deferred live evidence matrix and record accepted conclusions.
-2. Update the release evidence decision log with measured behavior/cost data.
-3. Run `npm.cmd run release:check:final`; it must pass only after the live gates
-   are accepted by a future change.
-4. Apply the prepared version bump from `0.4.2` to `0.5.0` across plugin,
+1. Run `npm.cmd run release:check:final`; it must pass from committed evidence
+   only.
+2. Run `npm.cmd run release:version:dry` and inspect the exact files it reports.
+3. Apply the prepared version bump from `0.4.2` to `0.5.0` across plugin,
    marketplace, package metadata, runtime manifest source, and changelog.
-5. Run the full deterministic suite and rebuild/inspect the runtime package.
-6. Create the final version commit and only then decide separately whether to
+4. Run the full deterministic suite and rebuild/inspect the runtime package.
+5. Create the final version commit and only then decide separately whether to
    tag, push, publish, or install.
 
 ## Review Packet

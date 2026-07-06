@@ -43,7 +43,7 @@ const obsLogFile = (root) => path.join(runDir(root), 'hook-observations.log');
 const clearLog = (root) => { try { fs.unlinkSync(obsLogFile(root)); } catch {} };
 
 function callHook(cwd, op, stdinPayload = '', env = {}, extraArgs = []) {
-  const r = spawnSync('node', [HOOK_SCRIPT, op, ...extraArgs], {
+  const r = spawnSync(process.execPath, [HOOK_SCRIPT, op, ...extraArgs], {
     cwd,
     input: typeof stdinPayload === 'string' ? stdinPayload : JSON.stringify(stdinPayload),
     env: { ...process.env, ...env },
@@ -200,6 +200,19 @@ console.log('Running Phase 5A enforcement tests...');
   const r1p = callHook(dir, 'pre-tool-use', { tool_name: 'Edit', tool_input: { file_path: 'src/a.js' } }, {}, ENFORCE);
   const e1p = parseOut(r1p.stdout);
   check(e1p && e1p.hookSpecificOutput.permissionDecision === 'deny', 'E1 production: deny');
+
+  const contaminatedIndex = path.join(os.tmpdir(), `cow-contaminated-index-${Date.now()}`);
+  const r1env = callHook(dir, 'pre-tool-use', { tool_name: 'Edit', tool_input: { file_path: 'src/a.js' } },
+    { GIT_INDEX_FILE: contaminatedIndex }, ENFORCE);
+  const e1env = parseOut(r1env.stdout);
+  check(e1env && e1env.hookSpecificOutput.permissionDecision === 'deny', 'E1 production: ignores inherited Git index env');
+
+  if (process.platform === 'win32' && fs.existsSync('C:\\Program Files\\Git\\cmd\\git.exe')) {
+    const r1path = callHook(dir, 'pre-tool-use', { tool_name: 'Edit', tool_input: { file_path: 'src/a.js' } },
+      { PATH: '', Path: '' }, ENFORCE);
+    const e1path = parseOut(r1path.stdout);
+    check(e1path && e1path.hookSpecificOutput.permissionDecision === 'deny', 'E1 production: finds Git when hook PATH omits it');
+  }
 }
 
 // E2: Edit/Write outside current unit allowedPaths during implementing.

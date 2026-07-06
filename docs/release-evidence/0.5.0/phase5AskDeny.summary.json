@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "evidenceKind": "phase7b-gate-summary",
+  "gate": "phase5AskDeny",
+  "status": "accepted",
+  "decision": "Live Claude Code hook-event evidence accepted for Phase 5 ASK/DENY activation in disposable evaluation repositories. No active source hooks/hooks.json was created.",
+  "observations": [
+    "standard-ask: PreToolUse Edit outside currentUnit.allowedPaths emitted permissionDecision ask with reason COW E2.",
+    "production-deny: PreToolUse Edit of a tracked source file during diagnosis-readonly emitted permissionDecision deny with reason COW E1.",
+    "Both accepted live runs completed through Claude Code stream-json with hook_response events and validated run records.",
+    "External fixture checks confirmed the blocked target files were unchanged; only evaluation-only hooks.json remained untracked in disposable repos.",
+    "The E1 live run exposed Git safe.directory ownership behavior in disposable repos; cow-hook now uses per-command safe.directory for read-only Git classification and tests cover inherited Git env/path edge cases."
+  ],
+  "acceptedRuns": [
+    {
+      "label": "standard-ask",
+      "stream": ".cost-oriented-agentic-workflow/eval/phase7b/F4-standard-ask-r2.stream.jsonl",
+      "streamSha256": "7126c75ea0c6180ba854c8f491e2742c8ae1a51ef62cc0dd3e25916adb0f5079",
+      "runRecord": ".cost-oriented-agentic-workflow/eval/phase7b/F4-standard-ask-r2.run.json",
+      "runRecordSha256": "dcf8035bf70e050da0e69b1ff951cd1ae79b191d5a46c3345a1cb41f0df2facd",
+      "decision": "ask",
+      "reasonCode": "E2"
+    },
+    {
+      "label": "production-deny",
+      "stream": ".cost-oriented-agentic-workflow/eval/phase7b/F4-production-deny-safe-r2.stream.jsonl",
+      "streamSha256": "4f06058bf31cfca3c14b6e3cd3aca93d1e3c9baeb00925462bbf8db45d987f43",
+      "runRecord": ".cost-oriented-agentic-workflow/eval/phase7b/F4-production-deny-safe-r2.run.json",
+      "runRecordSha256": "e01d33e3dc82c72e293589cbcd3fa8fb07cfe7f9e447b5bc713487775fd069ad",
+      "decision": "deny",
+      "reasonCode": "E1"
+    }
+  ]
+}

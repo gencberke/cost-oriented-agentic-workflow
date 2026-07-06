@@ -1,0 +1,65 @@
+{
+  "schemaVersion": 1,
+  "evidenceKind": "phase7b-gate-summary",
+  "gate": "phase3b2ReviewLifecycle",
+  "status": "accepted",
+  "acceptedAt": "2026-07-04T23:47:53.296Z",
+  "decision": "Accepted. F3 R7 completed a live Phase 3B.2 review lifecycle in a disposable repository: package construction, reviewer invocation, report validation, adjudication, remediation, targeted re-review validation, fresh verification, and local disposable commit.",
+  "acceptedAttempt": {
+    "label": "F3 R7",
+    "stream": ".cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r7.utf8.stream.jsonl",
+    "streamSha256": "7144df14dfc3f8e72dcc9b84ad0b9440d35456d814402c69e54426ef7deb265d",
+    "encodedStream": ".cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r7.stream.jsonl",
+    "encodedStreamSha256": "6ad6d97a0680b55c701c561f93920aa8a29d0005249854f687d3111275425ea5",
+    "run": ".cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r7.run.json",
+    "runSha256": "e6a5a02c4a8acfeffc8798751cb39341d833bc01d071cb3a3449a20ff1c0d146",
+    "reviewAnalysis": ".cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r7.review-analysis.json",
+    "reviewAnalysisSha256": "4c42db005d9b44c7232e2c5e3e89d6e983854534598b0af54b0f5e24dd9d746f",
+    "result": "accepted"
+  },
+  "observations": [
+    "R7 used the source plugin as input only and completed inside a disposable F3 fixture repository.",
+    "The live stream contains UNIT_REVIEW and TARGETED_REREVIEW dispatches to cost-oriented-agentic-workflow:cow-reviewer with literal REVIEW_PACKAGE_PATH and REVIEW_REPORT_PATH fields.",
+    "review-report.mjs validation passed for the UNIT_REVIEW report and for the TARGETED_REREVIEW report with accepted finding id F-001.",
+    "The controller adjudicated F-001 as accepted, F-002 as rejected because it was a process-timing artifact of controller-owned final commit, and F-003 as non-blocking.",
+    "One remediation wave fixed F-001 by adding finite/range validation for the money-like percentOff input and regression coverage.",
+    "The targeted re-review approved the F-001 remediation with no introduced blocking regressions.",
+    "Fresh fixture verification passed with 11 tests and 0 failures.",
+    "The disposable fixture created local commit 3947c75; no push, tag, publish, dependency install, or source-checkout modification occurred.",
+    "The original PowerShell-captured stream is preserved as encoded provenance; the accepted analysis uses the UTF-8 normalized stream with the same stream events and no malformed JSONL lines."
+  ],
+  "metrics": {
+    "semanticResult": "WORKFLOW_COMPLETED",
+    "processExitCode": 0,
+    "controllerModel": "claude-opus-4-8",
+    "reviewerModel": "claude-sonnet-4-6",
+    "reviewerDispatches": 2,
+    "reviewScopes": [
+      "UNIT_REVIEW",
+      "TARGETED_REREVIEW"
+    ],
+    "reviewAnalyzerViolations": 0,
+    "streamEvents": 234,
+    "malformedJsonlLines": 0,
+    "estimatedCostUsd": 3.373881350000001,
+    "fixtureTestsPassed": 11,
+    "fixtureTestsFailed": 0,
+    "disposableCommit": "3947c75"
+  },
+  "priorAttempts": [
+    {
+      "label": "F3 R5",
+      "stream": ".cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r5.stream.jsonl",
+      "streamSha256": "e693c6bcbb13a87a4ad2d4d9925eb2dbdf816de5e0f0ea24d2b7eed0aa737a05",
+      "result": "rejected",
+      "reason": "Missing literal review package/report dispatch fields and targeted re-review validation fails with accepted finding ids."
+    },
+    {
+      "label": "F3 R6",
+      "stream": ".cost-oriented-agentic-workflow/eval/phase7b/F3-review-remediation-r6.stream.jsonl",
+      "streamSha256": "d20d421549b7d3569f611a6d86c3c43340849d1c1b562c58407011df4e084544",
+      "result": "pending",
+      "reason": "Review package/report dispatch fields were observed and analyzer violations were zero, but the session limit stopped before targeted re-review completion."
+    }
+  ]
+}

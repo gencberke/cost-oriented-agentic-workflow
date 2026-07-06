@@ -8,7 +8,7 @@
     {
       "name": "cost-oriented-agentic-workflow",
       "description": "Token-economy agentic workflow for Claude Code: Opus plans, routes, and adjudicates; a Sonnet subagent does the token-heavy writing; independent Sonnet reviewers gate quality by risk; the controller stays lean. Standard and production modes.",
-      "version": "0.4.2",
+      "version": "0.5.0",
       "source": "./",
       "author": {
         "name": "berke"

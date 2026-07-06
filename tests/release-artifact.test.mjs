@@ -184,7 +184,7 @@ check(!fs.existsSync(unsafeOut), 'unsafe output directory is not created');
 const candidate = run([process.execPath, 'scripts/release-gate.mjs', '--mode=candidate']);
 check(candidate.status === 0 && /PHASE_7A_CANDIDATE_GATE_PASSED/.test(candidate.stdout), 'candidate release gate passes');
 const finalGate = run([process.execPath, 'scripts/release-gate.mjs', '--mode=final']);
-check(finalGate.status !== 0 && /LIVE_EVIDENCE_REQUIRED_BEFORE_RELEASE/.test(finalGate.stderr), 'final release gate blocks on pending live evidence');
+check(finalGate.status === 0 && /PHASE_7B_FINAL_EVIDENCE_GATE_PASSED/.test(finalGate.stdout), 'final release gate passes with accepted committed evidence');
 
 const versionDry = run([process.execPath, 'scripts/version-finalize.mjs', '--target', '0.5.0', '--dry-run']);
 check(versionDry.status === 0 && /"targetVersion": "0.5.0"/.test(versionDry.stdout) && /README\.md/.test(versionDry.stdout),
@@ -210,7 +210,7 @@ fs.mkdirSync(path.join(staleReadmeRoot, '.claude-plugin'), { recursive: true });
 fs.copyFileSync(path.join(root, '.claude-plugin/plugin.json'), path.join(staleReadmeRoot, '.claude-plugin/plugin.json'));
 fs.copyFileSync(path.join(root, '.claude-plugin/marketplace.json'), path.join(staleReadmeRoot, '.claude-plugin/marketplace.json'));
 fs.copyFileSync(path.join(root, 'package.json'), path.join(staleReadmeRoot, 'package.json'));
-fs.writeFileSync(path.join(staleReadmeRoot, 'CHANGELOG.md'), '## [0.5.0] - Pending\n');
+fs.writeFileSync(path.join(staleReadmeRoot, 'CHANGELOG.md'), '## [0.5.0] - 2026-07-05\n');
 fs.writeFileSync(path.join(staleReadmeRoot, 'README.md'), '/plugin marketplace add <path-to-runtime-output>/cost-oriented-agentic-workflow-0.4.2\n');
 const staleReadme = run([process.execPath, 'scripts/version-finalize.mjs', '--root', staleReadmeRoot, '--target', '0.5.0', '--dry-run']);
 check(staleReadme.status !== 0 && /version-neutral/.test(staleReadme.stderr), 'version dry-run rejects stale version-specific README install docs');
