@@ -1,7 +1,7 @@
 ---
 name: cow-repo-investigator
 description: Use to draft a bounded semantic repository profile from a controller-supplied repo-snapshot.json, the profile contract, and a few named files. Read-only, no shell. Returns a profile-draft envelope tagging each claim verified/inferred/unknown for the controller to finalize. Never edits, commits, runs commands, writes the profile, or explores broadly; returns BLOCKED_INPUT when required inputs are missing.
-model: sonnet
+model: claude-sonnet-5
 effort: low
 maxTurns: 10
 tools: Read, Glob, Grep

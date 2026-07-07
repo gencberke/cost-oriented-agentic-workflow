@@ -2,7 +2,7 @@
   "id": "reviewer",
   "fixture_version": 1,
   "agent_type": "cost-oriented-agentic-workflow:cow-reviewer",
-  "model": "sonnet",
+  "model": "claude-sonnet-5",
   "required_inputs": ["REVIEW_KIND", "BRIEF_PATH", "REVIEW_PACKAGE_PATH", "MODE", "RISK", "BASE_REFERENCE", "HEAD_REFERENCE"],
   "required_output_sections": ["SPEC_VERDICT", "QUALITY_VERDICT", "FINDINGS", "MINOR_FINDINGS", "FINAL_VERDICT"],
   "causality_classes": ["INTRODUCED", "WORSENED", "PRE_EXISTING", "UNCERTAIN"],

@@ -461,8 +461,8 @@ check(/execute or resume.*approved plan.*execution-routing.*before inspecting pr
   'production launcher routes approved-plan execution and resume before progress inspection');
 check(/Resume must read.*workspace `progress\.md`.*never look for ledger entries inside the plan/is.test(productionCommandText),
   'production launcher reads resume state from the workspace ledger');
-check(/every planned task.*independent reviewer.*model: sonnet/is.test(productionCommandText),
-  'production launcher pins planned-task reviewers to Sonnet');
+check(/every planned task.*independent reviewer.*model: claude-sonnet-5/is.test(productionCommandText),
+  'production launcher pins planned-task reviewers to Sonnet 5');
 check(/whole-work review.*model: opus/is.test(productionCommandText),
   'production launcher pins the final whole-work reviewer to Opus');
 check(/bug, test failure, or unexpected behavior.*systematic-debugging.*before inspecting the repository/is.test(productionCommandText),

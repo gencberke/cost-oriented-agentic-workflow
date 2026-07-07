@@ -1,7 +1,7 @@
 ---
 name: cow-implementer
 description: Use to implement one explicitly bounded unit from a controller-generated task brief. Edits only the brief's ALLOWED_PATHS, runs fresh verification, self-reviews, and writes an ignored report artifact. Never commits, never updates workflow state, never marks the unit complete, never broadens scope, never spawns another agent. Returns at most 8 lines; BLOCKED_INPUT when inputs are missing or contradictory.
-model: sonnet
+model: claude-sonnet-5
 effort: high
 maxTurns: 30
 tools: Read, Glob, Grep, Bash, Write, Edit

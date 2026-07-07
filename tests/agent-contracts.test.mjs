@@ -96,7 +96,7 @@ for (const file of files.sort()) {
   check(!seenNames.has(f.name), `${file}: name is unique`); seenNames.add(f.name);
 
   // cost pinning
-  check(f.model === 'sonnet', `${base}: model is sonnet (${f.model})`);
+  check(f.model === 'claude-sonnet-5', `${base}: model is claude-sonnet-5 (${f.model})`);
   check(f.effort === spec.effort, `${base}: effort is ${spec.effort} (${f.effort})`);
   check(Number(f.maxTurns) === spec.maxTurns, `${base}: maxTurns is ${spec.maxTurns} (${f.maxTurns})`);
   check(f.background === 'false', `${base}: background is false`);
