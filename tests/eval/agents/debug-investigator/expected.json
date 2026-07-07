@@ -2,7 +2,7 @@
   "id": "debug-investigator",
   "fixture_version": 1,
   "agent_type": "cost-oriented-agentic-workflow:cow-debug-investigator",
-  "model": "sonnet",
+  "model": "claude-sonnet-5",
   "preloads_skill": "cost-oriented-agentic-workflow:systematic-debugging",
   "required_inputs": ["SYMPTOM", "REPOSITORY_ROOT", "READ_SCOPE", "DIAGNOSIS_REPORT_FORMAT"],
   "required_output_sections": [

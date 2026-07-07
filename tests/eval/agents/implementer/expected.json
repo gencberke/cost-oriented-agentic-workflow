@@ -2,7 +2,7 @@
   "id": "implementer",
   "fixture_version": 1,
   "agent_type": "cost-oriented-agentic-workflow:cow-implementer",
-  "model": "sonnet",
+  "model": "claude-sonnet-5",
   "required_inputs": ["TASK_BRIEF_PATH", "REPORT_PATH", "ALLOWED_PATHS", "VERIFICATION_COMMANDS", "COMMIT_POLICY", "WORKTREE_ROOT"],
   "required_output_sections": [
     "STATUS", "FILES_CHANGED", "BEHAVIOR_IMPLEMENTED", "VERIFICATION_COMMANDS",

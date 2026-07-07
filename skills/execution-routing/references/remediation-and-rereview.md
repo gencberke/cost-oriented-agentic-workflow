@@ -23,6 +23,11 @@ original task unchanged. Remediation obeys the Phase 3B.1.1 ownership rules
 exactly: capture/keep the baseline, check overlap, attempt-qualified report, edit
 only the allowed paths, exact-path staging + `verify-stage`, controller commit.
 
+**One wave = one implementer dispatch carrying the complete accepted-findings
+list — never one fixer per finding.** Splitting a wave into per-finding
+dispatches multiplies cost without adding isolation; the findings already share
+one seam and one verification.
+
 ## Targeted re-review
 
 After remediation, dispatch a **fresh** `cow-reviewer` with `REVIEW_SCOPE =

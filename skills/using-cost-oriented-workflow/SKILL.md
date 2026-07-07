@@ -127,6 +127,15 @@ Long sessions drift without a cheap artifact to re-anchor against: the **persist
 
 If the human says skip a step, skip it. Instructions say WHAT; they do not by themselves mean "abandon the workflow."
 
+## Cost red flags
+
+Catch these mid-thought — each one is tokens leaving quietly:
+
+- About to **paste history into a dispatch** → hand a file path instead; pasted text stays resident forever.
+- Third dispatch for the **same evidence with nothing new** → that is a block, not persistence.
+- Reviewer "needs" the repo → it gets the **package**, nothing else.
+- Omitted `model` on a raw dispatch inherits **your** (Opus) model → scoped `cow-*` agents are already pinned; never dispatch unpinned.
+
 ## Where to go next
 
 Invoke by full id `cost-oriented-agentic-workflow:<name>` — names collide across libraries, so qualify or the wrong one loads.

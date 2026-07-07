@@ -312,7 +312,7 @@ class AgentFixtureContractTests(unittest.TestCase):
     (missing field, wrong scoped identifier, mutation flag inconsistent with the
     read-only contract) fails the suite so the live agent smokes always grade
     against a well-formed contract. A passing schema proves nothing about how an
-    agent actually behaves — that is the human-adjudicated live-smoke layer.
+    agent actually behaves â€” that is the human-adjudicated live-smoke layer.
     """
 
     def test_agent_fixture_set_and_readme(self) -> None:
@@ -339,7 +339,7 @@ class AgentFixtureContractTests(unittest.TestCase):
                     expected["agent_type"],
                     f"cost-oriented-agentic-workflow:cow-{fixture_id}",
                 )
-                self.assertEqual(expected["model"], "sonnet")
+                self.assertEqual(expected["model"], "claude-sonnet-5")
 
                 for field in ("required_inputs", "required_output_sections", "forbidden_actions", "human_checks"):
                     self.assertIsInstance(expected[field], list, f"{field} must be a list")
@@ -389,7 +389,7 @@ DISCOVERY_ROUTES = {"controller-map", "investigator", "parallel-investigators", 
 class DiscoveryFixtureContractTests(unittest.TestCase):
     """Schema/contract checks for the Phase 3A discovery control-plane fixtures.
 
-    Validates fixture *shape* only — readiness/route/scoped-agent/budget contracts.
+    Validates fixture *shape* only â€” readiness/route/scoped-agent/budget contracts.
     A malformed fixture fails the suite so the live discovery smokes always grade
     against a well-formed contract. A passing schema is not behavioral proof.
     """
@@ -452,7 +452,7 @@ class DiscoveryHardeningFixtureTests(unittest.TestCase):
 
     The load-bearing invariant: a VALID profile (even dirty) never triggers a
     PROFILE_DRAFT dispatch; only STALE does. Schema validity is not behavioral
-    proof — the analyzer on live streams provides the numeric evidence.
+    proof â€” the analyzer on live streams provides the numeric evidence.
     """
 
     def test_fixture_set_and_readme(self) -> None:
@@ -506,7 +506,7 @@ class ImplementationFixtureContractTests(unittest.TestCase):
     """Schema + coherence for the Phase 3B.1 implementation control-plane fixtures.
 
     Validates fixture *shape* and route/count coherence only. A passing schema is
-    not behavioral proof — the analyzer on live streams plus the human checks are
+    not behavioral proof â€” the analyzer on live streams plus the human checks are
     the behavioral layer. The load-bearing coherence: inline dispatches no
     implementer; delegated/batch dispatch exactly one; planned-sequential is two
     sequential units; and the negative cases never commit.

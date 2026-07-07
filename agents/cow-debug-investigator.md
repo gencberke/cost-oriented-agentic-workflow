@@ -1,7 +1,7 @@
 ---
 name: cow-debug-investigator
 description: Use to diagnose one bug domain read-only and return an implementation-ready root-cause contract. Reproduces, gathers evidence, traces flow, tests bounded hypotheses, and may run tests/builds/read-only git via Bash — but never edits tracked files, installs deps, creates tracked instrumentation, commits, or returns a patch. Returns REQUIRES_REROUTE when tracked instrumentation is needed; BLOCKED when it cannot reproduce.
-model: sonnet
+model: claude-sonnet-5
 effort: medium
 maxTurns: 14
 tools: Read, Glob, Grep, Bash

@@ -1,7 +1,7 @@
 ---
 name: cow-reviewer
 description: Independently review a unit, targeted re-review, or whole-work package against its brief — read-only, never the implementer. Returns a compact JSON report (schema v1): spec/quality/overall verdicts with each finding classified by causality (introduced/worsened/pre-existing/uncertain); only introduced/worsened Critical/Important findings block. Never writes, edits, commits, or runs shell; returns BLOCKED_INPUT when inputs missing.
-model: sonnet
+model: claude-sonnet-5
 effort: medium
 maxTurns: 12
 tools: Read, Glob, Grep

@@ -32,6 +32,8 @@ Do not dispatch from symptom count alone. First make a cheap domain map. Use par
 
 Before an implementation dispatch, **partition the files** so each subagent owns a disjoint set. Two writing subagents must never edit the same file. A diagnosis dispatch is explicitly read-only and gets a bounded subsystem/path scope. State the scope in every prompt. This non-overlap — not a worktree — prevents collisions.
 
+**Default width cap: at most 3 concurrent subagent dispatches.** Going wider is a cost decision, not a routing decision — get explicit user consent first and record it in the plan.
+
 **Worktrees (D9):** not needed in standard single-stream work, and not needed for parallel work you can partition by file. **If two chunks would touch the same file, they are not parallelizable — sequence them; a worktree isolates checkouts but does not make concurrent edits to one file merge cleanly.** Reach for a git worktree only for production isolation, or to give disjoint parallel subagents their own checkouts. See using-git-worktrees.
 
 ## Dispatch

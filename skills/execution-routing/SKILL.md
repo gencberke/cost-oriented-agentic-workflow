@@ -82,6 +82,8 @@ Override only by repo/user preference in the anchor: `implementer`, `user-owned`
 
 **Retry budget (D8):** initial attempt + at most **2 extra**, each changed and fresh; never resend the same prompt. For bugs/failing tests, find root cause first (systematic-debugging).
 
+**The only reroute edge is `diagnosis-readonly` back to `triage`** via `transition --phase triage --reroute` (used when an investigator returns `REQUIRES_REROUTE`); it is single-use per symptom — see discovery-routing.
+
 ## Bounded Remediation Gate
 
 Allow at most **2 remediation waves** per task or final whole-work review. A wave = one fresh fixer for all accepted introduced/worsened Critical/Important findings + tests, then targeted re-review. False positives, deferred pre-existing findings, and plan conflicts use no wave. After wave 2, open Critical/Important stops with evidence. **Budget exhausted ≠ approved.** Implementation attempts are separate; never merge counters. Detail: [remediation-and-rereview.md](references/remediation-and-rereview.md).

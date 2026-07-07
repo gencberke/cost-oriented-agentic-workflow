@@ -461,8 +461,8 @@ check(/execute or resume.*approved plan.*execution-routing.*before inspecting pr
   'production launcher routes approved-plan execution and resume before progress inspection');
 check(/Resume must read.*workspace `progress\.md`.*never look for ledger entries inside the plan/is.test(productionCommandText),
   'production launcher reads resume state from the workspace ledger');
-check(/every planned task.*independent reviewer.*model: sonnet/is.test(productionCommandText),
-  'production launcher pins planned-task reviewers to Sonnet');
+check(/every planned task.*independent reviewer.*model: claude-sonnet-5/is.test(productionCommandText),
+  'production launcher pins planned-task reviewers to Sonnet 5');
 check(/whole-work review.*model: opus/is.test(productionCommandText),
   'production launcher pins the final whole-work reviewer to Opus');
 check(/bug, test failure, or unexpected behavior.*systematic-debugging.*before inspecting the repository/is.test(productionCommandText),
@@ -979,6 +979,18 @@ const agentCount = isDir(agentsDir) ? fs.readdirSync(agentsDir).filter((f) => f.
 check(agentCount === 4, `3B.2: exactly four agents remain (no fifth reviewer) (${agentCount})`);
 check(plugin && plugin.version === '0.5.0' && packageMeta && packageMeta.version === '0.5.0',
   'final release: the package version is finalized at 0.5.0');
+
+// ── v0.5.1: cost-guard prose safeguards ───────────────────────────────
+check(rawDiscovery.includes('at most one reroute per symptom'),
+  'v0.5.1: discovery-routing bounds the reroute cycle');
+check(executionText.includes('The only reroute edge is'),
+  'v0.5.1: execution-routing names the reroute edge');
+check(read(path.join(skillsDir, 'dispatching-parallel-agents', 'SKILL.md')).includes('at most 3 concurrent subagent dispatches'),
+  'v0.5.1: parallel dispatch has a default width cap');
+check(remediationRef.includes('never one fixer per finding'),
+  'v0.5.1: remediation forbids per-finding fix fan-out');
+check(entryText.includes('Cost red flags'),
+  'v0.5.1: entry skill carries the cost red-flags block');
 
 // ── Summary ─────────────────────────────────────────────────────────────────
 console.log(`\n${passes} checks passed, ${failures} failed.`);

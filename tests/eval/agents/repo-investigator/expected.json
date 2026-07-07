@@ -2,7 +2,7 @@
   "id": "repo-investigator",
   "fixture_version": 1,
   "agent_type": "cost-oriented-agentic-workflow:cow-repo-investigator",
-  "model": "sonnet",
+  "model": "claude-sonnet-5",
   "required_inputs": ["SNAPSHOT_PATH", "PROFILE_CONTRACT_PATH", "TASK_CONTEXT", "OUTPUT_FORMAT", "READ_SCOPE"],
   "required_output_sections": ["STATUS", "PROFILE_JSON", "UNCERTAINTIES"],
   "forbidden_actions": [
